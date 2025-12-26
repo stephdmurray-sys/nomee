@@ -20,20 +20,30 @@ export async function POST(request: NextRequest) {
 
     const timestamp = Date.now()
     const fileExt = file.name.split(".").pop() || "webm"
-    const fileName = `contributions/${contributionId}/${timestamp}.${fileExt}`
+    const fileName = `audio/${contributionId}.${fileExt}`
 
     console.log("[v0] API - Uploading voice file:", fileName)
 
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    const { data: uploadData, error: uploadError } = await supabase.storage.from("voices").upload(fileName, buffer, {
-      contentType: file.type,
-      upsert: false,
-    })
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("nomee-audio")
+      .upload(fileName, buffer, {
+        contentType: file.type,
+        upsert: true, // Allow re-uploads
+      })
 
     if (uploadError) {
       console.error("[v0] API - Voice upload error:", uploadError)
+
+      await supabase
+        .from("contributions")
+        .update({
+          audio_status: "failed",
+        })
+        .eq("id", contributionId)
+
       return NextResponse.json(
         {
           ok: false,
@@ -45,14 +55,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: publicUrlData } = supabase.storage.from("voices").getPublicUrl(fileName)
+    const { data: publicUrlData } = supabase.storage.from("nomee-audio").getPublicUrl(fileName)
 
     console.log("[v0] API - Voice uploaded:", publicUrlData.publicUrl)
+
+    let audioDuration: number | null = null
+    try {
+      // Note: Duration calculation would require audio processing
+      // For now, we'll leave it null and could add later if needed
+      audioDuration = null
+    } catch {
+      // Ignore duration calculation errors
+    }
 
     const { error: updateError } = await supabase
       .from("contributions")
       .update({
         voice_url: publicUrlData.publicUrl,
+        audio_status: "uploaded",
+        audio_path: fileName,
+        audio_duration_ms: audioDuration,
       })
       .eq("id", contributionId)
 

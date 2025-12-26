@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { createClient } from "@/lib/supabase/client"
 import { RELATIONSHIP_OPTIONS, RELATIONSHIP_VALUES } from "@/lib/nomee-enums"
+import { VoiceRecorder } from "@/components/voice-recorder"
 
 const TRAIT_OPTIONS = {
   how_they_work: [
@@ -97,7 +98,7 @@ type ContributorFlowProps = {
 }
 
 export default function ContributorFlow({ profile, initialTraits }: ContributorFlowProps) {
-  const [step, setStep] = useState<"context" | "traits" | "quote" | "attribution" | "submitted">("context")
+  const [step, setStep] = useState<"context" | "traits" | "quote" | "attribution" | "voice" | "submitted">("context")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [errorDetails, setErrorDetails] = useState<string | null>(null)
@@ -355,8 +356,7 @@ export default function ContributorFlow({ profile, initialTraits }: ContributorF
 
     const success = await submitCoreContribution()
     if (success) {
-      setContributionId(null)
-      setStep("submitted")
+      setStep("voice")
     }
   }
 
@@ -679,6 +679,99 @@ export default function ContributorFlow({ profile, initialTraits }: ContributorF
               </Button>
             </div>
           </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (step === "voice") {
+    return (
+      <div className="min-h-screen bg-neutral-50 py-12 px-4">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-8">
+            <p className="mb-4 text-sm text-neutral-600">Step 4 of 4 (Optional)</p>
+            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">Want to add a quick voice note?</h1>
+            <p className="text-neutral-600">Your message is already saved. Audio is optional.</p>
+          </div>
+
+          <VoiceRecorder
+            quote={quote}
+            onRecordingComplete={(blob) => {
+              console.log("[v0] Voice recording completed, saving blob")
+              setVoiceBlob(blob)
+            }}
+          />
+
+          {error && (
+            <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-4">
+              <p className="text-sm text-amber-800">{error}</p>
+            </div>
+          )}
+
+          <div className="mt-8 flex gap-4">
+            <Button
+              onClick={async () => {
+                console.log("[v0] Skipping voice, navigating to submitted")
+                setStep("submitted")
+              }}
+              variant="outline"
+              size="lg"
+              disabled={loading}
+            >
+              Skip
+            </Button>
+            <Button
+              onClick={async () => {
+                console.log("[v0] Uploading voice and navigating to submitted")
+                setLoading(true)
+                setError(null)
+
+                if (voiceBlob && contributionId) {
+                  try {
+                    const formData = new FormData()
+                    formData.append("file", voiceBlob, `voice-${Date.now()}.webm`)
+                    formData.append("contributionId", contributionId)
+
+                    const response = await fetch("/api/contributions/attach-voice", {
+                      method: "POST",
+                      body: formData,
+                    })
+
+                    const result = await response.json()
+
+                    if (!response.ok || !result.success) {
+                      console.warn("[v0] Voice upload failed (non-blocking):", result.error)
+                      setError("Voice upload failed, but your message was saved successfully")
+                    } else {
+                      console.log("[v0] Voice uploaded successfully")
+                    }
+                  } catch (err) {
+                    console.warn("[v0] Voice upload error (non-blocking):", err)
+                    setError("Voice upload failed, but your message was saved successfully")
+                  }
+                }
+
+                setLoading(false)
+                setStep("submitted")
+              }}
+              className="flex-1"
+              size="lg"
+              disabled={loading || !voiceBlob}
+            >
+              {loading ? "Uploading..." : "Upload voice note"}
+            </Button>
+            <Button
+              onClick={() => {
+                console.log("[v0] Continue without voice")
+                setStep("submitted")
+              }}
+              className="flex-1"
+              size="lg"
+              disabled={loading}
+            >
+              Continue
+            </Button>
+          </div>
         </div>
       </div>
     )
