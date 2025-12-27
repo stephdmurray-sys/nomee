@@ -121,6 +121,19 @@ export function PremierProfileClient({
   console.log("[v0] Number of contributions:", contributions.length)
   console.log("[v0] Number of imported feedback:", importedFeedback.length)
 
+  const totalUploads = rawImportedFeedback.length
+  const voiceNotesCount = voiceContributions.length
+
+  console.log("[v0] Upload counts:", {
+    total: totalUploads,
+    analyzable: analyzableUploads.length,
+    rawData: rawImportedFeedback.map((u) => ({
+      id: u.id,
+      has_ocr: !!u.ocr_text,
+      included: u.included_in_analysis,
+    })),
+  })
+
   return (
     <div className="min-h-screen bg-white">
       {/* Fixed site header for navigation */}
@@ -165,11 +178,10 @@ export function PremierProfileClient({
             <p className="text-lg md:text-xl text-neutral-600 mb-3 leading-relaxed">{profile.headline}</p>
           )}
 
-          <p className="text-xs uppercase tracking-widest text-neutral-400 font-medium">
-            Nomee profile · Based on feedback from {rawContributions.length}{" "}
+          <p className="text-sm text-neutral-500 uppercase tracking-wide">
+            Nomee Profile · Based on feedback from {rawContributions.length}{" "}
             {rawContributions.length === 1 ? "person" : "people"}
-            {analyzableUploads.length > 0 &&
-              ` · ${analyzableUploads.length} ${analyzableUploads.length === 1 ? "upload" : "uploads"}`}
+            {totalUploads > 0 && ` · ${totalUploads} ${totalUploads === 1 ? "upload" : "uploads"}`}
           </p>
         </div>
 
@@ -189,17 +201,21 @@ export function PremierProfileClient({
                     Summary of working with {profile.full_name?.split(" ")[0] || "them"}
                   </h2>
                   <div className="text-right flex-shrink-0">
-                    <span className="text-xs text-neutral-400 uppercase tracking-wider block">
+                    <span className="text-xs text-neutral-400 uppercase tracking-widest block">
                       Updated automatically
                     </span>
                     {rawContributions.length > 0 && (
                       <span className="text-xs text-neutral-500 block mt-1">
                         {rawContributions.length} {rawContributions.length === 1 ? "contribution" : "contributions"} •{" "}
-                        {voiceContributions.length} {voiceContributions.length === 1 ? "voice note" : "voice notes"}
-                        {analyzableUploads.length > 0 && (
+                        {voiceNotesCount} {voiceNotesCount === 1 ? "voice note" : "voice notes"}
+                        {totalUploads > 0 && (
                           <>
                             {" "}
-                            • {analyzableUploads.length} {analyzableUploads.length === 1 ? "upload" : "uploads"}
+                            • {totalUploads} {totalUploads === 1 ? "upload" : "uploads"}
+                            {/* Phase 2: optionally show analyzed count */}
+                            {analyzableUploads.length > 0 && analyzableUploads.length < totalUploads && (
+                              <span className="text-neutral-400"> ({analyzableUploads.length} analyzed)</span>
+                            )}
                           </>
                         )}
                       </span>
@@ -218,11 +234,21 @@ export function PremierProfileClient({
                 <p className="text-xs text-neutral-500 pt-4 border-t border-neutral-100">
                   Generated from {rawContributions.length}{" "}
                   {rawContributions.length === 1 ? "contribution" : "contributions"}
-                  {analyzableUploads.length > 0 && (
+                  {totalUploads > 0 && (
                     <>
                       {" "}
-                      and {analyzableUploads.length} {analyzableUploads.length === 1 ? "upload" : "uploads"}
+                      and {totalUploads} {totalUploads === 1 ? "upload" : "uploads"}
+                      {analyzableUploads.length > 0 && analyzableUploads.length < totalUploads && (
+                        <span className="text-neutral-400"> ({analyzableUploads.length} analyzed)</span>
+                      )}
                     </>
+                  )}
+                  {unanalyzableUploads.length > 0 && (
+                    <span className="block text-xs text-neutral-400 mt-1">
+                      {unanalyzableUploads.length}{" "}
+                      {unanalyzableUploads.length === 1 ? "upload wasn't" : "uploads weren't"} analyzed (low OCR
+                      confidence)
+                    </span>
                   )}{" "}
                   • Updates as more people contribute
                 </p>
@@ -287,72 +313,125 @@ export function PremierProfileClient({
               <p className="text-sm text-neutral-500 text-center">
                 Not hand-picked — patterns emerge as more people contribute.
               </p>
+              <p className="text-xs text-neutral-400 text-center pt-1">Darker = mentioned more often</p>
             </div>
 
-            {/* Bento grid layout: Top signals (left) + Emerging signals (right) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
-              {/* Left panel: Top signals */}
-              <div className="p-6 rounded-xl border border-neutral-200 bg-white">
-                <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">Top signals</h4>
-                <div className="space-y-2">
-                  {traitsWithExamples.slice(0, 5).map((trait) => {
-                    const isSelected = selectedHeatmapTrait === trait.label
-                    return (
-                      <button
-                        key={trait.label}
-                        onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
-                        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all hover:shadow-sm ${
-                          isSelected
-                            ? "bg-neutral-900 text-white border-neutral-900"
-                            : "bg-white border-neutral-200 hover:border-neutral-300"
-                        }`}
-                      >
-                        <span className={`font-semibold ${isSelected ? "text-white" : "text-neutral-900"}`}>
-                          {trait.label}
-                        </span>
-                        <span
-                          className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                            isSelected ? "bg-white/20 text-white" : "bg-neutral-100 text-neutral-600"
-                          }`}
-                        >
-                          ×{trait.count}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
+            {(() => {
+              const maxCount = Math.max(...traitsWithExamples.map((t) => t.count))
 
-              {/* Right panel: Emerging signals */}
-              <div className="p-6 rounded-xl border border-neutral-200 bg-white">
-                <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
-                  Emerging signals
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {traitsWithExamples.slice(5, 15).map((trait) => {
-                    const isSelected = selectedHeatmapTrait === trait.label
-                    return (
-                      <button
-                        key={trait.label}
-                        onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
-                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all hover:shadow-sm ${
-                          isSelected
-                            ? "bg-neutral-900 text-white border-neutral-900"
-                            : "bg-white border-neutral-200 hover:border-neutral-300"
-                        }`}
-                      >
-                        <span className={`font-medium ${isSelected ? "text-white" : "text-neutral-700"}`}>
-                          {trait.label}
-                        </span>
-                        <span className={`text-xs font-semibold ${isSelected ? "text-white/70" : "text-neutral-500"}`}>
-                          ×{trait.count}
-                        </span>
-                      </button>
-                    )
-                  })}
+              // Create frequency level function (4 discrete levels)
+              const getFrequencyLevel = (count: number): number => {
+                const ratio = count / maxCount
+                if (ratio >= 0.8) return 4 // Level 4: highest (80-100%)
+                if (ratio >= 0.6) return 3 // Level 3: high (60-79%)
+                if (ratio >= 0.4) return 2 // Level 2: medium (40-59%)
+                return 1 // Level 1: low (0-39%)
+              }
+
+              // Frequency-based styling function
+              const getFrequencyStyles = (count: number, isSelected: boolean) => {
+                if (isSelected) {
+                  return {
+                    bg: "bg-neutral-900",
+                    border: "border-neutral-900",
+                    text: "text-white",
+                    badge: "bg-white/20 text-white",
+                  }
+                }
+
+                const level = getFrequencyLevel(count)
+
+                // Apply light blue intensity based on frequency level
+                switch (level) {
+                  case 4: // Highest frequency
+                    return {
+                      bg: "bg-blue-50/90",
+                      border: "border-blue-200",
+                      text: "text-neutral-900",
+                      badge: "bg-blue-100 text-neutral-700",
+                    }
+                  case 3: // High frequency
+                    return {
+                      bg: "bg-blue-50/60",
+                      border: "border-blue-100",
+                      text: "text-neutral-900",
+                      badge: "bg-blue-50 text-neutral-600",
+                    }
+                  case 2: // Medium frequency
+                    return {
+                      bg: "bg-blue-50/30",
+                      border: "border-neutral-200",
+                      text: "text-neutral-800",
+                      badge: "bg-neutral-100 text-neutral-600",
+                    }
+                  default: // Low frequency
+                    return {
+                      bg: "bg-white",
+                      border: "border-neutral-200",
+                      text: "text-neutral-700",
+                      badge: "bg-neutral-50 text-neutral-500",
+                    }
+                }
+              }
+
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+                  {/* Left panel: Top signals */}
+                  <div className="p-6 rounded-xl border border-neutral-200 bg-white">
+                    <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
+                      Top signals
+                    </h4>
+                    <div className="space-y-2">
+                      {traitsWithExamples.slice(0, 5).map((trait) => {
+                        const isSelected = selectedHeatmapTrait === trait.label
+                        const styles = getFrequencyStyles(trait.count, isSelected)
+
+                        return (
+                          <button
+                            key={trait.label}
+                            onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all hover:shadow-sm ${
+                              styles.bg
+                            } ${styles.border}`}
+                          >
+                            <span className={`font-semibold ${styles.text}`}>{trait.label}</span>
+                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${styles.badge}`}>
+                              ×{trait.count}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Right panel: Emerging signals */}
+                  <div className="p-6 rounded-xl border border-neutral-200 bg-white">
+                    <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
+                      Emerging signals
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {traitsWithExamples.slice(5, 15).map((trait) => {
+                        const isSelected = selectedHeatmapTrait === trait.label
+                        const styles = getFrequencyStyles(trait.count, isSelected)
+
+                        return (
+                          <button
+                            key={trait.label}
+                            onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
+                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all hover:shadow-sm ${
+                              styles.bg
+                            } ${styles.border}`}
+                          >
+                            <span className={`font-medium ${styles.text}`}>{trait.label}</span>
+                            <span className={`text-xs font-semibold ${styles.badge}`}>×{trait.count}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              )
+            })()}
 
             {selectedHeatmapTrait && (
               <button
