@@ -3,9 +3,10 @@
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Share2, Copy } from "lucide-react"
-import { VoiceCard } from "@/components/voice-card" // Import VoiceCard component
-import { SiteHeader } from "@/components/site-header" // Import SiteHeader component
+import { VoiceCard } from "@/components/voice-card"
+import { SiteHeader } from "@/components/site-header"
 import { AiPatternSummary } from "@/components/ai-pattern-summary"
+import { TestimonialGroup } from "@/components/testimonial-group"
 import { RelationshipFilter } from "@/components/relationship-filter"
 import { filterByRelationship, type RelationshipFilterCategory } from "@/lib/relationship-filter"
 import { categorizeTestimonials } from "@/lib/categorize-testimonials"
@@ -43,21 +44,11 @@ export function PremierProfileClient({
     "[v0] PremierProfileClient: Contributions with audio_url:",
     rawContributions.filter((c) => c.audio_url).length,
   )
-  console.log(
-    "[v0] PremierProfileClient: Sample audio URLs:",
-    rawContributions
-      .filter((c) => c.audio_url)
-      .slice(0, 3)
-      .map((c) => ({ id: c.id, audio_url: c.audio_url, has_audio_url: !!c.audio_url })),
-  )
-  // </CHANGE>
 
   const contributions = dedupeContributions(rawContributions)
   const voiceContributions = contributions.filter((c) => c.audio_url && c.audio_url.trim() !== "")
 
   console.log("[v0] PremierProfileClient: voiceContributions.length:", voiceContributions.length)
-  console.log("[v0] PremierProfileClient: voiceContributions sample:", voiceContributions.slice(0, 2))
-  // </CHANGE>
 
   const analyzableUploads = rawImportedFeedback.filter((u) => u.included_in_analysis && u.ocr_text)
   const totalUploads = rawImportedFeedback.length
@@ -65,9 +56,7 @@ export function PremierProfileClient({
 
   console.log("[v0] PremierProfileClient: voiceNotesCount (determines section visibility):", voiceNotesCount)
   console.log("[v0] PremierProfileClient: Will 'In Their Own Words' section render?", voiceNotesCount > 0)
-  // </CHANGE>
 
-  // Filter imported feedback to remove quotes mentioning wrong owner names
   const dedupedImportedFeedback = Array.from(
     new Map(
       rawImportedFeedback.map((feedback) => {
@@ -86,6 +75,7 @@ export function PremierProfileClient({
 
     return !mentionsDifferentName
   })
+  // </CHANGE>
 
   const [selectedTraits, setSelectedTraits] = useState<string[]>([])
   const [hoveredTrait, setHoveredTrait] = useState<string | null>(null)
@@ -148,10 +138,10 @@ export function PremierProfileClient({
   const getFrequencyLevel = (count: number): number => {
     const maxCount = Math.max(...traitsWithExamples.map((t) => t.count))
     const ratio = count / maxCount
-    if (ratio >= 0.8) return 4 // Level 4: highest (80-100%)
-    if (ratio >= 0.6) return 3 // Level 3: high (60-79%)
-    if (ratio >= 0.4) return 2 // Level 2: medium (40-59%)
-    return 1 // Level 1: low (0-39%)
+    if (ratio >= 0.8) return 4
+    if (ratio >= 0.6) return 3
+    if (ratio >= 0.4) return 2
+    return 1
   }
 
   const getFrequencyStyles = (count: number, isSelected: boolean) => {
@@ -166,30 +156,29 @@ export function PremierProfileClient({
 
     const level = getFrequencyLevel(count)
 
-    // Apply light blue intensity based on frequency level
     switch (level) {
-      case 4: // Highest frequency
+      case 4:
         return {
           bg: "bg-blue-50/90",
           border: "border-blue-200",
           text: "text-neutral-900",
           badge: "bg-blue-100 text-neutral-700",
         }
-      case 3: // High frequency
+      case 3:
         return {
           bg: "bg-blue-50/60",
           border: "border-blue-100",
           text: "text-neutral-900",
           badge: "bg-blue-50 text-neutral-600",
         }
-      case 2: // Medium frequency
+      case 2:
         return {
           bg: "bg-blue-50/30",
           border: "border-neutral-200",
           text: "text-neutral-800",
           badge: "bg-neutral-100 text-neutral-600",
         }
-      default: // Low frequency
+      default:
         return {
           bg: "bg-white",
           border: "border-neutral-200",
@@ -209,7 +198,6 @@ export function PremierProfileClient({
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Fixed site header for navigation */}
       <SiteHeader />
 
       {/* Floating share cluster - Desktop only */}
@@ -259,17 +247,16 @@ export function PremierProfileClient({
           <p className="text-xs text-neutral-500 mt-2">Each contributor can submit once.</p>
         </div>
 
+        {/* Summary section */}
         {totalContributions > 0 && traits.length > 0 && (
           <div
             className={`mb-10 md:mb-12 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
             style={{ transitionDelay: "200ms" }}
           >
             <div className="relative max-w-full p-8 md:p-10 rounded-xl border border-neutral-200 bg-gradient-to-br from-blue-50/30 to-transparent shadow-sm">
-              {/* Left accent bar */}
               <div className="absolute left-0 top-8 bottom-8 w-1 bg-blue-500/40 rounded-r-full" />
 
               <div className="space-y-6">
-                {/* Header with meta */}
                 <div className="flex items-start justify-between gap-4 pb-4 border-b border-neutral-100">
                   <h2 className="text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight">
                     Summary of working with {profile.full_name?.split(" ")[0] || "them"}
@@ -293,7 +280,6 @@ export function PremierProfileClient({
                   </div>
                 </div>
 
-                {/* Summary content */}
                 <AiPatternSummary
                   contributions={rawContributions}
                   importedFeedback={rawImportedFeedback}
@@ -317,13 +303,11 @@ export function PremierProfileClient({
       </section>
 
       <div className="mx-auto max-w-6xl px-6 lg:px-8 space-y-8 md:space-y-10 py-4">
-        {/* In Their Own Words - ALWAYS PRESENT */}
         {voiceNotesCount > 0 && (
           <section className="space-y-6 py-8 md:py-10">
-            {/* Header - neutral and editorial */}
-            <div className="space-y-3 max-w-2xl mx-auto">
+            <div className="space-y-3 max-w-2xl mx-auto text-center">
               <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">In Their Own Words</h3>
-              <p className="text-base md:text-lg text-neutral-600 leading-relaxed text-center max-w-[65ch] mx-auto">
+              <p className="text-base md:text-lg text-neutral-600 leading-relaxed max-w-[65ch] mx-auto">
                 Unedited voice notes from people who know {profile.full_name?.split(" ")[0]}
               </p>
             </div>
@@ -360,17 +344,17 @@ export function PremierProfileClient({
             )}
           </section>
         )}
+        {/* </CHANGE> */}
 
         {voiceNotesCount > 0 && <div className="border-t border-neutral-100" />}
 
+        {/* Pattern Recognition section */}
         {traits.length > 0 && (
           <section className="space-y-6 pt-4 md:pt-6">
-            <div className="space-y-2 max-w-3xl mx-auto">
-              <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900 text-center">Pattern Recognition</h3>
-              <p className="text-sm text-neutral-500 text-center">
-                Not hand-picked — patterns emerge as more people contribute.
-              </p>
-              <p className="text-xs text-neutral-400 text-center pt-1">Darker = mentioned more often</p>
+            <div className="space-y-2 max-w-3xl mx-auto text-center">
+              <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">Pattern Recognition</h3>
+              <p className="text-sm text-neutral-500">Not hand-picked — patterns emerge as more people contribute.</p>
+              <p className="text-xs text-neutral-400 pt-1">Darker = mentioned more often</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
@@ -414,12 +398,12 @@ export function PremierProfileClient({
                       <button
                         key={trait.label}
                         onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
-                        className={`flex items-center px-3 py-2 rounded-full border transition-all hover:shadow-sm ${
+                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border transition-all hover:shadow-sm ${
                           styles.bg
                         } ${styles.border}`}
                       >
-                        <span className={`font-semibold ${styles.text}`}>{trait.label}</span>
-                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${styles.badge}`}>
+                        <span className={`text-sm font-semibold ${styles.text}`}>{trait.label}</span>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${styles.badge}`}>
                           ×{trait.count}
                         </span>
                       </button>
@@ -430,6 +414,147 @@ export function PremierProfileClient({
             </div>
           </section>
         )}
+
+        {howItFeels.length > 0 && (
+          <>
+            <div className="border-t border-neutral-100" />
+            <section className="space-y-6 py-8 md:py-10">
+              <div className="space-y-3 max-w-2xl mx-auto text-center">
+                <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">How it feels</h3>
+                <p className="text-base md:text-lg text-neutral-600 leading-relaxed">
+                  Day-to-day collaboration style and working patterns
+                </p>
+              </div>
+
+              <div className="flex justify-center">
+                <RelationshipFilter
+                  contributions={howItFeels}
+                  selectedCategory={howItFeelsRelationshipFilter}
+                  onCategoryChange={setHowItFeelsRelationshipFilter}
+                />
+              </div>
+
+              {filteredHowItFeels.length > 0 ? (
+                <TestimonialGroup
+                  title=""
+                  contributions={filteredHowItFeels}
+                  selectedTraits={selectedTraits}
+                  hoveredTrait={hoveredTrait}
+                  profileName={profile.full_name}
+                  highlightPatterns={highlightPatterns}
+                  isFirstGroup={true}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-neutral-600">
+                    No perspectives yet from {howItFeelsRelationshipFilter.toLowerCase()}.
+                  </p>
+                  <button
+                    onClick={() => setHowItFeelsRelationshipFilter("All")}
+                    className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    View all perspectives
+                  </button>
+                </div>
+              )}
+            </section>
+          </>
+        )}
+        {/* </CHANGE> */}
+
+        {importedFeedback.length > 0 && (
+          <>
+            <div className="border-t border-neutral-100" />
+            <section className="space-y-6 py-8 md:py-10">
+              <div className="space-y-3 max-w-2xl mx-auto text-center">
+                <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">Screenshots and highlights</h3>
+                <p className="text-base md:text-lg text-neutral-600 leading-relaxed">
+                  {profile.full_name?.split(" ")[0]} saved {importedFeedback.length}{" "}
+                  {importedFeedback.length === 1 ? "piece" : "pieces"} of feedback
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {importedFeedback.slice(0, 6).map((feedback, idx) => {
+                  console.log(
+                    "[v0] Screenshot card",
+                    idx,
+                    "- source_type:",
+                    feedback.source_type,
+                    "| image_url:",
+                    !!feedback.image_url,
+                  )
+                  return (
+                    <div
+                      key={feedback.id}
+                      className="p-6 rounded-xl border border-neutral-200 bg-white hover:shadow-lg transition-shadow duration-300"
+                    >
+                      {feedback.image_url && (
+                        <div className="mb-4 rounded-lg overflow-hidden border border-neutral-200 relative">
+                          <img
+                            src={feedback.image_url || "/placeholder.svg"}
+                            alt={`Feedback screenshot ${idx + 1}`}
+                            className="w-full h-auto"
+                          />
+                          {feedback.source_type && (
+                            <div className="absolute top-3 right-3">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium shadow-sm ${
+                                  feedback.source_type === "LinkedIn"
+                                    ? "bg-blue-500 text-white"
+                                    : feedback.source_type === "Email"
+                                      ? "bg-purple-500 text-white"
+                                      : feedback.source_type === "DM"
+                                        ? "bg-green-500 text-white"
+                                        : feedback.source_type === "Review"
+                                          ? "bg-orange-500 text-white"
+                                          : "bg-neutral-500 text-white"
+                                }`}
+                              >
+                                {feedback.source_type}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {feedback.ai_extracted_excerpt && (
+                        <p className="text-sm text-neutral-700 leading-relaxed mb-4">{feedback.ai_extracted_excerpt}</p>
+                      )}
+                      {feedback.giver_name && (
+                        <div className="text-xs text-neutral-500">
+                          <span className="font-medium">{feedback.giver_name}</span>
+                          {feedback.giver_company && <span> · {feedback.giver_company}</span>}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+          </>
+        )}
+        {/* </CHANGE> */}
+
+        <div className="border-t border-neutral-100" />
+        <section className="py-16 md:py-20">
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">Build your own Nomee profile</h3>
+            <p className="text-lg text-neutral-600 leading-relaxed max-w-[60ch] mx-auto">
+              Get feedback from people you've worked with. Create a profile that shows how you collaborate, solve
+              problems, and make an impact.
+            </p>
+            <div className="pt-4">
+              <Button
+                size="lg"
+                onClick={() => (window.location.href = "/signup")}
+                className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-6 text-lg rounded-xl"
+              >
+                Get started for free
+              </Button>
+            </div>
+          </div>
+        </section>
+        {/* </CHANGE> */}
       </div>
     </div>
   )

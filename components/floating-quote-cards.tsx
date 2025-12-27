@@ -159,8 +159,8 @@ export function FloatingQuoteCards({
         {columns.map((column, colIdx) => (
           <div
             key={colIdx}
-            className={isFirstInGroup && colIdx === 0 ? "col-span-2 space-y-6" : "space-y-6"}
-            style={!isFirstInGroup && colIdx % 2 === 1 ? { marginTop: "1rem" } : {}}
+            className={isFirstInGroup && colIdx === 0 ? "col-span-2 space-y-3" : "space-y-3"}
+            style={!isFirstInGroup && colIdx % 2 === 1 ? { marginTop: "0.5rem" } : {}}
           >
             {column.map((contribution: any, cardIdx: number) => {
               const isExpanded = expandedId === contribution.id
@@ -187,7 +187,6 @@ export function FloatingQuoteCards({
                 : truncateToSentences(contribution.written_note, 3)
 
               const cardPatterns = extractKeywordsFromText(contribution.written_note || "", allTraits)
-              console.log("[v0] Card", contribution.id, "- extracted", cardPatterns.length, "patterns")
 
               const renderedText = displayText ? highlightQuote(displayText, cardPatterns, 5) : displayText
 
@@ -304,7 +303,6 @@ export function FloatingQuoteCards({
               : truncateToSentences(contribution.written_note, 3)
 
             const cardPatterns = extractKeywordsFromText(contribution.written_note || "", allTraits)
-            console.log("[v0] Mobile card", contribution.id, "- extracted", cardPatterns.length, "patterns")
 
             const renderedText = displayText ? highlightQuote(displayText, cardPatterns, 5) : displayText
 
