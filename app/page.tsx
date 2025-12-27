@@ -99,37 +99,48 @@ export default function Home() {
               className="space-y-12"
             >
               {/* Anchor line */}
-              <p className="text-xl md:text-2xl text-slate-700 text-center leading-relaxed font-medium">
-                People don't struggle to describe their work — they struggle to show what they're like.
-              </p>
+              <div className="bg-blue-50/40 rounded-lg px-8 py-6 border border-blue-100/50">
+                <p className="text-xl md:text-2xl text-slate-700 text-center leading-relaxed font-medium">
+                  People don't struggle to describe their work — they struggle to show what they're like.
+                </p>
+              </div>
 
               {/* Three outcome blocks */}
               <div className="space-y-10">
                 {/* Block 1: Jobs */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-slate-900">Get hired without over-explaining yourself</h3>
-                  <p className="text-base text-slate-600 leading-relaxed">
-                    Hiring managers don't struggle to assess skills — they struggle to understand what it's actually
-                    like to work with someone. Nomee gives them that answer before the interview.
-                  </p>
+                <div className="flex gap-4 items-start">
+                  <div className="w-1.5 h-6 bg-blue-400 rounded-full flex-shrink-0 mt-0.5" />
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-slate-900">Get hired without over-explaining yourself</h3>
+                    <p className="text-base text-slate-600 leading-relaxed">
+                      Hiring managers don't struggle to assess skills — they struggle to understand what it's actually
+                      like to work with someone. Nomee gives them that answer before the interview.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Block 2: Deals & partnerships */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-slate-900">Win trust before the first call</h3>
-                  <p className="text-base text-slate-600 leading-relaxed">
-                    Brands, partners, and collaborators choose people who feel reliable and easy to work with. Nomee
-                    lets them hear that directly — from people you've already worked with.
-                  </p>
+                <div className="flex gap-4 items-start">
+                  <div className="w-1.5 h-6 bg-blue-400 rounded-full flex-shrink-0 mt-0.5" />
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-slate-900">Win trust before the first call</h3>
+                    <p className="text-base text-slate-600 leading-relaxed">
+                      Brands, partners, and collaborators choose people who feel reliable and easy to work with. Nomee
+                      lets them hear that directly — from people you've already worked with.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Block 3: Reputation over time */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-slate-900">Keep the praise that usually disappears</h3>
-                  <p className="text-base text-slate-600 leading-relaxed">
-                    Positive feedback gets buried in emails, DMs, and past jobs. Nomee saves it, organizes it, and lets
-                    it compound as your work and relationships grow.
-                  </p>
+                <div className="flex gap-4 items-start">
+                  <div className="w-1.5 h-6 bg-blue-400 rounded-full flex-shrink-0 mt-0.5" />
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-slate-900">Keep the praise that usually disappears</h3>
+                    <p className="text-base text-slate-600 leading-relaxed">
+                      Positive feedback gets buried in emails, DMs, and past jobs. Nomee saves it, organizes it, and
+                      lets it compound as your work and relationships grow.
+                    </p>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -137,8 +148,19 @@ export default function Home() {
         </section>
 
         {/* What a Nomee shows interpretive framing block */}
-        <section className="py-20 px-6 bg-white">
-          <div className="max-w-3xl mx-auto space-y-8 text-center">
+        <section className="py-20 px-6 bg-white relative overflow-hidden">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            {/* Circle 1: "How it feels" - shifted left, lighter opacity */}
+            <div className="absolute w-[280px] h-[280px] rounded-full bg-blue-200/[0.06] -translate-x-32 -translate-y-16" />
+
+            {/* Circle 2: "What stands out" - shifted right, light opacity */}
+            <div className="absolute w-[260px] h-[260px] rounded-full bg-blue-200/[0.08] translate-x-28 -translate-y-20" />
+
+            {/* Circle 3: "What's consistent" - dominant circle, larger and higher opacity */}
+            <div className="absolute w-[340px] h-[340px] rounded-full bg-blue-200/[0.11] translate-x-2 -translate-y-8" />
+          </div>
+
+          <div className="max-w-3xl mx-auto space-y-8 text-center relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -155,17 +177,26 @@ export default function Home() {
               </p>
 
               <div className="space-y-4 text-left max-w-2xl mx-auto pt-4">
-                <p className="text-base text-slate-700">
-                  <span className="font-semibold">How it feels</span> — Short reflections capture the experience of
-                  working together
+                <p className="text-base text-slate-700 flex items-start gap-3">
+                  <span className="w-2 h-2 rounded-full bg-blue-300/60 mt-2 flex-shrink-0" />
+                  <span>
+                    <span className="font-bold">How it feels</span> — Short reflections capture the experience of
+                    working together
+                  </span>
                 </p>
-                <p className="text-base text-slate-700">
-                  <span className="font-semibold">What stands out</span> — Key traits are highlighted directly from each
-                  contribution
+                <p className="text-base text-slate-700 flex items-start gap-3">
+                  <span className="w-2 h-2 rounded-full bg-blue-300/60 mt-2 flex-shrink-0" />
+                  <span>
+                    <span className="font-bold">What stands out</span> — Key traits are highlighted directly from each
+                    contribution
+                  </span>
                 </p>
-                <p className="text-base text-slate-700">
-                  <span className="font-semibold">What's consistent</span> — Patterns emerge as more people share over
-                  time
+                <p className="text-base text-slate-700 flex items-start gap-3">
+                  <span className="w-2 h-2 rounded-full bg-blue-300/60 mt-2 flex-shrink-0" />
+                  <span>
+                    <span className="font-bold">What's consistent</span> — Patterns emerge as more people share over
+                    time
+                  </span>
                 </p>
               </div>
             </motion.div>
