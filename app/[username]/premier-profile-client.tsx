@@ -8,6 +8,7 @@ import { Share2, Copy } from "lucide-react"
 import { TestimonialGroup } from "@/components/testimonial-group"
 import { VoiceCard } from "@/components/voice-card" // Import VoiceCard component
 import { SiteHeader } from "@/components/site-header" // Import SiteHeader component
+import { AiPatternSummary } from "@/components/ai-pattern-summary"
 import { categorizeTestimonials } from "@/lib/categorize-testimonials"
 import { extractRepeatedPhrases } from "@/lib/extract-repeated-phrases"
 import { dedupeContributions } from "@/lib/dedupe-contributions"
@@ -146,7 +147,7 @@ export function PremierProfileClient({
       <section className="max-w-6xl mx-auto px-6 lg:px-8 pt-28 md:pt-32 pb-12 md:pb-16">
         {/* Owner anchor */}
         <div
-          className={`mb-8 md:mb-10 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+          className={`mb-10 md:mb-12 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
           style={{ transitionDelay: "0ms" }}
         >
           <h1 className="text-4xl md:text-5xl font-semibold text-neutral-900 mb-2 tracking-tight leading-[1.1]">
@@ -162,6 +163,51 @@ export function PremierProfileClient({
             {rawContributions.length === 1 ? "person" : "people"}
           </p>
         </div>
+
+        {rawContributions.length > 0 && traits.length > 0 && (
+          <div
+            className={`mb-10 md:mb-12 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            style={{ transitionDelay: "200ms" }}
+          >
+            <div className="relative max-w-full p-8 md:p-10 rounded-xl border border-neutral-200 bg-gradient-to-br from-blue-50/30 to-transparent shadow-sm">
+              {/* Left accent bar */}
+              <div className="absolute left-0 top-8 bottom-8 w-1 bg-blue-500/40 rounded-r-full" />
+
+              <div className="space-y-6">
+                {/* Header with meta */}
+                <div className="flex items-start justify-between gap-4 pb-4 border-b border-neutral-100">
+                  <h2 className="text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight">
+                    Summary of working with {profile.full_name?.split(" ")[0] || "them"}
+                  </h2>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-xs text-neutral-400 uppercase tracking-wider block">
+                      Updated automatically
+                    </span>
+                    {rawContributions.length > 0 && (
+                      <span className="text-xs text-neutral-500 block mt-1">
+                        {rawContributions.length} {rawContributions.length === 1 ? "contribution" : "contributions"} •{" "}
+                        {voiceContributions.length} {voiceContributions.length === 1 ? "voice note" : "voice notes"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Summary content with expanded view */}
+                <AiPatternSummary
+                  contributions={rawContributions}
+                  topTraits={traitsWithExamples.slice(0, 5).map((t) => ({ label: t.label, count: t.count }))}
+                />
+
+                {/* Credibility line */}
+                <p className="text-xs text-neutral-500 pt-4 border-t border-neutral-100">
+                  Generated from {rawContributions.length}{" "}
+                  {rawContributions.length === 1 ? "contribution" : "contributions"} • Updates as more people contribute
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* END HERO MODULE */}
 
         {/* Insight summary with highlighted traits */}
         <div className="space-y-6 md:space-y-8">
@@ -210,105 +256,80 @@ export function PremierProfileClient({
       </section>
       {/* End hero section */}
 
-      <div className="mx-auto max-w-6xl px-6 lg:px-8 space-y-20 md:space-y-24 py-10">
-        {/* Working Energy Snapshot */}
-        {profile.vibe_labels && profile.vibe_labels.length > 0 && (
-          <section className="space-y-6 py-8 md:py-10">
-            <div className="relative max-w-4xl mx-auto p-8 md:p-10 rounded-3xl border-2 border-blue-200/60 bg-blue-50/20 animate-border-draw">
-              <div className="space-y-4">
-                <p className="text-xs uppercase tracking-widest text-neutral-400 font-medium text-center">
-                  {profile.full_name?.split(" ")[0] || "The"}'s working energy
-                </p>
-
-                <div className="text-center">
-                  <p className="text-3xl md:text-4xl lg:text-5xl font-semibold text-neutral-900 leading-tight">
-                    {profile.vibe_labels.map((label, idx) => (
-                      <span key={label}>
-                        {label}
-                        {idx < profile.vibe_labels.length - 1 && ". "}
-                        {idx === profile.vibe_labels.length - 1 && "."}
-                      </span>
-                    ))}
-                  </p>
-                </div>
-
-                <p className="text-sm text-neutral-500 text-center">Based on patterns across Nomee submissions.</p>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Subtle section divider */}
-        <div className="border-t border-neutral-100" />
-
-        {/* Pattern Recognition */}
+      <div className="mx-auto max-w-6xl px-6 lg:px-8 space-y-16 md:space-y-20 py-8">
         {traits.length > 0 && (
-          <section className="space-y-8 pt-16 md:pt-20 pb-8 md:pb-10">
-            <div className="space-y-3 max-w-2xl mx-auto">
+          <section className="space-y-6 pt-8 md:pt-10">
+            <div className="space-y-2 max-w-3xl mx-auto">
               <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900 text-center">Pattern Recognition</h3>
-              <p className="text-base md:text-lg text-neutral-600 leading-relaxed text-center max-w-[65ch] mx-auto">
-                These traits weren't selected — they emerged as more people shared their experience.
+              <p className="text-sm text-neutral-500 text-center">
+                Not hand-picked — patterns emerge as more people contribute.
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-3 max-w-5xl mx-auto justify-center">
-              {traitsWithExamples.slice(0, 12).map((trait, idx) => {
-                const maxCount = Math.max(...traitsWithExamples.map((t) => t.count))
-                const relativeFrequency = trait.count / maxCount
+            {/* Bento grid layout: Top signals (left) + Emerging signals (right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+              {/* Left panel: Top signals */}
+              <div className="p-6 rounded-xl border border-neutral-200 bg-white">
+                <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">Top signals</h4>
+                <div className="space-y-2">
+                  {traitsWithExamples.slice(0, 5).map((trait) => {
+                    const isSelected = selectedHeatmapTrait === trait.label
+                    return (
+                      <button
+                        key={trait.label}
+                        onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all hover:shadow-sm ${
+                          isSelected
+                            ? "bg-neutral-900 text-white border-neutral-900"
+                            : "bg-white border-neutral-200 hover:border-neutral-300"
+                        }`}
+                      >
+                        <span className={`font-semibold ${isSelected ? "text-white" : "text-neutral-900"}`}>
+                          {trait.label}
+                        </span>
+                        <span
+                          className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                            isSelected ? "bg-white/20 text-white" : "bg-neutral-100 text-neutral-600"
+                          }`}
+                        >
+                          ×{trait.count}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
 
-                const isHighFrequency = relativeFrequency >= 0.7
-                const isMediumFrequency = relativeFrequency >= 0.4 && relativeFrequency < 0.7
-
-                const textColor = isHighFrequency
-                  ? "text-neutral-900"
-                  : isMediumFrequency
-                    ? "text-neutral-800"
-                    : "text-neutral-700"
-
-                const borderOpacity = isHighFrequency
-                  ? "border-neutral-400"
-                  : isMediumFrequency
-                    ? "border-neutral-300"
-                    : "border-neutral-200"
-
-                const bgOpacity = isHighFrequency
-                  ? "rgba(59, 130, 246, 0.08)"
-                  : isMediumFrequency
-                    ? "rgba(59, 130, 246, 0.05)"
-                    : "rgba(59, 130, 246, 0.02)"
-
-                const isSelected = selectedHeatmapTrait === trait.label
-
-                const hiddenOnMobile = idx >= 5 ? "hidden md:flex" : "flex"
-
-                return (
-                  <button
-                    key={trait.label}
-                    onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
-                    className={`${hiddenOnMobile} items-center gap-2 px-4 py-3 md:py-2.5 rounded-lg border transition-all hover:scale-[1.02] ${borderOpacity} ${
-                      isSelected ? "ring-2 ring-neutral-900 ring-offset-2" : ""
-                    }`}
-                    style={{
-                      backgroundColor: isSelected ? "var(--near-black)" : bgOpacity,
-                    }}
-                  >
-                    <span className={`text-sm md:text-base font-semibold ${isSelected ? "text-white" : textColor}`}>
-                      {trait.label}
-                    </span>
-                    <span
-                      className={`text-xs font-semibold ${isSelected ? "text-white/70" : "text-neutral-500"}`}
-                      title={`Selected by ${trait.count} ${trait.count === 1 ? "contributor" : "contributors"}`}
-                    >
-                      ×{trait.count}
-                    </span>
-                  </button>
-                )
-              })}
+              {/* Right panel: Emerging signals */}
+              <div className="p-6 rounded-xl border border-neutral-200 bg-white">
+                <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
+                  Emerging signals
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {traitsWithExamples.slice(5, 15).map((trait) => {
+                    const isSelected = selectedHeatmapTrait === trait.label
+                    return (
+                      <button
+                        key={trait.label}
+                        onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
+                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all hover:shadow-sm ${
+                          isSelected
+                            ? "bg-neutral-900 text-white border-neutral-900"
+                            : "bg-white border-neutral-200 hover:border-neutral-300"
+                        }`}
+                      >
+                        <span className={`font-medium ${isSelected ? "text-white" : "text-neutral-700"}`}>
+                          {trait.label}
+                        </span>
+                        <span className={`text-xs font-semibold ${isSelected ? "text-white/70" : "text-neutral-500"}`}>
+                          ×{trait.count}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
-
-            {!selectedHeatmapTrait && (
-              <p className="text-sm text-neutral-500 text-center">Select a trait to see related experiences below.</p>
-            )}
 
             {selectedHeatmapTrait && (
               <button
@@ -320,6 +341,7 @@ export function PremierProfileClient({
             )}
           </section>
         )}
+        {/* END PATTERN RECOGNITION */}
 
         {/* Subtle section divider */}
         <div className="border-t border-neutral-100" />

@@ -91,7 +91,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-16 px-6 bg-slate-50">
+        <section className="py-20 px-6 bg-gradient-to-b from-white to-slate-50">
           <div className="max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -102,7 +102,11 @@ export default function Home() {
             >
               <h2 className="text-2xl md:text-3xl font-semibold text-slate-900">Use your Nomee anywhere</h2>
               <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-                Embed your live Nomee on your site, media kit, or portfolio.
+                Share your link anywhere for free. Embed quotes and traits with Pro.
+              </p>
+
+              <p className="text-sm text-slate-500 max-w-xl mx-auto">
+                Sharing your Nomee link is free. Embeds + extra proof tools are Pro.
               </p>
 
               {/* Mock embed visual */}
@@ -145,9 +149,13 @@ export default function Home() {
                   href="/pricing"
                   className="inline-flex items-center gap-2 text-base font-medium text-slate-600 hover:text-slate-900 transition-colors"
                 >
-                  See embed options →
+                  See all sharing options →
                 </Link>
               </div>
+
+              <p className="text-xs text-slate-500 mt-6 max-w-lg mx-auto">
+                Submissions are tied to real people — one per contributor
+              </p>
             </motion.div>
           </div>
         </section>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
+import { ChevronDown } from "lucide-react"
 
 interface Contribution {
   id: string
@@ -24,13 +24,20 @@ export function AiPatternSummary({ contributions, topTraits }: AiPatternSummaryP
     patterns: string[]
     relationshipInsights?: { role: string; qualities: string[] }[]
   } | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   useEffect(() => {
     generateSummary()
   }, [contributions, topTraits])
 
   const generateSummary = () => {
-    if (contributions.length === 0 || topTraits.length === 0) return
+    if (contributions.length === 0 || topTraits.length === 0) {
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
 
     // Extract top 3 traits
     const top3Traits = topTraits.slice(0, 3).map((t) => t.label.toLowerCase())
@@ -152,63 +159,71 @@ export function AiPatternSummary({ contributions, topTraits }: AiPatternSummaryP
       patterns: patterns.slice(0, 3),
       relationshipInsights: relationshipInsights.length >= 2 ? relationshipInsights : undefined,
     })
+
+    setIsLoading(false)
   }
 
-  if (!summary) return null
+  if (isLoading && contributions.length > 0) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-24 bg-neutral-100 rounded-lg"></div>
+        <div className="h-8 bg-neutral-100 rounded-lg w-1/2"></div>
+      </div>
+    )
+  }
+
+  if (!summary) {
+    return (
+      <div className="text-center py-6">
+        <p className="text-sm text-neutral-500">Summary will appear once contributions are received.</p>
+      </div>
+    )
+  }
+
+  const needsExpand = summary.synthesis.length > 240
 
   return (
-    <motion.section
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6, delay: 0.3 }}
-      className="w-full py-12 px-6 bg-neutral-50/30"
-    >
-      <div className="mx-auto max-w-5xl">
-        <div className="text-center mb-8">
-          <h2 className="text-lg font-semibold text-neutral-900 mb-1">Pattern Summary</h2>
-          <p className="text-xs text-neutral-400">AI-generated from recurring themes across real collaborators</p>
-        </div>
+    <div className="space-y-5">
+      {/* Summary paragraph with larger font and comfortable line-height */}
+      <div className="relative">
+        <p
+          className={`text-neutral-700 leading-relaxed text-lg md:text-xl transition-all duration-300 ${
+            !isExpanded && needsExpand ? "line-clamp-2" : ""
+          }`}
+          style={{ lineHeight: "1.7" }}
+        >
+          {summary.synthesis}
+        </p>
 
-        <div className="space-y-8">
-          {/* Synthesis */}
-          <p className="text-neutral-700 leading-relaxed text-center text-2xl">{summary.synthesis}</p>
-
-          {summary.patterns.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Left column: Most consistent patterns */}
-              <div>
-                <h3 className="text-sm font-medium text-neutral-600 mb-4">Most consistent patterns</h3>
-                <div className="space-y-3">
-                  {summary.patterns.map((pattern, index) => (
-                    <div key={index} className="bg-white rounded-lg px-4 py-3 border border-neutral-100">
-                      <div className="text-sm text-neutral-700">{pattern}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right column: How different collaborators describe them */}
-              {summary.relationshipInsights && summary.relationshipInsights.length >= 2 && (
-                <div>
-                  <h3 className="text-sm font-medium text-neutral-600 mb-4">
-                    How different collaborators describe them
-                  </h3>
-                  <div className="space-y-3">
-                    {summary.relationshipInsights.map((insight, index) => (
-                      <div key={index} className="bg-white rounded-lg px-4 py-3 border border-neutral-100">
-                        <div className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1.5">
-                          {insight.role}
-                        </div>
-                        <div className="text-sm text-neutral-700">{insight.qualities.join(", ")}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        {needsExpand && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="mt-2 text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors font-medium"
+          >
+            {isExpanded ? "Read less" : "Read more"}
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
+            />
+          </button>
+        )}
       </div>
-    </motion.section>
+
+      {/* Most mentioned signals as small pills (max 4) */}
+      {summary.patterns.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Most mentioned signals</p>
+          <div className="flex flex-wrap gap-2">
+            {summary.patterns.slice(0, 4).map((pattern, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100"
+              >
+                {pattern}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

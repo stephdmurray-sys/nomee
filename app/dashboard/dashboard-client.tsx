@@ -11,6 +11,7 @@ import { ImportedFeedbackUploadCard } from "@/components/imported-feedback-uploa
 import { extractSubmissionPhrases, calculatePhraseFrequencies, getTopPhrases } from "@/lib/extract-submission-phrases"
 import { highlightQuote } from "@/lib/highlight-quote"
 import { extractKeywordsFromText } from "@/lib/extract-keywords-from-text"
+import { ShareKit } from "@/components/share-kit"
 
 type DashboardClientProps = {
   profile: any
@@ -119,6 +120,12 @@ export default function DashboardClient({
           )}
         </Card>
       </div>
+
+      {publicUrl && (
+        <div className="mb-12">
+          <ShareKit publicUrl={publicUrl} plan={plan} />
+        </div>
+      )}
 
       {/* Phrase Summary Section */}
       {confirmedCount > 0 && topPhrases.length > 0 && (
