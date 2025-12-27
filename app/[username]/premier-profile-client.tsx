@@ -243,12 +243,11 @@ export function PremierProfileClient({
 
         {/* Pattern Recognition */}
         {traits.length > 0 && (
-          <section className="space-y-8 py-8 md:py-10">
+          <section className="space-y-8 pt-16 md:pt-20 pb-8 md:pb-10">
             <div className="space-y-3 max-w-2xl mx-auto">
               <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900 text-center">Pattern Recognition</h3>
               <p className="text-base md:text-lg text-neutral-600 leading-relaxed text-center max-w-[65ch] mx-auto">
-                Filter reviews below by selecting traits contributors selected when describing what it's like to work
-                together.
+                These traits weren't selected — they emerged as more people shared their experience.
               </p>
             </div>
 
@@ -261,10 +260,10 @@ export function PremierProfileClient({
                 const isMediumFrequency = relativeFrequency >= 0.4 && relativeFrequency < 0.7
 
                 const textColor = isHighFrequency
-                  ? "text-neutral-800"
+                  ? "text-neutral-900"
                   : isMediumFrequency
-                    ? "text-neutral-700"
-                    : "text-neutral-600"
+                    ? "text-neutral-800"
+                    : "text-neutral-700"
 
                 const borderOpacity = isHighFrequency
                   ? "border-neutral-400"
@@ -293,7 +292,7 @@ export function PremierProfileClient({
                       backgroundColor: isSelected ? "var(--near-black)" : bgOpacity,
                     }}
                   >
-                    <span className={`text-sm md:text-base font-medium ${isSelected ? "text-white" : textColor}`}>
+                    <span className={`text-sm md:text-base font-semibold ${isSelected ? "text-white" : textColor}`}>
                       {trait.label}
                     </span>
                     <span
@@ -307,10 +306,14 @@ export function PremierProfileClient({
               })}
             </div>
 
+            {!selectedHeatmapTrait && (
+              <p className="text-sm text-neutral-500 text-center">Select a trait to see related experiences below.</p>
+            )}
+
             {selectedHeatmapTrait && (
               <button
                 onClick={() => handleTraitSelect(null)}
-                className="text-sm text-neutral-600 hover:text-neutral-900 underline py-2"
+                className="text-sm text-neutral-600 hover:text-neutral-900 underline py-2 mx-auto block"
               >
                 Clear filter
               </button>

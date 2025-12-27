@@ -58,8 +58,9 @@ export function highlightQuote(text: string, patterns: HighlightPattern[], maxHi
       parts.push(text.slice(lastIndex, match.index))
     }
 
+    // Increased visual emphasis of inline highlights for better scanning
     parts.push(
-      <span key={`highlight-${idx}`} className="bg-blue-100/70 px-1 rounded-md font-medium">
+      <span key={`highlight-${idx}`} className="bg-blue-100 px-1.5 py-0.5 rounded-md font-medium text-slate-900">
         {match.phrase}
       </span>,
     )
