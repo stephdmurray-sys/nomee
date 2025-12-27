@@ -281,7 +281,7 @@ export default function DashboardClient({
                         ))}
                       {isFeatured && isConfirmed && (
                         <Badge variant="default" className="bg-blue-600">
-                          <Star className="mr-1 h-3 w-3" />
+                          <Star className="mr-1 h-3 w-3 fill-current" />
                           Featured
                         </Badge>
                       )}
@@ -317,7 +317,7 @@ export default function DashboardClient({
                     </div>
                   )}
 
-                  <p className="mb-4 text-base leading-relaxed text-neutral-900">{contribution.message}</p>
+                  <p className="mb-4 text-base leading-relaxed text-neutral-900">{contribution.written_note}</p>
 
                   {/* Phrase Highlights */}
                   {isConfirmed && submissionPhrases.length > 0 && (
@@ -340,7 +340,7 @@ export default function DashboardClient({
                   <div className="border-t pt-4 text-sm text-neutral-600">
                     <div className="font-medium text-neutral-900">{contribution.contributor_name}</div>
                     <div>
-                      {contribution.relationship} · {contribution.company_or_org}
+                      {contribution.relationship} · {contribution.contributor_company}
                     </div>
                     {contribution.contributor_email && (
                       <div className="text-xs text-neutral-500 mt-1">{contribution.contributor_email}</div>

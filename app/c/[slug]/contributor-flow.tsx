@@ -1,74 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { createClient } from "@/lib/supabase/client"
-import { RELATIONSHIP_OPTIONS, RELATIONSHIP_VALUES } from "@/lib/nomee-enums"
+import { RELATIONSHIP_OPTIONS, DURATION_OPTIONS } from "@/lib/nomee-enums"
+import { TRAIT_CATEGORIES } from "@/lib/trait-categories"
 import { VoiceRecorder } from "@/components/voice-recorder"
-
-const TRAIT_OPTIONS = {
-  how_they_work: [
-    { label: "Fast", sort_order: 1 },
-    { label: "Thorough", sort_order: 2 },
-    { label: "Organized", sort_order: 3 },
-    { label: "Reliable", sort_order: 4 },
-    { label: "Proactive", sort_order: 5 },
-    { label: "Takes ownership", sort_order: 6 },
-    { label: "Crisp communicator", sort_order: 7 },
-    { label: "Clear expectations", sort_order: 8 },
-    { label: "Calm under pressure", sort_order: 9 },
-    { label: "Action-oriented", sort_order: 10 },
-    { label: "Flexible", sort_order: 11 },
-    { label: "Follow-through", sort_order: 12 },
-  ],
-  what_it_feels_like: [
-    { label: "Easy", sort_order: 1 },
-    { label: "Energizing", sort_order: 2 },
-    { label: "Supportive", sort_order: 3 },
-    { label: "Collaborative", sort_order: 4 },
-    { label: "Safe", sort_order: 5 },
-    { label: "Fun", sort_order: 6 },
-    { label: "Motivating", sort_order: 7 },
-    { label: "Efficient", sort_order: 8 },
-    { label: "Respectful", sort_order: 9 },
-    { label: "Low-stress", sort_order: 10 },
-    { label: "Inspiring", sort_order: 11 },
-    { label: "Trustworthy", sort_order: 12 },
-  ],
-  how_they_think: [
-    { label: "Strategic", sort_order: 1 },
-    { label: "Creative", sort_order: 2 },
-    { label: "Analytical", sort_order: 3 },
-    { label: "Practical", sort_order: 4 },
-    { label: "Big-picture", sort_order: 5 },
-    { label: "Detail-minded", sort_order: 6 },
-    { label: "Problem-solver", sort_order: 7 },
-    { label: "Customer-first", sort_order: 8 },
-    { label: "Data-driven", sort_order: 9 },
-    { label: "Decisive", sort_order: 10 },
-    { label: "Thoughtful", sort_order: 11 },
-    { label: "Curious", sort_order: 12 },
-  ],
-  how_they_show_up: [
-    { label: "Empathetic", sort_order: 1 },
-    { label: "Encouraging", sort_order: 2 },
-    { label: "Direct (in a good way)", sort_order: 3 },
-    { label: "Advocates for others", sort_order: 4 },
-    { label: "Gives credit", sort_order: 5 },
-    { label: "Coaches others", sort_order: 6 },
-    { label: "Inclusive", sort_order: 7 },
-    { label: "Patient", sort_order: 8 },
-    { label: "Honest feedback", sort_order: 9 },
-    { label: "Shows gratitude", sort_order: 10 },
-    { label: "Leads by example", sort_order: 11 },
-    { label: "Makes time", sort_order: 12 },
-  ],
-}
 
 type ProfileData = {
   id: string
@@ -76,307 +17,48 @@ type ProfileData = {
   username: string
 }
 
-type Trait = {
-  id: string
-  label: string
-  category: string
-  sort_order: number
-}
-
-type ValidationErrors = {
-  contributorName?: string
-  contributorEmail?: string
-  relationship?: string
-  company?: string
-  traits?: string
-  quote?: string
-}
+type StepName = "entry" | "relationship" | "duration" | "traits" | "message" | "identity" | "voice" | "submitted"
 
 type ContributorFlowProps = {
   profile: ProfileData
-  initialTraits?: Record<string, string[]>
 }
 
-export default function ContributorFlow({ profile, initialTraits }: ContributorFlowProps) {
-  const [step, setStep] = useState<"context" | "traits" | "quote" | "attribution" | "voice" | "submitted">("context")
+export default function ContributorFlow({ profile }: ContributorFlowProps) {
+  // Step management
+  const [step, setStep] = useState<StepName>("entry")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [errorDetails, setErrorDetails] = useState<string | null>(null)
-  const [showErrorDetails, setShowErrorDetails] = useState(false)
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
-  const [traits, setTraits] = useState<Trait[]>([])
-  const [traitsByCategory, setTraitsByCategory] = useState<Record<string, Trait[]>>({})
-  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
-  const [clickedButton, setClickedButton] = useState<"skip" | "continue" | null>(null)
-  const [clickTest, setClickTest] = useState("")
-  const [testClicks, setTestClicks] = useState(0)
-  const [contributionId, setContributionId] = useState<string | null>(null)
-  const [selectedTraits, setSelectedTraits] = useState<Record<string, string[]>>(initialTraits || {})
-  const [traitError, setTraitError] = useState("")
-  const [quote, setQuote] = useState("")
-  const [contributorName, setContributorName] = useState("")
-  const [contributorEmail, setContributorEmail] = useState("")
-  const [company, setCompany] = useState("")
+
+  // Form data
   const [relationship, setRelationship] = useState("")
-  const [usingFallback, setUsingFallback] = useState(false)
+  const [duration, setDuration] = useState("")
+  const [selectedTraits, setSelectedTraits] = useState<Record<string, string[]>>({})
+  const [message, setMessage] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastInitial, setLastInitial] = useState("")
+  const [email, setEmail] = useState("")
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
+  const [contributionId, setContributionId] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchTraits = async () => {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from("trait_library")
-        .select("id, label, category, sort_order")
-        .order("category")
-        .order("sort_order")
+  // Validation errors
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
-      if (data && !error && data.length > 0) {
-        setTraits(data)
-        const grouped = data.reduce((acc: Record<string, Trait[]>, trait) => {
-          if (!acc[trait.category]) acc[trait.category] = []
-          acc[trait.category].push(trait)
-          return acc
-        }, {})
-        setTraitsByCategory(grouped)
-        setUsingFallback(false)
-      } else {
-        const fallbackTraits = Object.entries(TRAIT_OPTIONS).flatMap(([category, options]) =>
-          options.map((opt, idx) => ({
-            id: `${category}-${idx}`,
-            label: opt.label,
-            category,
-            sort_order: opt.sort_order,
-          })),
-        )
-        setTraits(fallbackTraits)
-        const grouped = fallbackTraits.reduce((acc: Record<string, Trait[]>, trait) => {
-          if (!acc[trait.category]) acc[trait.category] = []
-          acc[trait.category].push(trait)
-          return acc
-        }, {})
-        setTraitsByCategory(grouped)
-        setUsingFallback(true)
-      }
-    }
-    fetchTraits()
-  }, [])
+  const firstNameValue = profile.full_name.split(" ")[0]
 
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
-
-  const validateAttributionStep = (): boolean => {
-    const errors: ValidationErrors = {}
-
-    if (!contributorName.trim()) {
-      errors.contributorName = "Your name is required"
-    }
-
-    if (!contributorEmail.trim()) {
-      errors.contributorEmail = "Your email is required"
-    } else if (!isValidEmail(contributorEmail.trim())) {
-      errors.contributorEmail = "Please enter a valid email"
-    }
-
-    if (!relationship) {
-      errors.relationship = "Please select your relationship"
-    } else if (!RELATIONSHIP_VALUES.includes(relationship as any)) {
-      errors.relationship = "Please select a valid option"
-    }
-
-    if (!company.trim()) {
-      errors.company = "Company or organization is required"
-    }
-
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  const validateSubmission = (): boolean => {
-    const totalTraits = Object.values(selectedTraits).flat().length
-    const quoteLength = quote.trim().length
-
-    if (totalTraits === 0 && quoteLength < 20) {
-      setValidationErrors({
-        traits: "Select at least 1 trait or write at least 20 characters",
-        quote: "Select at least 1 trait or write at least 20 characters",
-      })
-      return false
-    }
-
-    return true
-  }
-
-  const handleTraitToggle = (category: string, traitId: string) => {
-    const currentSelected = selectedTraits[category] || []
-
-    if (currentSelected.includes(traitId)) {
-      setSelectedTraits({
-        ...selectedTraits,
-        [category]: currentSelected.filter((id) => id !== traitId),
-      })
-      setTraitError("")
-      setValidationErrors((prev) => ({ ...prev, traits: undefined }))
-    } else if (currentSelected.length < 2) {
-      setSelectedTraits({
-        ...selectedTraits,
-        [category]: [...currentSelected, traitId],
-      })
-      setTraitError("")
-      setValidationErrors((prev) => ({ ...prev, traits: undefined }))
-    } else {
-      setTraitError("You've already selected 2 in this section.")
-      setTimeout(() => setTraitError(""), 3000)
-    }
-  }
-
-  const submitCoreContribution = async (): Promise<boolean> => {
-    if (!profile) {
-      console.log("[v0] No profile found")
-      return false
-    }
-
-    try {
-      console.log("[v0] Starting core contribution submission (Step 3)")
-
-      if (!validateSubmission()) {
-        console.log("[v0] Validation failed")
-        return false
-      }
-
-      setLoading(true)
-      setError(null)
-      setErrorDetails(null)
-
-      const allSelectedTraitIds = Object.values(selectedTraits).flat()
-
-      console.log("[v0] Submitting core contribution (NO voice)")
-
-      const response = await fetch("/api/contributions/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profileId: profile.id,
-          contributorName: contributorName.trim(),
-          contributorEmail: contributorEmail.trim().toLowerCase(),
-          companyOrOrg: company.trim(),
-          relationship,
-          message: quote.trim(),
-          selectedTraitIds: allSelectedTraitIds,
-        }),
-      })
-
-      const result = await response.json()
-
-      console.log("[v0] Response:", response.status, result)
-
-      if (response.status === 201 && result.success && result.contributionId) {
-        console.log("[v0] ✅ Core submission successful! ID:", result.contributionId)
-        setContributionId(result.contributionId)
-        setLoading(false)
-        return true
-      }
-
-      let userMessage = "Couldn't submit right now. Please try again."
-      const details = result.error || result.details || `HTTP ${response.status}`
-
-      if (response.status === 429 || result.code === "RATE_LIMIT") {
-        userMessage =
-          result.error ||
-          `The email "${contributorEmail.trim().toLowerCase()}" has reached its submission limit. Try again later or use a different email.`
-      } else if (response.status === 409 || result.code === "DUPLICATE_SUBMISSION") {
-        userMessage =
-          result.error ||
-          `You've already submitted with "${contributorEmail.trim().toLowerCase()}" for ${profile.full_name}. Each email can only contribute once.`
-      } else if (response.status === 500 || result.code === "DB_INSERT_ERROR") {
-        if (
-          details &&
-          typeof details === "string" &&
-          (details.includes("duplicate") || details.includes("unique constraint") || details.includes("email_hash"))
-        ) {
-          userMessage = `The email "${contributorEmail.trim().toLowerCase()}" has already been used for ${profile.full_name}. Each email can only submit once.`
-        } else {
-          userMessage = "Database error occurred. Please try again or contact support if this persists."
-        }
-      } else if (response.status === 400) {
-        userMessage = result.error || "Invalid submission data. Please check your information."
-      }
-
-      setError(userMessage)
-      setErrorDetails(details)
-      console.error("[v0] ❌ Submission error:", response.status, result)
-      setLoading(false)
-      return false
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Unknown error"
-      console.error("[v0] ❌ Submission error:", error)
-      setError("Network error. Please check your connection and try again.")
-      setErrorDetails(errorMsg)
-      setLoading(false)
-      return false
-    }
-  }
-
-  const attachVoiceToContribution = async () => {
-    if (!voiceBlob || !contributionId) {
-      console.log("[v0] No voice or no contribution ID, skipping voice attachment")
-      return
-    }
-
-    console.log("[v0] Uploading voice in background (non-blocking)...")
-
-    try {
-      const formData = new FormData()
-      formData.append("file", voiceBlob, `voice-${Date.now()}.webm`)
-      formData.append("contributionId", contributionId)
-
-      const response = await fetch("/api/contributions/attach-voice", {
-        method: "POST",
-        body: formData,
-      })
-
-      const result = await response.json()
-
-      if (response.ok && result.success) {
-        console.log("[v0] ✅ Voice attached successfully")
-      } else {
-        console.warn("[v0] ⚠️ Voice upload failed (non-blocking):", result.error)
-      }
-    } catch (error) {
-      console.warn("[v0] ⚠️ Voice upload error (non-blocking):", error)
-    }
-  }
-
-  const handleAttributionSubmit = async () => {
-    console.log("[v0] Starting attribution submission")
-
-    if (!validateAttributionStep()) {
-      return
-    }
-
-    const success = await submitCoreContribution()
-    if (success) {
-      setStep("voice")
-    }
-  }
-
-  const handleAttributionContinue = () => {
-    if (validateAttributionStep()) {
-      setStep("voice")
-    }
-  }
-
-  if (step === "context") {
+  // STEP 1: Emotional Entry
+  if (step === "entry") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4 py-12">
         <div className="w-full max-w-2xl">
           <Card className="p-12 text-center">
             <h1 className="mb-4 text-4xl font-semibold text-neutral-900">
-              You're helping capture what it's actually like to work with {profile.full_name}
+              What's it really like to work with {profile.full_name}?
             </h1>
-            <p className="mb-8 text-lg text-neutral-600">This takes about 2 minutes. Your insights matter.</p>
-            <Button onClick={() => setStep("traits")} size="lg" className="px-8">
-              Get started
+            <p className="mb-8 text-lg text-neutral-600">
+              Your words help capture what it genuinely felt like to work together.
+            </p>
+            <Button onClick={() => setStep("relationship")} size="lg" className="px-8">
+              Start
             </Button>
           </Card>
         </div>
@@ -384,159 +66,52 @@ export default function ContributorFlow({ profile, initialTraits }: ContributorF
     )
   }
 
-  if (step === "traits") {
-    const totalSelected = Object.values(selectedTraits).flat().length
-    const canContinue = true
-
-    const CATEGORY_CONFIG = {
-      how_they_work: {
-        title: "How They Work",
-        subtitle: "Their approach to getting things done",
-      },
-      what_it_feels_like: {
-        title: "What Working With Them Feels Like",
-        subtitle: "The day-to-day experience of collaborating",
-      },
-      how_they_think: {
-        title: "How They Think",
-        subtitle: "Their approach to solving problems",
-      },
-      how_they_show_up: {
-        title: "How They Show Up for Others",
-        subtitle: "The way they support the people around them",
-      },
-    }
-
-    return (
-      <div className="min-h-screen bg-white py-12 px-4">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-8">
-            <p className="mb-4 text-sm text-neutral-600">Step 1 of 4</p>
-            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">
-              Pick up to 2 words per section that feel true
-            </h1>
-            <p className="text-neutral-600">You can skip sections if nothing fits.</p>
-          </div>
-
-          {usingFallback && (
-            <div className="mb-6 rounded-lg bg-blue-50 border border-blue-200 p-4 text-sm text-blue-900">
-              Using default trait options
-            </div>
-          )}
-
-          <div className="space-y-8">
-            {Object.entries(CATEGORY_CONFIG).map(([categoryKey, config]) => {
-              const categoryTraits = traitsByCategory[categoryKey] || []
-              const selected = selectedTraits[categoryKey] || []
-
-              return (
-                <Card key={categoryKey} className="p-6">
-                  <div className="mb-4">
-                    <h2 className="text-xl font-semibold text-neutral-900">{config.title}</h2>
-                    <p className="text-sm text-neutral-600">{config.subtitle}</p>
-                  </div>
-                  <div className="mb-4 flex items-center justify-between">
-                    <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-sm text-neutral-700">
-                      {selected.length} of 2 selected
-                    </span>
-                  </div>
-
-                  {categoryTraits.length === 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {[1, 2, 3, 4, 5, 6].map((i) => (
-                        <div key={i} className="h-9 w-24 animate-pulse rounded-full bg-neutral-200" />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {categoryTraits.map((trait) => {
-                        const isSelected = selected.includes(trait.id)
-                        return (
-                          <button
-                            key={trait.id}
-                            onClick={() => handleTraitToggle(categoryKey, trait.id)}
-                            className={`rounded-full px-4 py-2 text-sm transition-all ${
-                              isSelected
-                                ? "bg-neutral-900 text-white ring-2 ring-neutral-900 ring-offset-2"
-                                : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-                            }`}
-                          >
-                            {trait.label}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </Card>
-              )
-            })}
-          </div>
-
-          {traitError && (
-            <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900">
-              {traitError}
-            </div>
-          )}
-          {validationErrors.traits && (
-            <div className="mt-4 rounded-lg bg-red-50 p-4 text-sm text-red-800">{validationErrors.traits}</div>
-          )}
-
-          <div className="mt-8 flex gap-4">
-            <Button onClick={() => setStep("context")} variant="outline" size="lg">
-              Back
-            </Button>
-            <Button onClick={() => setStep("quote")} className="flex-1" size="lg">
-              Continue
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (step === "quote") {
-    const charCount = quote.length
-    const maxChars = 1200
-    const totalTraits = Object.values(selectedTraits).flat().length
-    const canContinue = totalTraits >= 1 || quote.trim().length >= 20
-
+  // STEP 2: Working Relationship
+  if (step === "relationship") {
     return (
       <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-2xl">
           <div className="mb-8">
-            <p className="mb-4 text-sm text-neutral-600">Step 2 of 4</p>
-            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">
-              In 1-2 sentences, what's it like working with {profile.full_name.split(" ")[0]}?
-            </h1>
-            <p className="text-neutral-600">Think of a specific moment or quality that stands out.</p>
+            <p className="mb-4 text-sm text-neutral-600">Step 1 of 6</p>
+            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">How did you work with {profile.full_name}?</h1>
           </div>
 
           <Card className="p-8">
-            <Textarea
-              value={quote}
-              onChange={(e) => {
-                setQuote(e.target.value.slice(0, maxChars))
-                setValidationErrors((prev) => ({ ...prev, quote: undefined }))
+            <Select
+              value={relationship}
+              onValueChange={(value) => {
+                setRelationship(value)
+                setValidationErrors((prev) => ({ ...prev, relationship: "" }))
               }}
-              placeholder="E.g., 'She has this way of making complex problems feel solvable' or 'He always knows when the team needs a reset'"
-              className="min-h-[180px] text-base"
-            />
-            <p className="mt-2 text-right text-sm text-neutral-500">
-              {charCount} / {maxChars}
-            </p>
-
-            {validationErrors.quote && (
-              <div className="mt-4 rounded-lg bg-amber-50 p-4 text-sm text-amber-800">{validationErrors.quote}</div>
+            >
+              <SelectTrigger className="text-base">
+                <SelectValue placeholder="Select one" />
+              </SelectTrigger>
+              <SelectContent>
+                {RELATIONSHIP_OPTIONS.map((rel) => (
+                  <SelectItem key={rel.value} value={rel.value}>
+                    {rel.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {validationErrors.relationship && (
+              <p className="mt-2 text-sm text-red-600">{validationErrors.relationship}</p>
             )}
 
             <div className="mt-8 flex gap-4">
-              <Button onClick={() => setStep("traits")} variant="outline" size="lg">
+              <Button onClick={() => setStep("entry")} variant="outline" size="lg">
                 Back
               </Button>
               <Button
-                onClick={() => setStep("attribution")}
-                disabled={!canContinue}
-                className="flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => {
+                  if (!relationship) {
+                    setValidationErrors({ relationship: "Please select your relationship" })
+                    return
+                  }
+                  setStep("duration")
+                }}
+                className="flex-1"
                 size="lg"
               >
                 Continue
@@ -548,134 +123,53 @@ export default function ContributorFlow({ profile, initialTraits }: ContributorF
     )
   }
 
-  if (step === "attribution") {
-    const canContinue = contributorName.trim() && contributorEmail.trim() && company.trim() && relationship
-
+  // STEP 3: Time Context
+  if (step === "duration") {
     return (
-      <div className="min-h-screen bg-neutral-50 py-12 px-4">
+      <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-2xl">
           <div className="mb-8">
-            <p className="mb-4 text-sm text-neutral-600">Step 3 of 4</p>
-            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">A little about you</h1>
-            <p className="text-neutral-600">So {profile.full_name.split(" ")[0]} knows who this is from.</p>
+            <p className="mb-4 text-sm text-neutral-600">Step 2 of 6</p>
+            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">How long did you work with them?</h1>
           </div>
 
           <Card className="p-8">
-            <div className="space-y-6">
-              <div>
-                <Label htmlFor="name" className="text-neutral-900">
-                  Your name
-                </Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={contributorName}
-                  onChange={(e) => {
-                    setContributorName(e.target.value)
-                    setValidationErrors((prev) => ({ ...prev, contributorName: undefined }))
-                  }}
-                  placeholder="Full name"
-                  className="mt-2"
-                />
-                {validationErrors.contributorName && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.contributorName}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="relationship" className="text-neutral-900">
-                  Working relationship <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={relationship}
-                  onValueChange={(value) => {
-                    setRelationship(value)
-                    setValidationErrors((prev) => ({ ...prev, relationship: undefined }))
-                  }}
-                >
-                  <SelectTrigger id="relationship" className="mt-2">
-                    <SelectValue placeholder="Select one" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RELATIONSHIP_OPTIONS.map((rel) => (
-                      <SelectItem key={rel.value} value={rel.value}>
-                        {rel.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {validationErrors.relationship && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.relationship}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="company" className="text-neutral-900">
-                  Company or organization
-                </Label>
-                <Input
-                  id="company"
-                  type="text"
-                  value={company}
-                  onChange={(e) => {
-                    setCompany(e.target.value)
-                    setValidationErrors((prev) => ({ ...prev, company: undefined }))
-                  }}
-                  placeholder='E.g., "Acme Corp" or "Independent"'
-                  className="mt-2"
-                />
-                {validationErrors.company && <p className="mt-1 text-sm text-red-600">{validationErrors.company}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="email" className="text-neutral-900">
-                  Your email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={contributorEmail}
-                  onChange={(e) => {
-                    setContributorEmail(e.target.value)
-                    setValidationErrors((prev) => ({ ...prev, contributorEmail: undefined }))
-                  }}
-                  placeholder="your@email.com"
-                  className="mt-2"
-                />
-                {validationErrors.contributorEmail && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.contributorEmail}</p>
-                )}
-                <p className="mt-2 text-sm text-neutral-500">To confirm your submission. Never shown publicly.</p>
-              </div>
-            </div>
-
-            {error && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-                <p className="text-sm font-medium text-red-800">{error}</p>
-                {errorDetails && (
-                  <div className="mt-2">
-                    <button
-                      onClick={() => setShowErrorDetails(!showErrorDetails)}
-                      className="text-xs text-red-700 hover:text-red-900 underline"
-                    >
-                      {showErrorDetails ? "Hide details" : "Show details"}
-                    </button>
-                    {showErrorDetails && (
-                      <pre className="mt-2 text-xs text-red-700 bg-red-100 p-2 rounded overflow-auto">
-                        {errorDetails}
-                      </pre>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+            <Select
+              value={duration}
+              onValueChange={(value) => {
+                setDuration(value)
+                setValidationErrors((prev) => ({ ...prev, duration: "" }))
+              }}
+            >
+              <SelectTrigger className="text-base">
+                <SelectValue placeholder="Select one" />
+              </SelectTrigger>
+              <SelectContent>
+                {DURATION_OPTIONS.map((dur) => (
+                  <SelectItem key={dur.value} value={dur.value}>
+                    {dur.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {validationErrors.duration && <p className="mt-2 text-sm text-red-600">{validationErrors.duration}</p>}
 
             <div className="mt-8 flex gap-4">
-              <Button onClick={() => setStep("quote")} variant="outline" size="lg">
+              <Button onClick={() => setStep("relationship")} variant="outline" size="lg">
                 Back
               </Button>
-              <Button onClick={handleAttributionSubmit} disabled={!canContinue || loading} className="flex-1" size="lg">
-                {loading ? "Submitting..." : "Continue"}
+              <Button
+                onClick={() => {
+                  if (!duration) {
+                    setValidationErrors({ duration: "Please select a duration" })
+                    return
+                  }
+                  setStep("traits")
+                }}
+                className="flex-1"
+                size="lg"
+              >
+                Continue
               </Button>
             </div>
           </Card>
@@ -684,90 +178,96 @@ export default function ContributorFlow({ profile, initialTraits }: ContributorF
     )
   }
 
-  if (step === "voice") {
+  // STEP 4: Traits
+  if (step === "traits") {
+    const totalSelected = Object.values(selectedTraits).flat().length
+
+    const handleTraitToggle = (category: string, traitId: string) => {
+      const currentSelected = selectedTraits[category] || []
+
+      if (currentSelected.includes(traitId)) {
+        setSelectedTraits({
+          ...selectedTraits,
+          [category]: currentSelected.filter((id) => id !== traitId),
+        })
+      } else if (currentSelected.length < 2) {
+        setSelectedTraits({
+          ...selectedTraits,
+          [category]: [...currentSelected, traitId],
+        })
+      }
+    }
+
     return (
-      <div className="min-h-screen bg-neutral-50 py-12 px-4">
-        <div className="mx-auto max-w-2xl">
+      <div className="min-h-screen bg-white py-12 px-4">
+        <div className="mx-auto max-w-3xl">
           <div className="mb-8">
-            <p className="mb-4 text-sm text-neutral-600">Step 4 of 4 (Optional)</p>
-            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">Want to add a quick voice note?</h1>
-            <p className="text-neutral-600">Your message is already saved. Audio is optional.</p>
+            <p className="mb-4 text-sm text-neutral-600">Step 3 of 6</p>
+            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">
+              Choose up to 2 traits per section that best reflect your experience
+            </h1>
+            <p className="text-neutral-600">
+              At least 1 trait total is required. You can skip sections if nothing fits.
+            </p>
           </div>
 
-          <VoiceRecorder
-            quote={quote}
-            onRecordingComplete={(blob) => {
-              console.log("[v0] Voice recording completed, saving blob")
-              setVoiceBlob(blob)
-            }}
-          />
+          <div className="space-y-8">
+            {Object.entries(TRAIT_CATEGORIES).map(([categoryKey, category]) => {
+              const selected = selectedTraits[categoryKey] || []
 
-          {error && (
-            <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-4">
-              <p className="text-sm text-amber-800">{error}</p>
+              return (
+                <Card key={categoryKey} className="p-6">
+                  <div className="mb-4">
+                    <h2 className="text-xl font-semibold text-neutral-900">{category.title}</h2>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-sm text-neutral-600">{selected.length} of 2 selected</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {category.traits.map((trait) => {
+                      const isSelected = selected.includes(trait.id)
+                      return (
+                        <button
+                          key={trait.id}
+                          onClick={() => handleTraitToggle(categoryKey, trait.id)}
+                          className={`rounded-full px-4 py-2 text-sm transition-all ${
+                            isSelected
+                              ? "bg-neutral-900 text-white ring-2 ring-neutral-900 ring-offset-2"
+                              : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                          }`}
+                        >
+                          {trait.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+
+          {validationErrors.traits && (
+            <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-800">
+              {validationErrors.traits}
             </div>
           )}
 
           <div className="mt-8 flex gap-4">
-            <Button
-              onClick={async () => {
-                console.log("[v0] Skipping voice, navigating to submitted")
-                setStep("submitted")
-              }}
-              variant="outline"
-              size="lg"
-              disabled={loading}
-            >
-              Skip
-            </Button>
-            <Button
-              onClick={async () => {
-                console.log("[v0] Uploading voice and navigating to submitted")
-                setLoading(true)
-                setError(null)
-
-                if (voiceBlob && contributionId) {
-                  try {
-                    const formData = new FormData()
-                    formData.append("file", voiceBlob, `voice-${Date.now()}.webm`)
-                    formData.append("contributionId", contributionId)
-
-                    const response = await fetch("/api/contributions/attach-voice", {
-                      method: "POST",
-                      body: formData,
-                    })
-
-                    const result = await response.json()
-
-                    if (!response.ok || !result.success) {
-                      console.warn("[v0] Voice upload failed (non-blocking):", result.error)
-                      setError("Voice upload failed, but your message was saved successfully")
-                    } else {
-                      console.log("[v0] Voice uploaded successfully")
-                    }
-                  } catch (err) {
-                    console.warn("[v0] Voice upload error (non-blocking):", err)
-                    setError("Voice upload failed, but your message was saved successfully")
-                  }
-                }
-
-                setLoading(false)
-                setStep("submitted")
-              }}
-              className="flex-1"
-              size="lg"
-              disabled={loading || !voiceBlob}
-            >
-              {loading ? "Uploading..." : "Upload voice note"}
+            <Button onClick={() => setStep("duration")} variant="outline" size="lg">
+              Back
             </Button>
             <Button
               onClick={() => {
-                console.log("[v0] Continue without voice")
-                setStep("submitted")
+                if (totalSelected < 1) {
+                  setValidationErrors({ traits: "Please select at least 1 trait" })
+                  return
+                }
+                setValidationErrors({})
+                setStep("message")
               }}
               className="flex-1"
               size="lg"
-              disabled={loading}
             >
               Continue
             </Button>
@@ -777,34 +277,338 @@ export default function ContributorFlow({ profile, initialTraits }: ContributorF
     )
   }
 
+  // STEP 5: Written Message
+  if (step === "message") {
+    const charCount = message.length
+    const maxChars = 1200
+
+    return (
+      <div className="min-h-screen bg-white py-12 px-4">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-8">
+            <p className="mb-4 text-sm text-neutral-600">Step 4 of 6</p>
+            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">
+              In 1–3 sentences, what stood out about working with {profile.full_name}?
+            </h1>
+            <p className="text-neutral-600">Think of a moment, behavior, or quality that made an impression.</p>
+          </div>
+
+          <Card className="p-8">
+            <Textarea
+              value={message}
+              onChange={(e) => {
+                setMessage(e.target.value.slice(0, maxChars))
+                setValidationErrors((prev) => ({ ...prev, message: "" }))
+              }}
+              placeholder={`Working with ${firstNameValue} felt like having someone who truly…`}
+              className="min-h-[180px] text-base"
+            />
+            <p className="mt-2 text-right text-sm text-neutral-500">
+              {charCount} / {maxChars}
+            </p>
+
+            {validationErrors.message && (
+              <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-800">
+                {validationErrors.message}
+              </div>
+            )}
+
+            <div className="mt-8 flex gap-4">
+              <Button onClick={() => setStep("traits")} variant="outline" size="lg">
+                Back
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!message.trim()) {
+                    setValidationErrors({ message: "Please write a message" })
+                    return
+                  }
+                  setValidationErrors({})
+                  setStep("identity")
+                }}
+                className="flex-1"
+                size="lg"
+              >
+                Continue
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // STEP 7: Identity
+  if (step === "identity") {
+    const isValidEmail = (email: string): boolean => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      return emailRegex.test(email)
+    }
+
+    const handleSubmit = async () => {
+      // Validation
+      const errors: Record<string, string> = {}
+      if (!firstName.trim()) errors.firstName = "First name is required"
+      if (!lastInitial.trim()) errors.lastInitial = "Last initial is required"
+      if (!email.trim()) errors.email = "Email is required"
+      else if (!isValidEmail(email.trim())) errors.email = "Please enter a valid email"
+
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors)
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+      setValidationErrors({})
+
+      try {
+        const allSelectedTraitIds = Object.values(selectedTraits).flat()
+
+        const response = await fetch("/api/contributions/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            profileId: profile.id,
+            contributorName: `${firstName.trim()} ${lastInitial.trim()}.`,
+            contributorEmail: email.trim().toLowerCase(),
+            companyOrOrg: "Unknown", // Not collected in new flow
+            relationship,
+            duration,
+            message: message.trim(),
+            selectedTraitIds: allSelectedTraitIds,
+          }),
+        })
+
+        const result = await response.json()
+
+        if (response.status === 201 && result.success && result.contributionId) {
+          setContributionId(result.contributionId)
+          setLoading(false)
+          setStep("voice")
+          return
+        }
+
+        // Handle errors
+        let userMessage = "Couldn't submit right now. Please try again."
+        if (response.status === 429 || result.code === "RATE_LIMIT") {
+          userMessage = result.error || "This email has reached its submission limit. Try again later."
+        } else if (response.status === 409 || result.code === "DUPLICATE_SUBMISSION") {
+          userMessage = result.error || "This email has already submitted for this person."
+        }
+
+        setError(userMessage)
+        setLoading(false)
+      } catch (err) {
+        setError("Network error. Please check your connection and try again.")
+        setLoading(false)
+      }
+    }
+
+    return (
+      <div className="min-h-screen bg-neutral-50 py-12 px-4">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-8">
+            <p className="mb-4 text-sm text-neutral-600">Step 5 of 6</p>
+            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">Who's this from?</h1>
+          </div>
+
+          <Card className="p-8">
+            <div className="space-y-6">
+              <div>
+                <Label htmlFor="firstName" className="text-neutral-900">
+                  First name
+                </Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => {
+                    setFirstName(e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, firstName: "" }))
+                  }}
+                  className="mt-2"
+                />
+                {validationErrors.firstName && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.firstName}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="lastInitial" className="text-neutral-900">
+                  Last initial
+                </Label>
+                <Input
+                  id="lastInitial"
+                  type="text"
+                  maxLength={1}
+                  value={lastInitial}
+                  onChange={(e) => {
+                    setLastInitial(e.target.value.toUpperCase())
+                    setValidationErrors((prev) => ({ ...prev, lastInitial: "" }))
+                  }}
+                  className="mt-2"
+                />
+                {validationErrors.lastInitial && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.lastInitial}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="email" className="text-neutral-900">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, email: "" }))
+                  }}
+                  className="mt-2"
+                />
+                {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
+                <p className="mt-2 text-sm text-neutral-500">
+                  Your email is only used to verify authenticity. It's never shown publicly.
+                </p>
+              </div>
+            </div>
+
+            {error && (
+              <div className="mt-6 rounded-lg bg-red-50 border border-red-200 p-4">
+                <p className="text-sm font-medium text-red-800">{error}</p>
+              </div>
+            )}
+
+            <div className="mt-8 flex gap-4">
+              <Button onClick={() => setStep("message")} variant="outline" size="lg" disabled={loading}>
+                Back
+              </Button>
+              <Button onClick={handleSubmit} disabled={loading} className="flex-1" size="lg">
+                {loading ? "Submitting..." : "Submit"}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // STEP 6: Voice (Optional)
+  if (step === "voice") {
+    const handleSkip = () => {
+      setStep("submitted")
+    }
+
+    const handleUploadVoice = async () => {
+      if (!voiceBlob || !contributionId) {
+        setStep("submitted")
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        const formData = new FormData()
+        formData.append("file", voiceBlob, `voice-${Date.now()}.webm`)
+        formData.append("contributionId", contributionId)
+
+        const response = await fetch("/api/contributions/attach-voice", {
+          method: "POST",
+          body: formData,
+        })
+
+        const result = await response.json()
+
+        if (!response.ok || !result.success) {
+          setError("Voice upload failed, but your message was saved successfully")
+        }
+      } catch (err) {
+        setError("Voice upload failed, but your message was saved successfully")
+      }
+
+      setLoading(false)
+      setStep("submitted")
+    }
+
+    const handleContinue = () => {
+      setStep("submitted")
+    }
+
+    return (
+      <div className="min-h-screen bg-neutral-50 py-12 px-4">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-8">
+            <p className="mb-4 text-sm text-neutral-600">Step 6 of 6 (Optional)</p>
+            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">Want to read it in your own voice?</h1>
+            <p className="text-neutral-600">Optional, but adds authenticity and meaning.</p>
+          </div>
+
+          <Card className="p-8">
+            <div className="mb-6 rounded-lg bg-neutral-100 p-4">
+              <p className="text-sm text-neutral-700">{message}</p>
+            </div>
+
+            <VoiceRecorder
+              quote={message}
+              onRecordingComplete={(blob) => {
+                setVoiceBlob(blob)
+              }}
+            />
+
+            {error && (
+              <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-4">
+                <p className="text-sm text-amber-800">{error}</p>
+              </div>
+            )}
+
+            <div className="mt-8 flex flex-col gap-4">
+              <Button onClick={handleUploadVoice} disabled={loading || !voiceBlob} className="w-full" size="lg">
+                {loading ? "Uploading..." : "🎙️ Record your voice"}
+              </Button>
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleSkip}
+                  variant="outline"
+                  className="flex-1 bg-transparent"
+                  size="lg"
+                  disabled={loading}
+                >
+                  Skip
+                </Button>
+                <Button onClick={handleContinue} className="flex-1" size="lg" disabled={loading}>
+                  Continue
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // STEP 8: Confirmation
   return (
     <div className="flex min-h-screen items-center justify-center bg-white px-4">
       <Card className="mx-auto max-w-2xl p-12 text-center">
         <div className="mb-6 flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-            <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+            <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
         </div>
 
-        <h1 className="mb-4 text-3xl font-semibold text-neutral-900">Check your email to confirm</h1>
-        <p className="mb-2 text-neutral-600">
-          We sent a confirmation link to <span className="font-medium">{contributorEmail}</span>
-        </p>
+        <h1 className="mb-4 text-3xl font-semibold text-neutral-900">Your Nomee is complete.</h1>
         <p className="mb-8 text-neutral-600">
-          Once you click the link, your perspective will appear on {profile.full_name}'s Nomee.
+          Thank you for capturing what it felt like to work with {profile.full_name}.
         </p>
 
-        <div className="text-sm text-neutral-500">
-          <p>Why do we need confirmation?</p>
-          <p>It helps keep Nomee authentic and prevents spam.</p>
-        </div>
+        <Button variant="outline" size="lg" onClick={() => (window.location.href = "/")}>
+          Create your own Nomee
+        </Button>
       </Card>
     </div>
   )

@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createPublicServerClient } from "@/lib/supabase/public-server"
 import { checkRateLimit, detectSpamPatterns, detectInappropriateContent } from "@/lib/rate-limiter"
-import { RELATIONSHIP_VALUES } from "@/lib/nomee-enums"
+import { RELATIONSHIP_VALUES, DURATION_VALUES } from "@/lib/nomee-enums"
 import crypto from "crypto"
 
 const VALID_RELATIONSHIPS = [
@@ -26,22 +26,24 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] API - Received contribution request:", Object.keys(body))
 
-    const { profileId, contributorName, contributorEmail, companyOrOrg, relationship, message, selectedTraitIds } = body
+    const {
+      profileId,
+      contributorName,
+      contributorEmail,
+      companyOrOrg,
+      relationship,
+      duration,
+      message,
+      selectedTraitIds,
+    } = body
 
-    if (!contributorName || !contributorEmail || !companyOrOrg || !relationship || !message) {
+    if (!contributorName || !contributorEmail || !relationship || !duration || !message) {
       console.log("[v0] API - Missing required fields")
       return NextResponse.json(
         {
           ok: false,
           error: "All fields are required",
           code: "MISSING_FIELDS",
-          details: {
-            contributorName: !!contributorName,
-            contributorEmail: !!contributorEmail,
-            companyOrOrg: !!companyOrOrg,
-            relationship: !!relationship,
-            message: !!message,
-          },
         },
         { status: 400 },
       )
@@ -56,7 +58,19 @@ export async function POST(request: NextRequest) {
           ok: false,
           error: "Invalid relationship value",
           code: "INVALID_RELATIONSHIP",
-          details: `Got "${relationship}", expected one of: ${RELATIONSHIP_VALUES.join(", ")}`,
+        },
+        { status: 400 },
+      )
+    }
+
+    if (!DURATION_VALUES.includes(duration)) {
+      console.log("[v0] API - Invalid duration value:", duration)
+      console.log("[v0] API - Expected one of:", DURATION_VALUES)
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Invalid duration value",
+          code: "INVALID_DURATION",
         },
         { status: 400 },
       )
@@ -179,8 +193,9 @@ export async function POST(request: NextRequest) {
         owner_id: profileId,
         contributor_name: contributorName,
         contributor_email: normalizedEmail,
-        contributor_company: companyOrOrg,
+        contributor_company: companyOrOrg || "Unknown",
         relationship,
+        duration,
         written_note: message,
         email_hash: emailHash,
         status: "pending_confirmation",
