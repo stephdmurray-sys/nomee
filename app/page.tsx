@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/site-header"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { DemoCard } from "@/components/demo-card"
+import { RealNomeeSlice } from "@/components/real-nomee-slice"
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -25,22 +26,22 @@ export default function Home() {
 
         <section className="pt-32 pb-24 px-6">
           <div className="max-w-7xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-16 items-start">
               {/* Left: Product-first copy */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="space-y-6"
+                className="space-y-6 lg:pt-8"
               >
                 <h1 className="text-5xl md:text-6xl font-bold text-slate-900 leading-tight tracking-tight">
-                  This is a Nomee.
+                  What it's actually like to work with you.
                 </h1>
 
                 <p className="text-lg text-slate-500 font-medium">Real experiences. Highlighted patterns. Over time.</p>
 
                 <p className="text-xl md:text-2xl text-slate-700 leading-relaxed">
-                  A Nomee shows how it feels to work with you — from real people, over time.
+                  One link that shows how people experience working with you — from real people, over time.
                 </p>
 
                 <p className="text-lg text-slate-600">Takes ~2 minutes to contribute.</p>
@@ -64,38 +65,26 @@ export default function Home() {
                 </div>
               </motion.div>
 
-              {/* Right: Demo cards with inline highlights */}
+              {/* Right: Real Nomee Slice (Desktop) */}
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="grid gap-4"
+                className="hidden lg:block"
               >
-                <DemoCard
-                  quote="Maya asks questions that make you think differently about the problem. Her thoughtful approach to complex challenges helped us uncover insights we never would have found otherwise."
-                  name="Quinn Davis"
-                  company="ResearchLab"
-                  relationship="Other"
-                  traits={["Thoughtful", "Curious", "Analytical"]}
-                />
-                <DemoCard
-                  quote="In high-pressure situations, Maya is the person you want in the room. She stays calm, asks the right questions, and helps everyone think more clearly."
-                  name="Morgan Lee"
-                  company="Enterprise Inc"
-                  relationship="Manager"
-                  hasVoice
-                  voiceDuration="38s"
-                  traits={["Calm under pressure", "Level-headed", "Clear communicator"]}
-                />
-                <DemoCard
-                  quote="Maya creates such a safe space for creative exploration. She encouraged us to think bigger while keeping us grounded in what was actually possible."
-                  name="Casey Wong"
-                  company="Creative Co"
-                  relationship="Client"
-                  traits={["Encouraging", "Supportive", "Collaborative"]}
-                />
+                <RealNomeeSlice />
               </motion.div>
             </div>
+
+            {/* Mobile: Real Nomee Slice below hero copy */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="lg:hidden mt-12"
+            >
+              <RealNomeeSlice />
+            </motion.div>
           </div>
         </section>
 

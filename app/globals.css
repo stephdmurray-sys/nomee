@@ -340,6 +340,24 @@
   animation: marquee-left 60s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 
+/* Adding continuous scroll animation for Live Nomee Preview trait pills */
+@keyframes scroll-slow {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll-slow {
+  animation: scroll-slow 30s linear infinite;
+}
+
+.pause-animation {
+  animation-play-state: paused;
+}
+
 /* Adding echo layer animation for continuous horizontal scrolling */
 .animate-marquee-left-echo {
   /* Increased duration from 150s to 300s for extremely slow, contemplative scrolling */
