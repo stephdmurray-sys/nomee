@@ -9,6 +9,8 @@ const globalCallbacks: Set<() => void> = new Set()
 
 export function IntimateAudioPlayer({ audioUrl }: { audioUrl: string }) {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
   const [hasError, setHasError] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -22,10 +24,26 @@ export function IntimateAudioPlayer({ audioUrl }: { audioUrl: string }) {
       setIsPlaying(false)
     }
 
-    audioRef.current.onended = () => setIsPlaying(false)
+    audioRef.current.onloadedmetadata = () => {
+      setDuration(audioRef.current?.duration || 0)
+    }
+
+    audioRef.current.ontimeupdate = () => {
+      setCurrentTime(audioRef.current?.currentTime || 0)
+    }
+
+    audioRef.current.onended = () => {
+      setIsPlaying(false)
+      setCurrentTime(0)
+    }
 
     // Register this player in global callbacks
-    const stopCallback = () => setIsPlaying(false)
+    const stopCallback = () => {
+      setIsPlaying(false)
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0
+      }
+    }
     globalCallbacks.add(stopCallback)
 
     return () => {
@@ -59,30 +77,41 @@ export function IntimateAudioPlayer({ audioUrl }: { audioUrl: string }) {
     }
   }
 
-  return (
-    <div
-      onClick={togglePlay}
-      className={`flex items-center gap-3 ${hasError ? "opacity-40 cursor-not-allowed" : "cursor-pointer group"}`}
-      title={hasError ? "Audio demo placeholder" : undefined}
-    >
-      <button
-        className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-slate-700 transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-        aria-label={isPlaying ? "Pause" : "Play"}
-        disabled={hasError}
-      >
-        {isPlaying ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4 ml-0.5" />}
-      </button>
+  const progress = duration > 0 ? currentTime / duration : 0
 
-      <div className="flex items-center gap-1 h-4">
-        {[10, 14, 12, 16, 14, 18, 12, 16].map((height, i) => (
-          <div
-            key={i}
-            className="w-0.5 rounded-full bg-slate-400 group-hover:bg-slate-500 transition-colors duration-200"
-            style={{
-              height: `${height}px`,
-            }}
-          />
-        ))}
+  return (
+    <div className="space-y-2">
+      <div
+        onClick={togglePlay}
+        className={`flex items-center gap-3 ${hasError ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+        title={hasError ? "Audio demo placeholder" : undefined}
+      >
+        <button
+          className="flex-shrink-0 w-9 h-9 rounded-full bg-neutral-800 text-white flex items-center justify-center hover:bg-neutral-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label={isPlaying ? "Pause" : "Play"}
+          disabled={hasError}
+        >
+          {isPlaying ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4 ml-0.5" />}
+        </button>
+
+        <div className="flex items-center gap-0.5 h-6 flex-1">
+          {[8, 14, 10, 16, 12, 18, 14, 20, 16, 14, 10, 16, 12, 18, 14, 12].map((height, i) => {
+            const barProgress = i / 16
+            const isActive = isPlaying && barProgress <= progress
+
+            return (
+              <div
+                key={i}
+                className={`w-0.5 rounded-full transition-all duration-200 ${
+                  isActive ? "bg-neutral-800" : "bg-neutral-300"
+                }`}
+                style={{
+                  height: `${height}px`,
+                }}
+              />
+            )
+          })}
+        </div>
       </div>
     </div>
   )
