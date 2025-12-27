@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,8 @@ import { TestimonialGroup } from "@/components/testimonial-group"
 import { VoiceCard } from "@/components/voice-card" // Import VoiceCard component
 import { SiteHeader } from "@/components/site-header" // Import SiteHeader component
 import { AiPatternSummary } from "@/components/ai-pattern-summary"
+import { RelationshipFilter } from "@/components/relationship-filter"
+import { filterByRelationship, type RelationshipFilterCategory } from "@/lib/relationship-filter"
 import { categorizeTestimonials } from "@/lib/categorize-testimonials"
 import { extractRepeatedPhrases } from "@/lib/extract-repeated-phrases"
 import { dedupeContributions } from "@/lib/dedupe-contributions"
@@ -44,13 +46,6 @@ export function PremierProfileClient({
   const contributions = dedupeContributions(rawContributions)
   const voiceContributions = contributions.filter((c) => c.audio_url && c.audio_url.trim() !== "")
 
-  console.log("[v0] PremierProfileClient: Voice contributions debug", {
-    totalContributions: contributions.length,
-    voiceContributions: voiceContributions.length,
-    contributionsWithAudio: contributions.filter((c) => c.audio_url).length,
-    sampleAudioUrls: contributions.slice(0, 3).map((c) => ({ id: c.id, audio_url: c.audio_url })),
-  })
-
   const analyzableUploads = rawImportedFeedback.filter((u) => u.included_in_analysis && u.ocr_text)
   const totalUploads = rawImportedFeedback.length
   const voiceNotesCount = voiceContributions.length
@@ -80,6 +75,8 @@ export function PremierProfileClient({
   const [selectedHeatmapTrait, setSelectedHeatmapTrait] = useState<string | null>(null)
   const [heroVisible, setHeroVisible] = useState(false)
   const [showCopied, setShowCopied] = useState(false)
+  const [howItFeelsRelationshipFilter, setHowItFeelsRelationshipFilter] = useState<RelationshipFilterCategory>("All")
+  const [voiceRelationshipFilter, setVoiceRelationshipFilter] = useState<RelationshipFilterCategory>("All")
 
   useEffect(() => {
     const timer = setTimeout(() => setHeroVisible(true), 100)
@@ -184,6 +181,14 @@ export function PremierProfileClient({
         }
     }
   }
+
+  const filteredHowItFeels = useMemo(() => {
+    return filterByRelationship(howItFeels, howItFeelsRelationshipFilter)
+  }, [howItFeels, howItFeelsRelationshipFilter])
+
+  const filteredVoiceContributions = useMemo(() => {
+    return filterByRelationship(voiceContributions, voiceRelationshipFilter)
+  }, [voiceContributions, voiceRelationshipFilter])
 
   return (
     <div className="min-h-screen bg-white">
@@ -294,73 +299,55 @@ export function PremierProfileClient({
         )}
       </section>
 
-      <div className="mx-auto max-w-6xl px-6 lg:px-8 space-y-16 md:space-y-20 py-8">
+      <div className="mx-auto max-w-6xl px-6 lg:px-8 space-y-8 md:space-y-10 py-4">
         {/* In Their Own Words - ALWAYS PRESENT */}
-        <section className="space-y-8 py-8 md:py-10">
-          {/* Header - neutral and editorial */}
-          <div className="space-y-2 text-center">
-            <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">In Their Own Words</h3>
-            <p className="text-base text-neutral-600 leading-relaxed">
-              {voiceContributions.length > 0
-                ? `Unedited voice notes from people who know ${profile.full_name?.split(" ")[0] || "them"}`
-                : "Voice notes appear here when contributors add them."}
-            </p>
-          </div>
+        {voiceNotesCount > 0 && (
+          <section className="space-y-6 py-8 md:py-10">
+            {/* Header - neutral and editorial */}
+            <div className="space-y-3 max-w-2xl mx-auto">
+              <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">In Their Own Words</h3>
+              <p className="text-base md:text-lg text-neutral-600 leading-relaxed text-center max-w-[65ch] mx-auto">
+                Unedited voice notes from people who know {profile.full_name?.split(" ")[0]}
+              </p>
+            </div>
 
-          {/* Show voice cards if they exist */}
-          {voiceContributions.length > 0 ? (
-            <>
-              {/* Mobile: horizontal scroll with snap */}
-              <div className="md:hidden -mx-6">
-                <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory px-6 pb-4 scrollbar-hide">
-                  {voiceContributions.slice(0, 3).map((contribution) => (
-                    <VoiceCard
-                      key={contribution.id}
-                      contribution={contribution}
-                      isMobile
-                      highlightPatterns={highlightPatterns}
-                    />
-                  ))}
-                </div>
-              </div>
+            <div className="flex justify-center">
+              <RelationshipFilter
+                contributions={voiceContributions}
+                selectedCategory={voiceRelationshipFilter}
+                onCategoryChange={setVoiceRelationshipFilter}
+              />
+            </div>
 
-              {/* Desktop: grid layout */}
-              <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-6 mx-auto max-w-6xl">
-                {voiceContributions.slice(0, 3).map((contribution) => (
-                  <VoiceCard key={contribution.id} contribution={contribution} highlightPatterns={highlightPatterns} />
+            {filteredVoiceContributions.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredVoiceContributions.slice(0, 3).map((contribution) => (
+                  <VoiceCard
+                    key={contribution.id}
+                    contribution={contribution}
+                    profileName={profile.full_name}
+                    highlightPatterns={highlightPatterns}
+                  />
                 ))}
               </div>
-
-              {/* Show "See all" if more than 3 */}
-              {voiceContributions.length > 3 && (
-                <p className="text-center text-sm text-neutral-500 mt-4">
-                  +{voiceContributions.length - 3} more {voiceContributions.length === 4 ? "voice note" : "voice notes"}
-                </p>
-              )}
-            </>
-          ) : (
-            // Empty state: calm placeholder only, NO button
-            <div className="max-w-2xl mx-auto text-center py-8">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-3">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                  />
-                </svg>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-neutral-600">No perspectives yet from {voiceRelationshipFilter.toLowerCase()}.</p>
+                <button
+                  onClick={() => setVoiceRelationshipFilter("All")}
+                  className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  View all perspectives
+                </button>
               </div>
-              <p className="text-sm text-neutral-500">Voice notes appear here when contributors add them.</p>
-            </div>
-          )}
-        </section>
+            )}
+          </section>
+        )}
 
-        {/* Subtle section divider */}
-        <div className="border-t border-neutral-100" />
+        {voiceNotesCount > 0 && <div className="border-t border-neutral-100" />}
 
         {traits.length > 0 && (
-          <section className="space-y-6 pt-8 md:pt-10">
+          <section className="space-y-6 pt-4 md:pt-6">
             <div className="space-y-2 max-w-3xl mx-auto">
               <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900 text-center">Pattern Recognition</h3>
               <p className="text-sm text-neutral-500 text-center">
@@ -434,25 +421,45 @@ export function PremierProfileClient({
           </section>
         )}
 
-        {/* Subtle section divider */}
-        <div className="border-t border-neutral-100" />
-
         {howItFeels.length > 0 && (
-          <section className="space-y-8 py-8 md:py-10">
+          <section className="space-y-6 py-8 md:py-10">
             <div className="space-y-3 max-w-2xl mx-auto">
               <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900 text-center">How it feels</h3>
               <p className="text-base md:text-lg text-neutral-600 leading-relaxed text-center max-w-[65ch] mx-auto">
                 Day-to-day collaboration style and working patterns
               </p>
             </div>
-            <TestimonialGroup
-              title=""
-              contributions={howItFeels}
-              selectedTraits={selectedTraits}
-              hoveredTrait={hoveredTrait}
-              profileName={profile.full_name}
-              highlightPatterns={highlightPatterns}
-            />
+
+            <div className="flex justify-center">
+              <RelationshipFilter
+                contributions={howItFeels}
+                selectedCategory={howItFeelsRelationshipFilter}
+                onCategoryChange={setHowItFeelsRelationshipFilter}
+              />
+            </div>
+
+            {filteredHowItFeels.length > 0 ? (
+              <TestimonialGroup
+                title=""
+                contributions={filteredHowItFeels}
+                selectedTraits={selectedTraits}
+                hoveredTrait={hoveredTrait}
+                profileName={profile.full_name}
+                highlightPatterns={highlightPatterns}
+              />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-neutral-600">
+                  No perspectives yet from {howItFeelsRelationshipFilter.toLowerCase()}.
+                </p>
+                <button
+                  onClick={() => setHowItFeelsRelationshipFilter("All")}
+                  className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  View all perspectives
+                </button>
+              </div>
+            )}
           </section>
         )}
 
