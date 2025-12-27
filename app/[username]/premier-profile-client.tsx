@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Share2, Copy } from "lucide-react"
 import { TestimonialGroup } from "@/components/testimonial-group"
+import { IntimateAudioPlayer } from "@/components/intimate-audio-player"
 import { categorizeTestimonials } from "@/lib/categorize-testimonials"
 import { extractRepeatedPhrases } from "@/lib/extract-repeated-phrases"
 import { dedupeContributions } from "@/lib/dedupe-contributions"
@@ -57,6 +58,8 @@ export function PremierProfileClient({
 
     return true
   })
+
+  const voiceContributions = contributions.filter((c) => c.voice_url)
 
   const [selectedTraits, setSelectedTraits] = useState<string[]>([])
   const [hoveredTrait, setHoveredTrait] = useState<string | null>(null)
@@ -314,6 +317,57 @@ export function PremierProfileClient({
                 Clear filter
               </button>
             )}
+          </section>
+        )}
+
+        {/* Subtle section divider */}
+        <div className="border-t border-neutral-100" />
+
+        {voiceContributions.length > 0 && (
+          <section className="space-y-8 py-8 md:py-10">
+            <div className="space-y-3 max-w-2xl mx-auto">
+              <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900 text-center">In Their Own Words</h3>
+              <p className="text-base md:text-lg text-neutral-600 leading-relaxed text-center max-w-[65ch] mx-auto">
+                Hear directly from people who've worked with {profile.full_name?.split(" ")[0] || "them"}
+              </p>
+              <p className="text-sm text-neutral-500 text-center italic">Voice recordings feature demonstration</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {voiceContributions.map((contribution) => (
+                <Card
+                  key={contribution.id}
+                  className="p-6 border border-neutral-200 bg-white hover:shadow-lg transition-all duration-300 rounded-2xl"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-neutral-900">{contribution.contributor_name}</p>
+                        {contribution.contributor_company && (
+                          <p className="text-xs text-neutral-600 mt-0.5">{contribution.contributor_company}</p>
+                        )}
+                        <p className="text-xs text-neutral-500 mt-0.5 capitalize">
+                          {contribution.relationship?.replace(/_/g, " ")}
+                        </p>
+                      </div>
+                      {contribution.audio_duration_ms && (
+                        <Badge variant="secondary" className="text-xs bg-blue-100/40 text-blue-800 border-blue-200/40">
+                          {Math.round(contribution.audio_duration_ms / 1000)}s
+                        </Badge>
+                      )}
+                    </div>
+
+                    <IntimateAudioPlayer audioUrl={contribution.voice_url!} />
+
+                    {contribution.written_note && (
+                      <p className="text-sm text-neutral-600 leading-relaxed line-clamp-3 mt-3">
+                        {contribution.written_note}
+                      </p>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
           </section>
         )}
 

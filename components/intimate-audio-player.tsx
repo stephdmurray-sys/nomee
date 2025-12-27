@@ -9,11 +9,19 @@ const globalCallbacks: Set<() => void> = new Set()
 
 export function IntimateAudioPlayer({ audioUrl }: { audioUrl: string }) {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [hasError, setHasError] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     // Initialize audio element
     audioRef.current = new Audio(audioUrl)
+
+    audioRef.current.onerror = () => {
+      console.log("[v0] Audio file not available (demo placeholder):", audioUrl)
+      setHasError(true)
+      setIsPlaying(false)
+    }
+
     audioRef.current.onended = () => setIsPlaying(false)
 
     // Register this player in global callbacks
@@ -27,7 +35,7 @@ export function IntimateAudioPlayer({ audioUrl }: { audioUrl: string }) {
   }, [audioUrl])
 
   const togglePlay = () => {
-    if (!audioRef.current) return
+    if (!audioRef.current || hasError) return
 
     if (isPlaying) {
       // Pause this audio
@@ -43,17 +51,24 @@ export function IntimateAudioPlayer({ audioUrl }: { audioUrl: string }) {
       }
 
       // Play this audio
-      audioRef.current.play()
+      audioRef.current.play().catch(() => {
+        setHasError(true)
+      })
       setIsPlaying(true)
       globalAudio = audioRef.current
     }
   }
 
   return (
-    <div onClick={togglePlay} className="flex items-center gap-3 cursor-pointer group">
+    <div
+      onClick={togglePlay}
+      className={`flex items-center gap-3 ${hasError ? "opacity-40 cursor-not-allowed" : "cursor-pointer group"}`}
+      title={hasError ? "Audio demo placeholder" : undefined}
+    >
       <button
-        className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-slate-700 transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
+        className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-slate-700 transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         aria-label={isPlaying ? "Pause" : "Play"}
+        disabled={hasError}
       >
         {isPlaying ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4 ml-0.5" />}
       </button>
