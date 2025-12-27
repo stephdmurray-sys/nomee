@@ -14,42 +14,60 @@ interface VoiceCardProps {
     audio_duration_ms?: number | null
     written_note?: string | null
   }
+  isMobile?: boolean
 }
 
-export function VoiceCard({ contribution }: VoiceCardProps) {
+export function VoiceCard({ contribution, isMobile = false }: VoiceCardProps) {
   const [showTranscript, setShowTranscript] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
 
   return (
-    <div className="bg-neutral-50 rounded-2xl p-5 min-w-[85vw] md:min-w-0 snap-center space-y-4">
-      {/* Audio player with static waveform */}
-      <IntimateAudioPlayer audioUrl={contribution.voice_url!} />
+    <div
+      className={`
+        rounded-xl p-6 space-y-4 transition-all duration-300 cursor-pointer
+        ${isMobile ? "min-w-[85vw] snap-center" : ""}
+        ${
+          isPlaying
+            ? "border-blue-300 bg-blue-50/30 shadow-lg scale-[1.02]"
+            : "bg-white border border-blue-200/60 hover:border-blue-300 hover:shadow-md hover:scale-[1.02] hover:-translate-y-1"
+        }
+      `}
+    >
+      <IntimateAudioPlayer audioUrl={contribution.voice_url!} onPlayingChange={setIsPlaying} />
 
-      {/* Contributor info - small, neutral */}
-      <div className="space-y-0.5">
-        <p className="text-sm font-medium text-neutral-900">{contribution.contributor_name}</p>
-        <p className="text-xs text-neutral-600">
-          {contribution.contributor_company && `${contribution.contributor_company} • `}
-          {contribution.relationship?.replace(/_/g, " ")}
+      {/* Contributor info - clean hierarchy */}
+      <div className="space-y-1">
+        <p className="text-base font-semibold text-neutral-900 transition-colors group-hover:text-blue-900">
+          {contribution.contributor_name}
         </p>
+        <div className="flex items-center gap-2 text-sm text-neutral-600">
+          {contribution.contributor_company && <span>{contribution.contributor_company}</span>}
+          {contribution.contributor_company && contribution.relationship && <span>•</span>}
+          {contribution.relationship && (
+            <span className="capitalize">{contribution.relationship.replace(/_/g, " ")}</span>
+          )}
+        </div>
         {contribution.audio_duration_ms && (
-          <p className="text-xs text-neutral-500 pt-0.5">{Math.round(contribution.audio_duration_ms / 1000)}s</p>
+          <p className="text-xs text-neutral-500">{Math.round(contribution.audio_duration_ms / 1000)}s</p>
         )}
       </div>
 
-      {/* Transcript toggle - collapsed by default */}
       {contribution.written_note && (
-        <div className="border-t border-neutral-200 pt-3">
+        <div className="border-t border-neutral-200 pt-3 space-y-2">
           <button
             onClick={() => setShowTranscript(!showTranscript)}
-            className="flex items-center gap-1 text-xs text-neutral-600 hover:text-neutral-900 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+            aria-expanded={showTranscript}
           >
             <span>Read transcript</span>
             <ChevronDown
-              className={`h-3 w-3 transition-transform duration-200 ${showTranscript ? "rotate-180" : ""}`}
+              className={`h-3.5 w-3.5 transition-transform duration-200 ${showTranscript ? "rotate-180" : ""}`}
             />
           </button>
           {showTranscript && (
-            <p className="text-xs text-neutral-600 leading-relaxed mt-2 pl-1">{contribution.written_note}</p>
+            <div className="text-sm text-neutral-600 leading-relaxed animate-in fade-in slide-in-from-top-2 duration-200">
+              {contribution.written_note}
+            </div>
           )}
         </div>
       )}

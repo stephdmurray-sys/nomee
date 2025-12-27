@@ -325,30 +325,34 @@ export function PremierProfileClient({
 
         {/* In Their Own Words - Voice Section */}
         {voiceContributions.length > 0 && (
-          <section className="space-y-6 py-12 md:py-16">
-            <div className="space-y-2 max-w-2xl mx-auto">
-              <h3 className="text-2xl md:text-3xl font-semibold text-neutral-900 text-center">In Their Own Words</h3>
-              <p className="text-sm md:text-base text-neutral-600 text-center">
-                Real voices from people who know {profile.full_name?.split(" ")[0] || "them"}
+          <section className="space-y-8 py-16 md:py-20">
+            {/* Header - neutral and editorial */}
+            <div className="space-y-2 text-center">
+              <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">In Their Own Words</h3>
+              <p className="text-base text-neutral-600 leading-relaxed">
+                Unedited voice notes from people who know {profile.full_name?.split(" ")[0] || "them"}
               </p>
-              <p className="text-xs text-neutral-500 text-center pt-1">Submitted by verified contributors</p>
             </div>
 
-            <div className="md:hidden flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 px-4 -mx-4 scrollbar-hide">
+            {/* Mobile: horizontal scroll with snap */}
+            <div className="md:hidden -mx-6">
+              <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory px-6 pb-4 scrollbar-hide">
+                {voiceContributions.map((contribution) => (
+                  <VoiceCard key={contribution.id} contribution={contribution} isMobile />
+                ))}
+              </div>
+            </div>
+
+            <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-6 mx-auto max-w-6xl">
               {voiceContributions.map((contribution) => (
                 <VoiceCard key={contribution.id} contribution={contribution} />
               ))}
             </div>
 
-            <div className="hidden md:flex md:flex-col md:gap-4 max-w-2xl mx-auto">
-              {voiceContributions.map((contribution) => (
-                <VoiceCard key={contribution.id} contribution={contribution} />
-              ))}
-            </div>
-
-            <div className="flex justify-center pt-4">
-              <button className="px-6 py-2 text-sm text-neutral-700 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors duration-200">
-                Add your voice
+            <div className="flex flex-col items-center gap-4 pt-8">
+              <div className="w-24 h-px bg-neutral-200" />
+              <button className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors tracking-wider">
+                Share your perspective
               </button>
             </div>
           </section>
