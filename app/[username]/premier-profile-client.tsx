@@ -21,11 +21,6 @@ interface PremierProfileClientProps {
   contributions: Contribution[]
   importedFeedback: ImportedFeedback[]
   traits: Trait[]
-  totalContributions: number
-  uniqueCompanies: string[]
-  interpretationSentence: string
-  vibeLabels: string[]
-  anchorQuote: string
 }
 
 export function PremierProfileClient({
@@ -33,11 +28,6 @@ export function PremierProfileClient({
   contributions: rawContributions,
   importedFeedback: rawImportedFeedback,
   traits,
-  totalContributions,
-  uniqueCompanies,
-  interpretationSentence,
-  vibeLabels,
-  anchorQuote,
 }: PremierProfileClientProps) {
   console.log("[v0] PremierProfileClient: Profile loaded:", profile.slug)
   console.log("[v0] PremierProfileClient: Total contributions received:", rawContributions.length)
@@ -195,8 +185,38 @@ export function PremierProfileClient({
     return filterByRelationship(voiceContributions, voiceRelationshipFilter)
   }, [voiceContributions, voiceRelationshipFilter])
 
+  const totalContributions = contributions.length
+
+  const getConfidenceLevel = (count: number) => {
+    if (count <= 2)
+      return {
+        label: "Early signal",
+        description: "This updates as more people contribute. Invite 2 more to strengthen patterns.",
+        color: "text-amber-600",
+        bgColor: "bg-amber-50",
+        borderColor: "border-amber-200",
+      }
+    if (count <= 4)
+      return {
+        label: "Directional",
+        description: "Patterns are starting to stabilize as more people contribute.",
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-200",
+      }
+    return {
+      label: "High confidence",
+      description: "Patterns are consistent across contributors.",
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      borderColor: "border-green-200",
+    }
+  }
+
+  const confidenceLevel = getConfidenceLevel(totalContributions)
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-neutral-50">
       <SiteHeader />
 
       {/* Floating share cluster - Desktop only */}
@@ -242,6 +262,13 @@ export function PremierProfileClient({
             Nomee Profile · Based on feedback from {totalContributions} {totalContributions === 1 ? "person" : "people"}
             {totalUploads > 0 && ` · ${totalUploads} ${totalUploads === 1 ? "upload" : "uploads"}`}
           </p>
+
+          <div
+            className={`inline-flex items-center gap-2 mt-3 px-3 py-1.5 rounded-full border ${confidenceLevel.bgColor} ${confidenceLevel.borderColor}`}
+          >
+            <div className={`w-2 h-2 rounded-full ${confidenceLevel.color.replace("text-", "bg-")}`}></div>
+            <span className={`text-xs font-semibold ${confidenceLevel.color}`}>{confidenceLevel.label}</span>
+          </div>
 
           <p className="text-xs text-neutral-500 mt-2">Each contributor can submit once.</p>
 
@@ -305,7 +332,7 @@ export function PremierProfileClient({
                 <AiPatternSummary
                   contributions={rawContributions}
                   importedFeedback={rawImportedFeedback}
-                  topTraits={traitsWithExamples.slice(0, 5).map((t) => ({ label: t.label, count: t.count }))}
+                  topTraits={traits.slice(0, 5).map((t) => ({ label: t.label, count: t.count }))}
                 />
 
                 <p className="text-xs text-neutral-500 pt-4 border-t border-neutral-100">
@@ -377,66 +404,101 @@ export function PremierProfileClient({
             <div className="space-y-2 max-w-3xl mx-auto text-center">
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">Pattern Recognition</h3>
               <p className="text-sm text-neutral-500">Not hand-picked — patterns emerge as more people contribute.</p>
-              <p className="text-xs text-neutral-400 pt-1">Darker = mentioned more often</p>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 max-w-5xl mx-auto">
-              {/* Left panel: Top signals */}
-              <div className="p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white">
-                <h4 className="text-xs sm:text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
-                  Top signals
-                </h4>
-                <div className="space-y-2">
-                  {traitsWithExamples.slice(0, 5).map((trait) => {
-                    const isSelected = selectedHeatmapTrait === trait.label
-                    const styles = getFrequencyStyles(trait.count, isSelected)
-
-                    return (
-                      <button
-                        key={trait.label}
-                        onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
-                        className={`w-full flex items-center justify-between px-4 py-3 min-h-[44px] rounded-lg border transition-all hover:shadow-sm active:scale-[0.98] ${
-                          styles.bg
-                        } ${styles.border}`}
-                      >
-                        <span className={`font-semibold text-sm sm:text-base ${styles.text}`}>{trait.label}</span>
-                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${styles.badge}`}>
-                          ×{trait.count}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
+              <div
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${confidenceLevel.bgColor} ${confidenceLevel.borderColor} mt-3`}
+              >
+                <div className={`w-2 h-2 rounded-full ${confidenceLevel.color.replace("text-", "bg-")}`}></div>
+                <span className={`text-xs font-semibold ${confidenceLevel.color}`}>{confidenceLevel.label}</span>
               </div>
 
-              {/* Right panel: Emerging signals */}
-              <div className="p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white">
-                <h4 className="text-xs sm:text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
-                  Emerging signals
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {traitsWithExamples.slice(5, 15).map((trait) => {
-                    const isSelected = selectedHeatmapTrait === trait.label
-                    const styles = getFrequencyStyles(trait.count, isSelected)
+              <p className="text-xs text-neutral-500 pt-2 max-w-md mx-auto">{confidenceLevel.description}</p>
 
-                    return (
-                      <button
+              {totalContributions >= 3 && (
+                <p className="text-xs text-neutral-400 pt-1">Darker = mentioned more often</p>
+              )}
+            </div>
+
+            {totalContributions < 3 ? (
+              <div className="max-w-2xl mx-auto">
+                <div className="p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white">
+                  <h4 className="text-xs sm:text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
+                    Top signals
+                  </h4>
+                  <div className="space-y-2">
+                    {traits.slice(0, 5).map((trait) => (
+                      <div
                         key={trait.label}
-                        onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
-                        className={`inline-flex items-center gap-2 px-3 py-2 min-h-[36px] rounded-full border transition-all hover:shadow-sm active:scale-95 ${
-                          styles.bg
-                        } ${styles.border}`}
+                        className="flex items-center justify-between px-4 py-3 rounded-lg border border-neutral-200 bg-neutral-50"
                       >
-                        <span className={`text-xs sm:text-sm font-semibold ${styles.text}`}>{trait.label}</span>
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${styles.badge}`}>
+                        <span className="font-semibold text-sm sm:text-base text-neutral-900">{trait.label}</span>
+                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-neutral-200 text-neutral-700">
                           ×{trait.count}
                         </span>
-                      </button>
-                    )
-                  })}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 max-w-5xl mx-auto">
+                {/* Left panel: Top signals */}
+                <div className="p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white">
+                  <h4 className="text-xs sm:text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
+                    Top signals
+                  </h4>
+                  <div className="space-y-2">
+                    {traits.slice(0, 5).map((trait) => {
+                      const isSelected = selectedHeatmapTrait === trait.label
+                      const styles = getFrequencyStyles(trait.count, isSelected)
+
+                      return (
+                        <button
+                          key={trait.label}
+                          onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
+                          className={`w-full flex items-center justify-between px-4 py-3 min-h-[44px] rounded-lg border transition-all hover:shadow-sm active:scale-[0.98] ${
+                            styles.bg
+                          } ${styles.border}`}
+                        >
+                          <span className={`font-semibold text-sm sm:text-base ${styles.text}`}>{trait.label}</span>
+                          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${styles.badge}`}>
+                            ×{trait.count}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Right panel: Emerging signals */}
+                <div className="p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white">
+                  <h4 className="text-xs sm:text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
+                    Emerging signals
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {traits.slice(5, 15).map((trait) => {
+                      const isSelected = selectedHeatmapTrait === trait.label
+                      const styles = getFrequencyStyles(trait.count, isSelected)
+
+                      return (
+                        <button
+                          key={trait.label}
+                          onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
+                          className={`inline-flex items-center gap-2 px-3 py-2 min-h-[36px] rounded-full border transition-all hover:shadow-sm active:scale-95 ${
+                            styles.bg
+                          } ${styles.border}`}
+                        >
+                          <span className={`text-xs sm:text-sm font-semibold ${styles.text}`}>{trait.label}</span>
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${styles.badge}`}>
+                            ×{trait.count}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
         )}
 
