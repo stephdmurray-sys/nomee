@@ -101,12 +101,13 @@ export default function SettingsClient({ profile, userEmail }: { profile: Profil
       return
     }
 
-    setSuccess("Settings updated successfully!")
+    setSuccess("Username saved!")
     setLoading(false)
 
     setTimeout(() => {
+      router.push("/dashboard")
       router.refresh()
-    }, 1500)
+    }, 1000)
   }
 
   return (
@@ -186,7 +187,10 @@ export default function SettingsClient({ profile, userEmail }: { profile: Profil
                     <Loader2 className="absolute right-3 top-5 h-4 w-4 animate-spin text-neutral-400" />
                   )}
                 </div>
-                <p className="mt-2 text-sm text-neutral-500">Your public URL: nomee.co/{username || "username"}</p>
+                <p className="mt-2 text-sm text-neutral-600">
+                  This becomes your public link:{" "}
+                  <span className="font-mono text-blue-600">nomee.co/{username || "username"}</span>
+                </p>
               </div>
             </div>
 

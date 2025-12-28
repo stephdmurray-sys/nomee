@@ -12,6 +12,7 @@ import { extractSubmissionPhrases, calculatePhraseFrequencies, getTopPhrases } f
 import { highlightQuote } from "@/lib/highlight-quote"
 import { extractKeywordsFromText } from "@/lib/extract-keywords-from-text"
 import { ShareKit } from "@/components/share-kit"
+import { UsernameOnboardingModal } from "@/components/username-onboarding-modal"
 
 type DashboardClientProps = {
   profile: any
@@ -34,6 +35,7 @@ export default function DashboardClient({
   const [copiedPublic, setCopiedPublic] = useState(false)
   const [copiedEmbed, setCopiedEmbed] = useState(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(!profile.slug)
 
   const plan = profile.plan || "free"
   const featuredLimit = plan === "free" ? 1 : plan === "starter" ? 3 : Number.POSITIVE_INFINITY
@@ -94,6 +96,28 @@ export default function DashboardClient({
 
   return (
     <>
+      {/* Added onboarding modal that auto-shows for new users without username */}
+      <UsernameOnboardingModal
+        isOpen={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+        userEmail={profile.email || ""}
+      />
+
+      {!profile.slug && (
+        <Card className="mb-8 p-6 border-2 border-blue-200 bg-blue-50/40">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-neutral-900 mb-2">Claim your Nomee link</h3>
+              <p className="text-sm text-neutral-700 mb-4">
+                Set a username to unlock your collection link and public Nomee page.
+              </p>
+              {/* Updated button to open modal instead of navigating to settings */}
+              <Button onClick={() => setShowOnboarding(true)}>Set username</Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Stats */}
       <div className="mb-12 grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="p-6">
@@ -174,7 +198,12 @@ export default function DashboardClient({
               </Button>
             </div>
           ) : (
-            <p className="text-sm text-amber-600">Set up your username in settings to get your collection link</p>
+            <div className="space-y-3">
+              <p className="text-sm text-neutral-700">Set a username to activate your collection link.</p>
+              <Button variant="default" asChild className="w-full">
+                <Link href="/dashboard/settings">Set username</Link>
+              </Button>
+            </div>
           )}
         </Card>
 
@@ -216,7 +245,12 @@ export default function DashboardClient({
               </div>
             </div>
           ) : (
-            <p className="text-sm text-amber-600">Set up your username in settings</p>
+            <div className="space-y-3">
+              <p className="text-sm text-neutral-700">Set a username to activate your public page.</p>
+              <Button variant="default" asChild className="w-full">
+                <Link href="/dashboard/settings">Set username</Link>
+              </Button>
+            </div>
           )}
         </Card>
       </div>

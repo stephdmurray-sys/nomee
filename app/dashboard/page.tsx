@@ -33,8 +33,8 @@ export default async function DashboardPage() {
   const confirmedContributions = allContributions
   const pendingContributions: any[] = []
 
-  const publicUrl = profile.username ? `https://www.nomee.co/${profile.username}` : null
-  const collectionUrl = profile.username ? `https://www.nomee.co/c/${profile.username}` : null
+  const publicUrl = profile.slug ? `https://www.nomee.co/${profile.slug}` : null
+  const collectionUrl = profile.slug ? `https://www.nomee.co/c/${profile.slug}` : null
 
   return (
     <div className="min-h-screen bg-neutral-50">
