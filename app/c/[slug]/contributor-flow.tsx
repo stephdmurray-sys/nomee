@@ -12,16 +12,18 @@ import { TRAIT_CATEGORIES } from "@/lib/trait-categories"
 import { VoiceRecorder } from "@/components/voice-recorder"
 import { Check } from "lucide-react"
 
-type ProfileData = {
+type Profile = {
   id: string
   full_name: string
-  username: string
+  slug: string
 }
+
+type TraitSelections = Record<string, string[]>
 
 type StepName = "entry" | "relationship" | "duration" | "traits" | "message" | "identity" | "voice" | "submitted"
 
 type ContributorFlowProps = {
-  profile: ProfileData
+  profile: Profile
 }
 
 function ProgressBar({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
@@ -48,7 +50,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   // Form data
   const [relationship, setRelationship] = useState("")
   const [duration, setDuration] = useState("")
-  const [selectedTraits, setSelectedTraits] = useState<Record<string, string[]>>({})
+  const [selectedTraits, setSelectedTraits] = useState<TraitSelections>({})
   const [message, setMessage] = useState("")
   const [firstName, setFirstName] = useState("")
   const [lastInitial, setLastInitial] = useState("")
@@ -56,26 +58,71 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
   const [contributionId, setContributionId] = useState<string | null>(null)
 
-  // Validation errors
+  const [messageSaveStatus, setMessageSaveStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle")
+  const [saveRetryCount, setSaveRetryCount] = useState(0)
+  const [draftToken, setDraftToken] = useState<string | null>(null)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [emailValidation, setEmailValidation] = useState<string>("")
 
-  const [emailValidation, setEmailValidation] = useState<"valid" | "invalid" | "">("")
+  const firstNameValue = profile.full_name?.split(" ")[0] || profile.full_name || "them"
 
-  const firstNameValue = profile.full_name.split(" ")[0]
-
-  const getStepNumber = (currentStep: StepName): number => {
-    const stepMap: Record<StepName, number> = {
-      entry: 0,
-      relationship: 1,
-      duration: 2,
-      traits: 3,
-      message: 4,
-      identity: 5,
-      voice: 6,
-      submitted: 7,
+  useEffect(() => {
+    const sessionData = sessionStorage.getItem(`nomee-draft-${profile.slug}`)
+    if (sessionData) {
+      try {
+        const parsed = JSON.parse(sessionData)
+        console.log("[v0] Restored draft from sessionStorage:", parsed)
+        if (parsed.relationship) setRelationship(parsed.relationship)
+        if (parsed.duration) setDuration(parsed.duration)
+        if (parsed.selectedTraits) setSelectedTraits(parsed.selectedTraits)
+        if (parsed.message) setMessage(parsed.message)
+        if (parsed.firstName) setFirstName(parsed.firstName)
+        if (parsed.lastInitial) setLastInitial(parsed.lastInitial)
+        if (parsed.email) setEmail(parsed.email)
+        if (parsed.contributionId) setContributionId(parsed.contributionId)
+        if (parsed.draftToken) setDraftToken(parsed.draftToken)
+        if (parsed.step && parsed.step !== "submitted") setStep(parsed.step)
+      } catch (err) {
+        console.error("[v0] Failed to parse sessionStorage:", err)
+      }
     }
-    return stepMap[currentStep]
-  }
+
+    // Generate or restore draft token
+    if (!draftToken) {
+      const token = `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      setDraftToken(token)
+    }
+  }, [profile.slug])
+
+  useEffect(() => {
+    if (step !== "entry") {
+      const draftData = {
+        relationship,
+        duration,
+        selectedTraits,
+        message,
+        firstName,
+        lastInitial,
+        email,
+        contributionId,
+        draftToken,
+        step: step !== "submitted" ? step : "voice", // Don't restore to submitted
+      }
+      sessionStorage.setItem(`nomee-draft-${profile.slug}`, JSON.stringify(draftData))
+    }
+  }, [
+    relationship,
+    duration,
+    selectedTraits,
+    message,
+    firstName,
+    lastInitial,
+    email,
+    contributionId,
+    draftToken,
+    step,
+    profile.slug,
+  ])
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -361,6 +408,67 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     const charCount = message.length
     const maxChars = 1200
 
+    const saveMessageWithRetry = async (retryAttempt = 0): Promise<boolean> => {
+      try {
+        console.log("[v0] Attempting to save contribution (attempt", retryAttempt + 1, ")")
+        const allSelectedTraitIds = Object.values(selectedTraits).flat()
+
+        const response = await fetch("/api/contributions/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            profileId: profile.id,
+            contributorName: "Pending",
+            contributorEmail: "pending@nomee.app",
+            companyOrOrg: "Unknown",
+            relationship,
+            duration,
+            message: message.trim(),
+            selectedTraitIds: allSelectedTraitIds,
+            draftToken, // Include draft token for future recovery
+          }),
+        })
+
+        const result = await response.json()
+
+        if (response.status === 201 && result.success && result.contributionId) {
+          console.log("[v0] ✅ Contribution saved successfully:", result.contributionId)
+          setContributionId(result.contributionId)
+          setMessageSaveStatus("saved")
+          setSaveRetryCount(0)
+          return true
+        }
+
+        // Log detailed error for debugging
+        console.error("[v0] Save failed:", {
+          status: response.status,
+          code: result.code,
+          error: result.error,
+          details: result.details,
+        })
+
+        // Retry logic for transient failures
+        if (retryAttempt < 2 && response.status >= 500) {
+          console.log("[v0] Retrying save after", (retryAttempt + 1) * 1000, "ms")
+          await new Promise((resolve) => setTimeout(resolve, (retryAttempt + 1) * 1000))
+          return saveMessageWithRetry(retryAttempt + 1)
+        }
+
+        return false
+      } catch (err) {
+        console.error("[v0] Network error on save attempt", retryAttempt + 1, ":", err)
+
+        // Retry on network errors
+        if (retryAttempt < 2) {
+          console.log("[v0] Retrying save after network error")
+          await new Promise((resolve) => setTimeout(resolve, (retryAttempt + 1) * 1000))
+          return saveMessageWithRetry(retryAttempt + 1)
+        }
+
+        return false
+      }
+    }
+
     const handleMessageSubmit = async () => {
       if (!message.trim()) {
         setValidationErrors({ message: "Please write a message" })
@@ -370,43 +478,23 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
       setLoading(true)
       setError(null)
       setValidationErrors({})
+      setMessageSaveStatus("saving")
 
-      try {
-        console.log("[v0] Creating contribution at message step")
-        const allSelectedTraitIds = Object.values(selectedTraits).flat()
+      const saved = await saveMessageWithRetry()
 
-        const response = await fetch("/api/contributions/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            profileId: profile.id,
-            contributorName: "Pending", // Placeholder until identity step
-            contributorEmail: "pending@nomee.app", // Placeholder
-            companyOrOrg: "Unknown",
-            relationship,
-            duration,
-            message: message.trim(),
-            selectedTraitIds: allSelectedTraitIds,
-          }),
-        })
-
-        const result = await response.json()
-
-        if (response.status === 201 && result.success && result.contributionId) {
-          console.log("[v0] ✅ Contribution created:", result.contributionId)
-          setContributionId(result.contributionId)
-          setLoading(false)
-          setStep("identity")
-          return
-        }
-
-        // Handle errors
-        setError("Couldn't save right now. Please try again.")
+      if (saved) {
+        // Success - proceed normally
         setLoading(false)
-      } catch (err) {
-        console.error("[v0] Network error creating contribution:", err)
-        setError("Network error. Please check your connection and try again.")
+        setStep("identity")
+      } else {
+        // Save failed, but allow user to continue
+        console.log("[v0] Save failed, but allowing user to continue with local backup")
+        setMessageSaveStatus("failed")
+        setError(null) // Clear error to not block UI
         setLoading(false)
+
+        // Show non-blocking notice and proceed
+        setStep("identity")
       }
     }
 
@@ -428,6 +516,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               onChange={(e) => {
                 setMessage(e.target.value.slice(0, maxChars))
                 setValidationErrors((prev) => ({ ...prev, message: "" }))
+                setMessageSaveStatus("idle") // Reset status when user types
               }}
               placeholder={`Working with ${firstNameValue} felt like having someone who truly…`}
               className="min-h-[180px] text-base"
@@ -443,9 +532,9 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               </div>
             )}
 
-            {error && (
-              <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-4">
-                <p className="text-sm font-medium text-red-800">{error}</p>
+            {messageSaveStatus === "failed" && (
+              <div className="mt-4 rounded-lg bg-blue-50 border border-blue-200 p-4">
+                <p className="text-sm text-blue-800">💾 Your message is saved locally — you can continue safely</p>
               </div>
             )}
 
@@ -455,7 +544,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               </Button>
               <Button
                 onClick={handleMessageSubmit}
-                disabled={loading}
+                disabled={loading || !message.trim()}
                 className="flex-1"
                 size="lg"
                 data-continue-button
@@ -489,22 +578,62 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         return
       }
 
-      if (!contributionId) {
-        setError("Something went wrong. Please refresh and try again.")
-        return
-      }
-
       setLoading(true)
       setError(null)
       setValidationErrors({})
 
       try {
+        let finalContributionId = contributionId
+
+        if (!finalContributionId) {
+          console.log("[v0] No contributionId - creating contribution now with identity")
+          const allSelectedTraitIds = Object.values(selectedTraits).flat()
+
+          const createResponse = await fetch("/api/contributions/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              profileId: profile.id,
+              contributorName: `${firstName.trim()} ${lastInitial.trim()}.`,
+              contributorEmail: email.trim().toLowerCase(),
+              companyOrOrg: "Unknown",
+              relationship,
+              duration,
+              message: message.trim(),
+              selectedTraitIds: allSelectedTraitIds,
+              draftToken,
+            }),
+          })
+
+          const createResult = await createResponse.json()
+
+          if (createResponse.status === 201 && createResult.success && createResult.contributionId) {
+            console.log("[v0] ✅ Contribution created with identity:", createResult.contributionId)
+            finalContributionId = createResult.contributionId
+            setContributionId(finalContributionId)
+            setLoading(false)
+            setStep("voice")
+            return
+          } else {
+            // Handle create errors
+            let userMessage = "Couldn't save right now. Please try again."
+            if (createResponse.status === 429 || createResult.code === "RATE_LIMIT") {
+              userMessage = createResult.error || "This email has reached its submission limit."
+            } else if (createResponse.status === 409 || createResult.code === "DUPLICATE_SUBMISSION") {
+              userMessage = createResult.error || "This email has already submitted for this person."
+            }
+            setError(userMessage)
+            setLoading(false)
+            return
+          }
+        }
+
         console.log("[v0] Updating contribution with identity info")
         const response = await fetch("/api/contributions/update-identity", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contributionId,
+            contributionId: finalContributionId,
             contributorName: `${firstName.trim()} ${lastInitial.trim()}.`,
             contributorEmail: email.trim().toLowerCase(),
           }),
@@ -530,7 +659,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         setError(userMessage)
         setLoading(false)
       } catch (err) {
-        console.error("[v0] Network error updating identity:", err)
+        console.error("[v0] Error updating identity:", err)
         setError("Network error. Please check your connection and try again.")
         setLoading(false)
       }
@@ -719,6 +848,10 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   }
 
   // STEP 8: Confirmation (ALWAYS SHOWS)
+  if (step === "submitted") {
+    sessionStorage.removeItem(`nomee-draft-${profile.slug}`)
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-white px-4">
       <Card className="mx-auto max-w-2xl p-12 text-center">
