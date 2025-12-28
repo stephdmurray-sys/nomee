@@ -1,9 +1,10 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useRef, useState } from "react"
 import { Play, Pause } from "lucide-react"
 
-// Global audio state to ensure only one plays at a time
 let globalAudio: HTMLAudioElement | null = null
 const globalCallbacks: Set<() => void> = new Set()
 
@@ -82,26 +83,46 @@ export function IntimateAudioPlayer({
     }
   }
 
+  const handleWaveformClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!audioRef.current || hasError || duration === 0) return
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clickX = e.clientX - rect.left
+    const clickRatio = clickX / rect.width
+    const newTime = clickRatio * duration
+
+    audioRef.current.currentTime = newTime
+    setCurrentTime(newTime)
+  }
+
   const progress = duration > 0 ? currentTime / duration : 0
 
   return (
     <div className="space-y-2">
       <div
-        onClick={togglePlay}
-        className={`flex items-center gap-4 ${hasError ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+        className={`flex items-center gap-3 sm:gap-4 ${hasError ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
         role="button"
         tabIndex={hasError ? -1 : 0}
         aria-label={isPlaying ? "Pause audio" : "Play audio"}
       >
         <button
-          className="flex-shrink-0 w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center transition-all duration-150 hover:scale-105 hover:bg-blue-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={togglePlay}
+          className="flex-shrink-0 w-12 h-12 sm:w-12 sm:h-12 min-h-[44px] min-w-[44px] rounded-full bg-blue-500 text-white flex items-center justify-center transition-all duration-150 hover:scale-105 hover:bg-blue-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
           disabled={hasError}
-          aria-hidden="true"
+          aria-label={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
         </button>
 
-        <div className="flex items-center gap-0.5 h-8 flex-1">
+        <div
+          onClick={handleWaveformClick}
+          className="flex items-center gap-0.5 h-8 flex-1 cursor-pointer overflow-hidden"
+          role="slider"
+          aria-valuemin={0}
+          aria-valuemax={duration}
+          aria-valuenow={currentTime}
+          aria-label="Audio progress"
+        >
           {[10, 16, 12, 20, 14, 22, 16, 24, 18, 16, 12, 18, 14, 20, 16, 14].map((height, i) => {
             const barProgress = i / 16
             const isActive = isPlaying && barProgress <= progress
@@ -109,7 +130,7 @@ export function IntimateAudioPlayer({
             return (
               <div
                 key={i}
-                className={`w-0.5 rounded-full transition-all duration-100 ${isActive ? "bg-blue-500" : "bg-neutral-300"}`}
+                className={`flex-1 max-w-[6px] rounded-full transition-all duration-100 ${isActive ? "bg-blue-500" : "bg-neutral-300"}`}
                 style={{
                   height: `${height}px`,
                   transform: isActive && isPlaying ? "scaleY(1.15)" : "scaleY(1)",

@@ -23,9 +23,10 @@ interface VoiceCardProps {
   }
   isMobile?: boolean
   highlightPatterns?: HighlightPattern[]
+  profileName?: string
 }
 
-export function VoiceCard({ contribution, isMobile = false, highlightPatterns = [] }: VoiceCardProps) {
+export function VoiceCard({ contribution, isMobile = false, highlightPatterns = [], profileName }: VoiceCardProps) {
   const [showFullTranscript, setShowFullTranscript] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
 
@@ -37,39 +38,30 @@ export function VoiceCard({ contribution, isMobile = false, highlightPatterns = 
   ]
 
   const effectivePatterns = extractKeywordsFromText(contribution.written_note || "", allTraits)
-  console.log(
-    "[v0] Voice card",
-    contribution.id,
-    "- extracted",
-    effectivePatterns.length,
-    "patterns:",
-    effectivePatterns.map((p) => p.phrase),
-  )
 
-  const truncateToSentences = (text: string, maxSentences = 2) => {
+  const truncateToSentences = (text: string, maxSentences = 3) => {
     if (!text) return ""
     const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
     if (sentences.length <= maxSentences) return text
     return sentences.slice(0, maxSentences).join(" ").trim()
   }
 
-  const previewText = truncateToSentences(contribution.written_note || "", 2)
+  const previewText = truncateToSentences(contribution.written_note || "", 3)
   const fullText = contribution.written_note || ""
   const hasMoreText = fullText.length > previewText.length
 
-  // Apply highlighting to both preview and full text
   const highlightedPreview = previewText ? highlightQuote(previewText, effectivePatterns, 5) : null
   const highlightedFull = fullText ? highlightQuote(fullText, effectivePatterns, 5) : null
 
   return (
     <div
       className={`
-        rounded-xl p-6 space-y-4 transition-all duration-300 cursor-pointer
+        rounded-xl p-5 sm:p-6 space-y-4 transition-all duration-300 cursor-pointer relative
         ${isMobile ? "min-w-[85vw] snap-center" : ""}
         ${
           isPlaying
-            ? "border-blue-300 bg-blue-50/30 shadow-lg scale-[1.02]"
-            : "bg-white border border-blue-200/60 hover:border-blue-300 hover:shadow-md hover:scale-[1.02] hover:-translate-y-1"
+            ? "border-blue-300 bg-blue-50/30 shadow-lg scale-[1.01]"
+            : "bg-white border border-blue-200/60 hover:border-blue-300 hover:shadow-md hover:scale-[1.01]"
         }
       `}
     >
@@ -77,14 +69,14 @@ export function VoiceCard({ contribution, isMobile = false, highlightPatterns = 
 
       {highlightedPreview && (
         <div className="space-y-2">
-          <div className="text-sm md:text-base text-neutral-700 leading-relaxed">
+          <div className="text-base leading-relaxed text-neutral-700" style={{ lineHeight: "1.65" }}>
             {showFullTranscript ? highlightedFull : highlightedPreview}
           </div>
 
           {hasMoreText && (
             <button
               onClick={() => setShowFullTranscript(!showFullTranscript)}
-              className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 active:text-blue-600 transition-colors min-h-[44px] -ml-2 pl-2"
               aria-expanded={showFullTranscript}
             >
               <span>{showFullTranscript ? "Show less" : "Read more"}</span>
@@ -98,9 +90,7 @@ export function VoiceCard({ contribution, isMobile = false, highlightPatterns = 
 
       {/* Contributor info - clean hierarchy */}
       <div className="space-y-1 pt-2 border-t border-neutral-200">
-        <p className="text-base font-semibold text-neutral-900 transition-colors group-hover:text-blue-900">
-          {contribution.contributor_name}
-        </p>
+        <p className="text-base font-semibold text-neutral-900">{contribution.contributor_name}</p>
         <div className="flex items-center gap-2 text-sm text-neutral-600">
           <span className="capitalize">{contribution.relationship?.replace(/_/g, " ")}</span>
           {contribution.contributor_company && (

@@ -201,7 +201,7 @@ export function PremierProfileClient({
       <SiteHeader />
 
       {/* Floating share cluster - Desktop only */}
-      <div className="hidden lg:block fixed right-8 top-1/2 -translate-y-1/2 z-40">
+      <div className="hidden sm:block fixed right-8 top-1/2 -translate-y-1/2 z-40">
         <div className="flex flex-col gap-3">
           <Button
             variant="ghost"
@@ -225,18 +225,18 @@ export function PremierProfileClient({
       </div>
 
       {/* Top padding to account for fixed header */}
-      <section className="max-w-6xl mx-auto px-6 lg:px-8 pt-28 md:pt-32 pb-12 md:pb-16">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 md:pt-32 pb-8 sm:pb-12 md:pb-16">
         {/* Owner anchor */}
         <div
-          className={`mb-10 md:mb-12 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+          className={`mb-8 sm:mb-10 md:mb-12 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
           style={{ transitionDelay: "0ms" }}
         >
-          <h1 className="text-4xl md:text-5xl font-semibold text-neutral-900 mb-2 tracking-tight leading-[1.1]">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-neutral-900 mb-2 tracking-tight leading-[1.1]">
             {profile.full_name}
           </h1>
 
           {profile.headline && (
-            <p className="text-lg md:text-xl text-neutral-600 mb-3 leading-relaxed">{profile.headline}</p>
+            <p className="text-base sm:text-lg md:text-xl text-neutral-600 mb-3 leading-relaxed">{profile.headline}</p>
           )}
 
           <p className="text-sm text-neutral-500 uppercase tracking-wide">
@@ -245,23 +245,41 @@ export function PremierProfileClient({
           </p>
 
           <p className="text-xs text-neutral-500 mt-2">Each contributor can submit once.</p>
+
+          {/* Mobile share buttons below header */}
+          <div className="flex gap-3 mt-4 sm:hidden">
+            <button
+              onClick={handleShareProfile}
+              className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-full bg-white border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 active:bg-neutral-100 text-sm font-medium text-neutral-700 transition-colors"
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-full bg-white border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 active:bg-neutral-100 text-sm font-medium text-neutral-700 transition-colors"
+            >
+              <Copy className="h-4 w-4" />
+              {showCopied ? "Copied!" : "Copy link"}
+            </button>
+          </div>
         </div>
 
         {/* Summary section */}
         {totalContributions > 0 && traits.length > 0 && (
           <div
-            className={`mb-10 md:mb-12 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            className={`mb-8 sm:mb-10 md:mb-12 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
             style={{ transitionDelay: "200ms" }}
           >
-            <div className="relative max-w-full p-8 md:p-10 rounded-xl border border-neutral-200 bg-gradient-to-br from-blue-50/30 to-transparent shadow-sm">
+            <div className="relative max-w-full p-5 sm:p-8 md:p-10 rounded-xl border border-neutral-200 bg-gradient-to-br from-blue-50/30 to-transparent shadow-sm">
               <div className="absolute left-0 top-8 bottom-8 w-1 bg-blue-500/40 rounded-r-full" />
 
-              <div className="space-y-6">
-                <div className="flex items-start justify-between gap-4 pb-4 border-b border-neutral-100">
-                  <h2 className="text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 pb-4 border-b border-neutral-100">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight">
                     Summary of working with {profile.full_name?.split(" ")[0] || "them"}
                   </h2>
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-left sm:text-right flex-shrink-0">
                     <span className="text-xs text-neutral-400 uppercase tracking-widest block">
                       Updated automatically
                     </span>
@@ -302,12 +320,14 @@ export function PremierProfileClient({
         )}
       </section>
 
-      <div className="mx-auto max-w-6xl px-6 lg:px-8 space-y-8 md:space-y-10 py-4">
+      {/* Reduce spacing between sections on mobile */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 md:space-y-10 py-2 sm:py-4">
+        {/* Voice notes section */}
         {voiceNotesCount > 0 && (
-          <section className="space-y-6 py-8 md:py-10">
-            <div className="space-y-3 max-w-2xl mx-auto text-center">
-              <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">In Their Own Words</h3>
-              <p className="text-base md:text-lg text-neutral-600 leading-relaxed max-w-[65ch] mx-auto">
+          <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
+            <div className="space-y-2 sm:space-y-3 max-w-2xl mx-auto text-center">
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">In Their Own Words</h3>
+              <p className="text-sm sm:text-base md:text-lg text-neutral-600 leading-relaxed max-w-[65ch] mx-auto">
                 Unedited voice notes from people who know {profile.full_name?.split(" ")[0]}
               </p>
             </div>
@@ -321,7 +341,7 @@ export function PremierProfileClient({
             </div>
 
             {filteredVoiceContributions.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredVoiceContributions.slice(0, 3).map((contribution) => (
                   <VoiceCard
                     key={contribution.id}
@@ -336,7 +356,7 @@ export function PremierProfileClient({
                 <p className="text-neutral-600">No perspectives yet from {voiceRelationshipFilter.toLowerCase()}.</p>
                 <button
                   onClick={() => setVoiceRelationshipFilter("All")}
-                  className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium min-h-[44px] px-4"
                 >
                   View all perspectives
                 </button>
@@ -344,23 +364,24 @@ export function PremierProfileClient({
             )}
           </section>
         )}
-        {/* </CHANGE> */}
 
         {voiceNotesCount > 0 && <div className="border-t border-neutral-100" />}
 
         {/* Pattern Recognition section */}
         {traits.length > 0 && (
-          <section className="space-y-6 pt-4 md:pt-6">
+          <section className="space-y-4 sm:space-y-6 pt-2 sm:pt-4 md:pt-6">
             <div className="space-y-2 max-w-3xl mx-auto text-center">
-              <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">Pattern Recognition</h3>
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">Pattern Recognition</h3>
               <p className="text-sm text-neutral-500">Not hand-picked — patterns emerge as more people contribute.</p>
               <p className="text-xs text-neutral-400 pt-1">Darker = mentioned more often</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 max-w-5xl mx-auto">
               {/* Left panel: Top signals */}
-              <div className="p-6 rounded-xl border border-neutral-200 bg-white">
-                <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">Top signals</h4>
+              <div className="p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white">
+                <h4 className="text-xs sm:text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
+                  Top signals
+                </h4>
                 <div className="space-y-2">
                   {traitsWithExamples.slice(0, 5).map((trait) => {
                     const isSelected = selectedHeatmapTrait === trait.label
@@ -370,11 +391,11 @@ export function PremierProfileClient({
                       <button
                         key={trait.label}
                         onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
-                        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all hover:shadow-sm ${
+                        className={`w-full flex items-center justify-between px-4 py-3 min-h-[44px] rounded-lg border transition-all hover:shadow-sm active:scale-[0.98] ${
                           styles.bg
                         } ${styles.border}`}
                       >
-                        <span className={`font-semibold ${styles.text}`}>{trait.label}</span>
+                        <span className={`font-semibold text-sm sm:text-base ${styles.text}`}>{trait.label}</span>
                         <span className={`text-xs font-semibold px-2 py-1 rounded-full ${styles.badge}`}>
                           ×{trait.count}
                         </span>
@@ -385,8 +406,8 @@ export function PremierProfileClient({
               </div>
 
               {/* Right panel: Emerging signals */}
-              <div className="p-6 rounded-xl border border-neutral-200 bg-white">
-                <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
+              <div className="p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white">
+                <h4 className="text-xs sm:text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
                   Emerging signals
                 </h4>
                 <div className="flex flex-wrap gap-2">
@@ -398,11 +419,11 @@ export function PremierProfileClient({
                       <button
                         key={trait.label}
                         onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
-                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border transition-all hover:shadow-sm ${
+                        className={`inline-flex items-center gap-2 px-3 py-2 min-h-[36px] rounded-full border transition-all hover:shadow-sm active:scale-95 ${
                           styles.bg
                         } ${styles.border}`}
                       >
-                        <span className={`text-sm font-semibold ${styles.text}`}>{trait.label}</span>
+                        <span className={`text-xs sm:text-sm font-semibold ${styles.text}`}>{trait.label}</span>
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${styles.badge}`}>
                           ×{trait.count}
                         </span>
@@ -415,13 +436,14 @@ export function PremierProfileClient({
           </section>
         )}
 
+        {/* How it feels section */}
         {howItFeels.length > 0 && (
           <>
             <div className="border-t border-neutral-100" />
-            <section className="space-y-6 py-8 md:py-10">
-              <div className="space-y-3 max-w-2xl mx-auto text-center">
-                <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">How it feels</h3>
-                <p className="text-base md:text-lg text-neutral-600 leading-relaxed">
+            <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
+              <div className="space-y-2 sm:space-y-3 max-w-2xl mx-auto text-center">
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">How it feels</h3>
+                <p className="text-sm sm:text-base md:text-lg text-neutral-600 leading-relaxed">
                   Day-to-day collaboration style and working patterns
                 </p>
               </div>
@@ -451,7 +473,7 @@ export function PremierProfileClient({
                   </p>
                   <button
                     onClick={() => setHowItFeelsRelationshipFilter("All")}
-                    className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium min-h-[44px] px-4"
                   >
                     View all perspectives
                   </button>
@@ -460,72 +482,78 @@ export function PremierProfileClient({
             </section>
           </>
         )}
-        {/* </CHANGE> */}
 
+        {/* Screenshots and highlights section */}
         {importedFeedback.length > 0 && (
           <>
             <div className="border-t border-neutral-100" />
-            <section className="space-y-6 py-8 md:py-10">
-              <div className="space-y-3 max-w-2xl mx-auto text-center">
-                <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">Screenshots and highlights</h3>
-                <p className="text-base md:text-lg text-neutral-600 leading-relaxed">
+            <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
+              <div className="space-y-2 sm:space-y-3 max-w-2xl mx-auto text-center">
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">
+                  Screenshots and highlights
+                </h3>
+                <p className="text-sm sm:text-base md:text-lg text-neutral-600 leading-relaxed">
                   {profile.full_name?.split(" ")[0]} saved {importedFeedback.length}{" "}
                   {importedFeedback.length === 1 ? "piece" : "pieces"} of feedback
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {importedFeedback.slice(0, 6).map((feedback, idx) => {
-                  console.log(
-                    "[v0] Screenshot card",
-                    idx,
-                    "- source_type:",
-                    feedback.source_type,
-                    "| image_url:",
-                    !!feedback.image_url,
-                  )
+                  const sourceType = feedback.source_type || "Upload"
+                  const getSourcePillStyle = (type: string) => {
+                    switch (type) {
+                      case "LinkedIn":
+                        return "bg-[#0077B5] text-white" // LinkedIn blue
+                      case "Email":
+                        return "bg-neutral-600 text-white" // Neutral grey
+                      case "DM":
+                        return "bg-neutral-800 text-white" // Dark grey
+                      case "Review":
+                        return "bg-blue-500 text-white" // Trust blue
+                      default:
+                        return "bg-neutral-400 text-white" // Light grey
+                    }
+                  }
+
                   return (
                     <div
                       key={feedback.id}
-                      className="p-6 rounded-xl border border-neutral-200 bg-white hover:shadow-lg transition-shadow duration-300"
+                      className="p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white hover:shadow-lg transition-shadow duration-300 relative flex flex-col"
                     >
                       {feedback.image_url && (
-                        <div className="mb-4 rounded-lg overflow-hidden border border-neutral-200 relative">
+                        <div className="mb-4 rounded-lg overflow-hidden border border-neutral-200">
                           <img
                             src={feedback.image_url || "/placeholder.svg"}
                             alt={`Feedback screenshot ${idx + 1}`}
                             className="w-full h-auto"
                           />
-                          {feedback.source_type && (
-                            <div className="absolute top-3 right-3">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium shadow-sm ${
-                                  feedback.source_type === "LinkedIn"
-                                    ? "bg-blue-500 text-white"
-                                    : feedback.source_type === "Email"
-                                      ? "bg-purple-500 text-white"
-                                      : feedback.source_type === "DM"
-                                        ? "bg-green-500 text-white"
-                                        : feedback.source_type === "Review"
-                                          ? "bg-orange-500 text-white"
-                                          : "bg-neutral-500 text-white"
-                                }`}
-                              >
-                                {feedback.source_type}
-                              </span>
-                            </div>
-                          )}
                         </div>
                       )}
                       {feedback.ai_extracted_excerpt && (
-                        <p className="text-sm text-neutral-700 leading-relaxed mb-4">{feedback.ai_extracted_excerpt}</p>
+                        <p
+                          className="text-base leading-relaxed text-neutral-700 mb-4 flex-1"
+                          style={{ lineHeight: "1.65" }}
+                        >
+                          {feedback.ai_extracted_excerpt}
+                        </p>
                       )}
-                      {feedback.giver_name && (
-                        <div className="text-xs text-neutral-500">
-                          <span className="font-medium">{feedback.giver_name}</span>
-                          {feedback.giver_company && <span> · {feedback.giver_company}</span>}
+                      <div className="flex items-end justify-between gap-4 mt-auto pt-4 border-t border-neutral-100">
+                        <div className="text-xs text-neutral-500 flex-1">
+                          {feedback.giver_name && (
+                            <>
+                              <span className="font-medium">{feedback.giver_name}</span>
+                              {feedback.giver_role && <span> · {feedback.giver_role}</span>}
+                              {feedback.giver_company && <span> · {feedback.giver_company}</span>}
+                            </>
+                          )}
                         </div>
-                      )}
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getSourcePillStyle(sourceType)}`}
+                        >
+                          {sourceType}
+                        </span>
+                      </div>
                     </div>
                   )
                 })}
@@ -533,28 +561,28 @@ export function PremierProfileClient({
             </section>
           </>
         )}
-        {/* </CHANGE> */}
 
+        {/* Final CTA section */}
         <div className="border-t border-neutral-100" />
-        <section className="py-16 md:py-20">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h3 className="text-3xl md:text-4xl font-semibold text-neutral-900">Build your own Nomee profile</h3>
-            <p className="text-lg text-neutral-600 leading-relaxed max-w-[60ch] mx-auto">
+        <section className="py-12 sm:py-16 md:py-20">
+          <div className="max-w-3xl mx-auto text-center space-y-4 sm:space-y-6">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">
+              Build your own Nomee profile
+            </h3>
+            <p className="text-base sm:text-lg text-neutral-600 leading-relaxed max-w-[60ch] mx-auto">
               Get feedback from people you've worked with. Create a profile that shows how you collaborate, solve
               problems, and make an impact.
             </p>
-            <div className="pt-4">
-              <Button
-                size="lg"
+            <div className="pt-2 sm:pt-4">
+              <button
                 onClick={() => (window.location.href = "/signup")}
-                className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-6 text-lg rounded-xl"
+                className="bg-neutral-900 hover:bg-neutral-800 active:bg-neutral-950 text-white px-8 py-3 min-h-[48px] text-base sm:text-lg rounded-xl transition-colors touch-manipulation"
               >
                 Get started for free
-              </Button>
+              </button>
             </div>
           </div>
         </section>
-        {/* </CHANGE> */}
       </div>
     </div>
   )
