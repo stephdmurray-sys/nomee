@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { RELATIONSHIP_OPTIONS, DURATION_OPTIONS } from "@/lib/nomee-enums"
 import { TRAIT_CATEGORIES } from "@/lib/trait-categories"
 import { VoiceRecorder } from "@/components/voice-recorder"
+import { Check } from "lucide-react"
 
 type ProfileData = {
   id: string
@@ -21,6 +22,21 @@ type StepName = "entry" | "relationship" | "duration" | "traits" | "message" | "
 
 type ContributorFlowProps = {
   profile: ProfileData
+}
+
+function ProgressBar({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
+  const percentage = (currentStep / totalSteps) * 100
+
+  return (
+    <div className="mb-8">
+      <div className="h-2 w-full bg-neutral-200 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-neutral-900 transition-all duration-300 ease-out"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  )
 }
 
 export default function ContributorFlow({ profile }: ContributorFlowProps) {
@@ -43,11 +59,53 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   // Validation errors
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
+  const [emailValidation, setEmailValidation] = useState<"valid" | "invalid" | "">("")
+
   const firstNameValue = profile.full_name.split(" ")[0]
+
+  const getStepNumber = (currentStep: StepName): number => {
+    const stepMap: Record<StepName, number> = {
+      entry: 0,
+      relationship: 1,
+      duration: 2,
+      traits: 3,
+      message: 4,
+      identity: 5,
+      voice: 6,
+      submitted: 7,
+    }
+    return stepMap[currentStep]
+  }
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey && !loading) {
+        const activeElement = document.activeElement as HTMLElement
+        if (activeElement?.tagName !== "TEXTAREA" && activeElement?.tagName !== "SELECT") {
+          const continueButton = document.querySelector("[data-continue-button]") as HTMLButtonElement
+          if (continueButton && !continueButton.disabled) {
+            continueButton.click()
+          }
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyPress)
+    return () => window.removeEventListener("keydown", handleKeyPress)
+  }, [loading])
 
   const handleRecordingComplete = (blob: Blob) => {
     console.log("[v0] Received recording blob:", blob.size, "bytes")
     setVoiceBlob(blob)
+  }
+
+  const validateEmailInline = (email: string) => {
+    if (!email) {
+      setEmailValidation("")
+      return
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    setEmailValidation(emailRegex.test(email) ? "valid" : "invalid")
   }
 
   // STEP 1: Emotional Entry
@@ -63,7 +121,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
             <p className="mb-8 text-lg text-neutral-600">
               Your words help capture what it genuinely felt like to work together.
             </p>
-            <Button onClick={() => setStep("relationship")} size="lg" className="px-8">
+            <Button onClick={() => setStep("relationship")} size="lg" className="px-8" data-continue-button>
               Start
             </Button>
           </Card>
@@ -77,6 +135,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     return (
       <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-2xl">
+          <ProgressBar currentStep={1} totalSteps={6} />
           <div className="mb-8">
             <p className="mb-4 text-sm text-neutral-600">Step 1 of 6</p>
             <h1 className="mb-2 text-3xl font-semibold text-neutral-900">How did you work with {profile.full_name}?</h1>
@@ -119,6 +178,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                 }}
                 className="flex-1"
                 size="lg"
+                data-continue-button
               >
                 Continue
               </Button>
@@ -134,6 +194,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     return (
       <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-2xl">
+          <ProgressBar currentStep={2} totalSteps={6} />
           <div className="mb-8">
             <p className="mb-4 text-sm text-neutral-600">Step 2 of 6</p>
             <h1 className="mb-2 text-3xl font-semibold text-neutral-900">How long did you work with them?</h1>
@@ -174,6 +235,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                 }}
                 className="flex-1"
                 size="lg"
+                data-continue-button
               >
                 Continue
               </Button>
@@ -207,40 +269,50 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     return (
       <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-3xl">
+          <ProgressBar currentStep={3} totalSteps={6} />
           <div className="mb-8">
             <p className="mb-4 text-sm text-neutral-600">Step 3 of 6</p>
             <h1 className="mb-2 text-3xl font-semibold text-neutral-900">
               Choose up to 2 traits per section that best reflect your experience
             </h1>
             <p className="text-neutral-600">
-              At least 1 trait total is required. You can skip sections if nothing fits.
+              {totalSelected === 0 && "Select at least 1 trait to continue."}
+              {totalSelected > 0 && `${totalSelected} trait${totalSelected === 1 ? "" : "s"} selected`}
             </p>
           </div>
 
           <div className="space-y-8">
             {Object.entries(TRAIT_CATEGORIES).map(([categoryKey, category]) => {
               const selected = selectedTraits[categoryKey] || []
+              const isMaxed = selected.length >= 2
 
               return (
                 <Card key={categoryKey} className="p-6">
                   <div className="mb-4">
                     <h2 className="text-xl font-semibold text-neutral-900">{category.title}</h2>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm text-neutral-600">{selected.length} of 2 selected</span>
+                      <span className={`text-sm ${isMaxed ? "text-neutral-900 font-medium" : "text-neutral-600"}`}>
+                        {selected.length} of 2 selected {isMaxed && "✓"}
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
                     {category.traits.map((trait) => {
                       const isSelected = selected.includes(trait.id)
+                      const isDisabled = !isSelected && isMaxed
+
                       return (
                         <button
                           key={trait.id}
-                          onClick={() => handleTraitToggle(categoryKey, trait.id)}
+                          onClick={() => !isDisabled && handleTraitToggle(categoryKey, trait.id)}
+                          disabled={isDisabled}
                           className={`rounded-full px-4 py-2 text-sm transition-all ${
                             isSelected
                               ? "bg-neutral-900 text-white ring-2 ring-neutral-900 ring-offset-2"
-                              : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                              : isDisabled
+                                ? "bg-neutral-100 text-neutral-400 cursor-not-allowed"
+                                : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200 cursor-pointer"
                           }`}
                         >
                           {trait.label}
@@ -274,6 +346,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               }}
               className="flex-1"
               size="lg"
+              data-continue-button
             >
               Continue
             </Button>
@@ -340,6 +413,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     return (
       <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-2xl">
+          <ProgressBar currentStep={4} totalSteps={6} />
           <div className="mb-8">
             <p className="mb-4 text-sm text-neutral-600">Step 4 of 6</p>
             <h1 className="mb-2 text-3xl font-semibold text-neutral-900">
@@ -357,6 +431,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               }}
               placeholder={`Working with ${firstNameValue} felt like having someone who truly…`}
               className="min-h-[180px] text-base"
+              autoFocus
             />
             <p className="mt-2 text-right text-sm text-neutral-500">
               {charCount} / {maxChars}
@@ -378,7 +453,13 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               <Button onClick={() => setStep("traits")} variant="outline" size="lg" disabled={loading}>
                 Back
               </Button>
-              <Button onClick={handleMessageSubmit} disabled={loading} className="flex-1" size="lg">
+              <Button
+                onClick={handleMessageSubmit}
+                disabled={loading}
+                className="flex-1"
+                size="lg"
+                data-continue-button
+              >
                 {loading ? "Saving..." : "Continue"}
               </Button>
             </div>
@@ -458,6 +539,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     return (
       <div className="min-h-screen bg-neutral-50 py-12 px-4">
         <div className="mx-auto max-w-2xl">
+          <ProgressBar currentStep={5} totalSteps={6} />
           <div className="mb-8">
             <p className="mb-4 text-sm text-neutral-600">Step 5 of 6</p>
             <h1 className="mb-2 text-3xl font-semibold text-neutral-900">Who's this from?</h1>
@@ -478,6 +560,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                     setValidationErrors((prev) => ({ ...prev, firstName: "" }))
                   }}
                   className="mt-2"
+                  autoFocus
                 />
                 {validationErrors.firstName && (
                   <p className="mt-1 text-sm text-red-600">{validationErrors.firstName}</p>
@@ -508,16 +591,22 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                 <Label htmlFor="email" className="text-neutral-900">
                   Email
                 </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value)
-                    setValidationErrors((prev) => ({ ...prev, email: "" }))
-                  }}
-                  className="mt-2"
-                />
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      setValidationErrors((prev) => ({ ...prev, email: "" }))
+                      validateEmailInline(e.target.value)
+                    }}
+                    className="mt-2 pr-10"
+                  />
+                  {emailValidation === "valid" && (
+                    <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-600 mt-1" />
+                  )}
+                </div>
                 {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
                 <p className="mt-2 text-sm text-neutral-500">
                   Your email is only used to verify authenticity. It's never shown publicly.
@@ -535,8 +624,14 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               <Button onClick={() => setStep("message")} variant="outline" size="lg" disabled={loading}>
                 Back
               </Button>
-              <Button onClick={handleIdentityUpdate} disabled={loading} className="flex-1" size="lg">
-                {loading ? "Finishing..." : "Finish"}
+              <Button
+                onClick={handleIdentityUpdate}
+                disabled={loading}
+                className="flex-1"
+                size="lg"
+                data-continue-button
+              >
+                {loading ? "Finishing..." : "Continue to voice (optional)"}
               </Button>
             </div>
           </Card>
@@ -547,14 +642,8 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
 
   // STEP 7: Voice (Optional)
   if (step === "voice") {
-    const handleSkip = () => {
-      console.log("[v0] User skipped voice recording")
-      setStep("submitted")
-    }
-
-    const handleUploadVoice = async () => {
+    const handleSubmitWithVoice = async () => {
       if (!voiceBlob || !contributionId) {
-        console.log("[v0] No voice blob or contributionId, moving to submitted")
         setStep("submitted")
         return
       }
@@ -590,18 +679,19 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
       setStep("submitted")
     }
 
-    const handleContinue = () => {
-      console.log("[v0] User chose to continue without voice")
+    const handleSkipVoice = () => {
+      console.log("[v0] User skipped voice recording")
       setStep("submitted")
     }
 
     return (
       <div className="min-h-screen bg-neutral-50 py-12 px-4">
         <div className="mx-auto max-w-2xl">
+          <ProgressBar currentStep={6} totalSteps={6} />
           <div className="mb-8">
             <p className="mb-4 text-sm text-neutral-600">Step 6 of 6 (Optional)</p>
             <h1 className="mb-2 text-3xl font-semibold text-neutral-900">Want to read it in your own voice?</h1>
-            <p className="text-neutral-600">Optional — adds authenticity, totally up to you.</p>
+            <p className="text-neutral-600">Adds a personal touch — completely optional.</p>
           </div>
 
           <VoiceRecorder quote={message} onRecordingComplete={handleRecordingComplete} />
@@ -614,20 +704,13 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
 
           <div className="mt-8 flex flex-col gap-3">
             {voiceBlob ? (
-              <>
-                <Button size="lg" onClick={handleUploadVoice} disabled={loading}>
-                  {loading ? "Uploading..." : "Upload voice note"}
-                </Button>
-                <Button size="lg" variant="outline" onClick={handleContinue} disabled={loading}>
-                  Continue without uploading
-                </Button>
-              </>
+              <Button size="lg" onClick={handleSubmitWithVoice} disabled={loading} data-continue-button>
+                {loading ? "Submitting..." : "Submit with voice note"}
+              </Button>
             ) : (
-              <>
-                <Button size="lg" variant="outline" onClick={handleSkip}>
-                  Skip — no voice note
-                </Button>
-              </>
+              <Button size="lg" variant="outline" onClick={handleSkipVoice} data-continue-button>
+                Skip — submit without voice
+              </Button>
             )}
           </div>
         </div>
@@ -647,11 +730,13 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
           </div>
         </div>
 
-        <h1 className="mb-4 text-3xl font-semibold text-neutral-900">Your Nomee is complete</h1>
-        <p className="mb-8 text-neutral-600">Thank you for taking the time — this really matters.</p>
+        <h1 className="mb-4 text-3xl font-semibold text-neutral-900">Thank you — your voice matters</h1>
+        <p className="mb-8 text-neutral-600">
+          {profile.full_name} will see your Nomee and appreciate you taking the time to share your perspective.
+        </p>
 
         <Button variant="outline" size="lg" onClick={() => (window.location.href = "/")}>
-          Create your own Nomee
+          Build your own Nomee
         </Button>
       </Card>
     </div>

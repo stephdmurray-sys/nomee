@@ -1,45 +1,58 @@
 /**
  * Maps raw relationship values from database into standardized filter categories
  */
-export type RelationshipFilterCategory = "All" | "Manager" | "Direct report" | "Peer" | "Client" | "Other"
+export type RelationshipFilterCategory =
+  | "All"
+  | "Manager"
+  | "Teammate"
+  | "Direct Report"
+  | "Client"
+  | "Vendor"
+  | "Mentor"
+  | "Collaborator"
 
 export function mapRelationshipToCategory(relationship: string | null | undefined): RelationshipFilterCategory {
-  if (!relationship) return "Other"
+  if (!relationship) return "Collaborator"
 
   const normalized = relationship.toLowerCase().trim()
 
-  // Manager/supervisor/lead → Manager
+  // Manager
   if (normalized.includes("manager") || normalized.includes("supervisor") || normalized.includes("lead")) {
     return "Manager"
   }
 
-  // Direct report/reporting to me → Direct report
-  if (
-    normalized.includes("direct_report") ||
-    normalized.includes("direct report") ||
-    normalized.includes("reporting to me")
-  ) {
-    return "Direct report"
+  // Direct Report
+  if (normalized === "direct_report" || normalized === "direct report" || normalized.includes("reporting to me")) {
+    return "Direct Report"
   }
 
-  // Peer/teammate/coworker/collaborator → Peer
-  if (
-    normalized.includes("peer") ||
-    normalized.includes("teammate") ||
-    normalized.includes("coworker") ||
-    normalized.includes("collaborator") ||
-    normalized.includes("colleague")
-  ) {
-    return "Peer"
+  // Teammate
+  if (normalized === "teammate" || normalized.includes("coworker") || normalized.includes("colleague")) {
+    return "Teammate"
   }
 
-  // Client/customer/brand → Client
-  if (normalized.includes("client") || normalized.includes("customer") || normalized.includes("brand")) {
+  // Client
+  if (normalized === "client" || normalized.includes("customer") || normalized.includes("brand")) {
     return "Client"
   }
 
-  // Everything else → Other
-  return "Other"
+  // Vendor
+  if (normalized === "vendor" || normalized.includes("supplier") || normalized.includes("contractor")) {
+    return "Vendor"
+  }
+
+  // Mentor (includes legacy "advisor" mapping)
+  if (normalized === "mentor" || normalized === "advisor" || normalized.includes("coach")) {
+    return "Mentor"
+  }
+
+  // Collaborator (includes legacy "peer", "partner", "founder" mappings)
+  if (normalized === "collaborator" || normalized === "peer" || normalized === "partner" || normalized === "founder") {
+    return "Collaborator"
+  }
+
+  // Default fallback
+  return "Collaborator"
 }
 
 /**
@@ -49,10 +62,12 @@ export function getRelationshipCounts(contributions: any[]): Record<Relationship
   const counts: Record<RelationshipFilterCategory, number> = {
     All: contributions.length,
     Manager: 0,
-    "Direct report": 0,
-    Peer: 0,
+    Teammate: 0,
+    "Direct Report": 0,
     Client: 0,
-    Other: 0,
+    Vendor: 0,
+    Mentor: 0,
+    Collaborator: 0,
   }
 
   contributions.forEach((c) => {

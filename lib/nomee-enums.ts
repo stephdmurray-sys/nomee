@@ -3,10 +3,8 @@ export const RELATIONSHIP_OPTIONS = [
   { value: "teammate", label: "Teammate" },
   { value: "direct_report", label: "Direct Report" },
   { value: "client", label: "Client" },
-  { value: "partner", label: "Partner" },
-  { value: "advisor", label: "Advisor" },
-  { value: "founder", label: "Founder" },
   { value: "vendor", label: "Vendor" },
+  { value: "mentor", label: "Mentor" },
   { value: "collaborator", label: "Collaborator" },
 ] as const
 
@@ -25,7 +23,16 @@ export type RelationshipValue = (typeof RELATIONSHIP_OPTIONS)[number]["value"]
 export type DurationValue = (typeof DURATION_OPTIONS)[number]["value"]
 
 export function getRelationshipLabel(value: string): string {
-  const option = RELATIONSHIP_OPTIONS.find((opt) => opt.value === value)
+  // Map legacy values to canonical values
+  const legacyMapping: Record<string, string> = {
+    peer: "collaborator",
+    advisor: "mentor",
+    partner: "collaborator",
+    founder: "collaborator",
+  }
+
+  const mappedValue = legacyMapping[value.toLowerCase()] || value
+  const option = RELATIONSHIP_OPTIONS.find((opt) => opt.value === mappedValue)
   return option?.label || value
 }
 
