@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { PremierProfileClient } from "./premier-profile-client"
 import { generateVibeCheck } from "@/lib/generate-vibe-check"
 import { extractAnchorQuote } from "@/lib/extract-anchor-quote"
@@ -7,6 +7,12 @@ import { generateInterpretationSentence } from "@/lib/generate-interpretation-se
 
 export default async function PublicNomeePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params
+
+  const staticRoutes = ["how-it-works", "what-is-nomee", "pricing", "auth", "dashboard", "c", "api"]
+  if (staticRoutes.includes(username)) {
+    // Return null to let Next.js handle the static route
+    redirect("/" + username)
+  }
 
   console.log("[v0] PublicNomeePage: Loading profile for username:", username)
 

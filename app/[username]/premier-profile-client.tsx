@@ -46,16 +46,15 @@ export function PremierProfileClient({
   )
 
   const contributions = dedupeContributions(rawContributions)
-  const voiceContributions = contributions.filter((c) => c.audio_url && c.audio_url.trim() !== "")
+  const voiceContributions = contributions.filter((c) => c.voice_url)
+  const voiceNotesCount = voiceContributions.length
 
   console.log("[v0] PremierProfileClient: voiceContributions.length:", voiceContributions.length)
+  console.log("[v0] PremierProfileClient: voiceNotesCount (determines section visibility):", voiceNotesCount)
+  console.log("[v0] PremierProfileClient: Will 'In Their Own Words' section render?", voiceNotesCount > 0)
 
   const analyzableUploads = rawImportedFeedback.filter((u) => u.included_in_analysis && u.ocr_text)
   const totalUploads = rawImportedFeedback.length
-  const voiceNotesCount = voiceContributions.length
-
-  console.log("[v0] PremierProfileClient: voiceNotesCount (determines section visibility):", voiceNotesCount)
-  console.log("[v0] PremierProfileClient: Will 'In Their Own Words' section render?", voiceNotesCount > 0)
 
   const dedupedImportedFeedback = Array.from(
     new Map(
@@ -75,7 +74,6 @@ export function PremierProfileClient({
 
     return !mentionsDifferentName
   })
-  // </CHANGE>
 
   const [selectedTraits, setSelectedTraits] = useState<string[]>([])
   const [hoveredTrait, setHoveredTrait] = useState<string | null>(null)
@@ -285,8 +283,13 @@ export function PremierProfileClient({
                     </span>
                     {totalContributions > 0 && (
                       <span className="text-xs text-neutral-500 block mt-1">
-                        {totalContributions} {totalContributions === 1 ? "contribution" : "contributions"} •{" "}
-                        {voiceNotesCount} {voiceNotesCount === 1 ? "voice note" : "voice notes"}
+                        {totalContributions} {totalContributions === 1 ? "contribution" : "contributions"}
+                        {voiceNotesCount > 0 && (
+                          <>
+                            {" "}
+                            • {voiceNotesCount} {voiceNotesCount === 1 ? "voice note" : "voice notes"}
+                          </>
+                        )}
                         {totalUploads > 0 && (
                           <>
                             {" "}

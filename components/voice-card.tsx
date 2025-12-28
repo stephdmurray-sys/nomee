@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown } from "lucide-react"
 import { IntimateAudioPlayer } from "./intimate-audio-player"
 import { highlightQuote } from "@/lib/highlight-quote"
 import { extractKeywordsFromText } from "@/lib/extract-keywords-from-text"
@@ -28,7 +27,6 @@ interface VoiceCardProps {
 
 export function VoiceCard({ contribution, isMobile = false, highlightPatterns = [], profileName }: VoiceCardProps) {
   const [showFullTranscript, setShowFullTranscript] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
 
   const allTraits = [
     ...(contribution.traits_category1 || []),
@@ -39,14 +37,7 @@ export function VoiceCard({ contribution, isMobile = false, highlightPatterns = 
 
   const effectivePatterns = extractKeywordsFromText(contribution.written_note || "", allTraits)
 
-  const truncateToSentences = (text: string, maxSentences = 3) => {
-    if (!text) return ""
-    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
-    if (sentences.length <= maxSentences) return text
-    return sentences.slice(0, maxSentences).join(" ").trim()
-  }
-
-  const previewText = truncateToSentences(contribution.written_note || "", 3)
+  const previewText = contribution.written_note?.slice(0, 200) || ""
   const fullText = contribution.written_note || ""
   const hasMoreText = fullText.length > previewText.length
 
@@ -54,55 +45,41 @@ export function VoiceCard({ contribution, isMobile = false, highlightPatterns = 
   const highlightedFull = fullText ? highlightQuote(fullText, effectivePatterns, 5) : null
 
   return (
-    <div
-      className={`
-        rounded-xl p-5 sm:p-6 space-y-4 transition-all duration-300 cursor-pointer relative
-        ${isMobile ? "min-w-[85vw] snap-center" : ""}
-        ${
-          isPlaying
-            ? "border-blue-300 bg-blue-50/30 shadow-lg scale-[1.01]"
-            : "bg-white border border-blue-200/60 hover:border-blue-300 hover:shadow-md hover:scale-[1.01]"
-        }
-      `}
-    >
-      <IntimateAudioPlayer audioUrl={contribution.voice_url!} onPlayingChange={setIsPlaying} />
+    <div className={`rounded-xl p-6 bg-white border border-gray-200 ${isMobile ? "min-w-[85vw] snap-center" : ""}`}>
+      <div className="space-y-3">
+        <IntimateAudioPlayer audioUrl={contribution.voice_url!} />
 
-      {highlightedPreview && (
-        <div className="space-y-2">
-          <div className="text-base leading-relaxed text-neutral-700" style={{ lineHeight: "1.65" }}>
-            {showFullTranscript ? highlightedFull : highlightedPreview}
+        {highlightedPreview && (
+          <div className="space-y-2">
+            <div className="text-sm leading-relaxed text-gray-700">
+              {showFullTranscript ? highlightedFull : highlightedPreview}
+            </div>
+
+            {hasMoreText && (
+              <button
+                onClick={() => setShowFullTranscript(!showFullTranscript)}
+                className="text-sm text-blue-600 hover:text-blue-700 min-h-[44px]"
+              >
+                {showFullTranscript ? "Show less" : "Read more"}
+              </button>
+            )}
           </div>
-
-          {hasMoreText && (
-            <button
-              onClick={() => setShowFullTranscript(!showFullTranscript)}
-              className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 active:text-blue-600 transition-colors min-h-[44px] -ml-2 pl-2"
-              aria-expanded={showFullTranscript}
-            >
-              <span>{showFullTranscript ? "Show less" : "Read more"}</span>
-              <ChevronDown
-                className={`h-3.5 w-3.5 transition-transform duration-200 ${showFullTranscript ? "rotate-180" : ""}`}
-              />
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Contributor info - clean hierarchy */}
-      <div className="space-y-1 pt-2 border-t border-neutral-200">
-        <p className="text-base font-semibold text-neutral-900">{contribution.contributor_name}</p>
-        <div className="flex items-center gap-2 text-sm text-neutral-600">
-          <span className="capitalize">{contribution.relationship?.replace(/_/g, " ")}</span>
-          {contribution.contributor_company && (
-            <>
-              <span>•</span>
-              <span>{contribution.contributor_company}</span>
-            </>
-          )}
-        </div>
-        {contribution.audio_duration_ms && (
-          <p className="text-xs text-neutral-500">{Math.round(contribution.audio_duration_ms / 1000)}s recording</p>
         )}
+
+        <div className="flex flex-wrap gap-2 pt-2">
+          {allTraits.slice(0, 5).map((trait, idx) => (
+            <span key={idx} className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
+              {trait}
+            </span>
+          ))}
+        </div>
+
+        <div className="border-t border-gray-100 pt-3 mt-4">
+          <div className="text-sm font-medium text-gray-900">{contribution.contributor_name}</div>
+          {contribution.relationship && (
+            <div className="text-xs text-gray-500 capitalize">{contribution.relationship.replace(/_/g, " ")}</div>
+          )}
+        </div>
       </div>
     </div>
   )
