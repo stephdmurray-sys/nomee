@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { FloatingQuoteCards } from "./floating-quote-cards"
+import { ReviewCardPreview } from "./review-card-preview"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 
@@ -60,6 +60,8 @@ export function RealNomeeSlice() {
     { label: "Organized", count: 4 },
     { label: "Clear communicator", count: 4 },
   ]
+
+  const highlightedTerms = topTraits.map((t) => t.label.toLowerCase())
 
   // Auto-rotate top card every 6 seconds
   useEffect(() => {
@@ -125,19 +127,25 @@ export function RealNomeeSlice() {
               </div>
             </div>
 
-            {/* C. Contributions feed (real component with auto-rotation) */}
-            <div className="space-y-6 md:space-y-0">
+            {/* C. Review cards - full-width stacked layout */}
+            <div className="space-y-3">
               <motion.div
                 key={currentCardIndex}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.5 }}
-                className="overflow-x-auto md:overflow-x-visible snap-x snap-mandatory scrollbar-thin scrollbar-thumb-neutral-300 scrollbar-track-transparent pb-4"
+                className="flex flex-col gap-3"
               >
-                <div className="flex gap-4 md:grid md:grid-cols-1 min-w-full">
-                  <FloatingQuoteCards contributions={visibleContributions} />
-                </div>
+                {visibleContributions.map((contribution) => (
+                  <ReviewCardPreview
+                    key={contribution.id}
+                    name={contribution.contributor_name}
+                    relationship={contribution.relationship}
+                    text={contribution.written_note}
+                    highlightedTerms={highlightedTerms}
+                  />
+                ))}
               </motion.div>
             </div>
 

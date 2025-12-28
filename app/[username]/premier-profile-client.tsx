@@ -13,6 +13,7 @@ import { categorizeTestimonials } from "@/lib/categorize-testimonials"
 import { extractRepeatedPhrases } from "@/lib/extract-repeated-phrases"
 import { dedupeContributions } from "@/lib/dedupe-contributions"
 import { extractHighlightPatterns } from "@/lib/extract-highlight-patterns"
+import Link from "next/link"
 import type { Profile, Contribution, ImportedFeedback, Trait } from "@/lib/types"
 
 interface PremierProfileClientProps {
@@ -522,14 +523,14 @@ export function PremierProfileClient({
                   return (
                     <div
                       key={feedback.id}
-                      className="p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white hover:shadow-lg transition-shadow duration-300 relative flex flex-col"
+                      className="group p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white hover:shadow-xl hover:scale-[1.02] hover:border-neutral-300 transition-all duration-300 ease-out relative flex flex-col cursor-pointer"
                     >
                       {feedback.image_url && (
                         <div className="mb-4 rounded-lg overflow-hidden border border-neutral-200">
                           <img
                             src={feedback.image_url || "/placeholder.svg"}
                             alt={`Feedback screenshot ${idx + 1}`}
-                            className="w-full h-auto"
+                            className="w-full h-auto group-hover:brightness-105 transition-all duration-300"
                           />
                         </div>
                       )}
@@ -577,12 +578,12 @@ export function PremierProfileClient({
               problems, and make an impact.
             </p>
             <div className="pt-2 sm:pt-4">
-              <button
-                onClick={() => (window.location.href = "/signup")}
-                className="bg-neutral-900 hover:bg-neutral-800 active:bg-neutral-950 text-white px-8 py-3 min-h-[48px] text-base sm:text-lg rounded-xl transition-colors touch-manipulation"
+              <Link
+                href="/auth/signup"
+                className="inline-flex items-center justify-center bg-neutral-900 hover:bg-neutral-800 active:bg-neutral-950 text-white px-8 py-3 min-h-[48px] text-base sm:text-lg rounded-xl transition-colors touch-manipulation"
               >
                 Get started for free
-              </button>
+              </Link>
             </div>
           </div>
         </section>
