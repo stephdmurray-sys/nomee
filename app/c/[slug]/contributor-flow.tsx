@@ -46,6 +46,8 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   const [step, setStep] = useState<StepName>("entry")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [messageSaveStatus, setMessageSaveStatus] = useState<string>("idle")
+  const [saveRetryCount, setSaveRetryCount] = useState<number>(0)
 
   // Form data
   const [relationship, setRelationship] = useState("")
@@ -58,10 +60,6 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   const [email, setEmail] = useState("")
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
   const [contributionId, setContributionId] = useState<string | null>(null)
-  const [companyOrOrg, setCompanyOrOrg] = useState("") // Added state for company or org
-
-  const [messageSaveStatus, setMessageSaveStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle")
-  const [saveRetryCount, setSaveRetryCount] = useState(0)
   const [draftToken, setDraftToken] = useState<string | null>(null)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [emailValidation, setEmailValidation] = useState<string>("")
@@ -87,7 +85,6 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         if (parsed.lastName) setLastName(parsed.lastName)
         if (parsed.email) setEmail(parsed.email)
         if (parsed.contributionId) setContributionId(parsed.contributionId)
-        if (parsed.companyOrOrg) setCompanyOrOrg(parsed.companyOrOrg) // Restore company or org
         if (parsed.draftToken) setDraftToken(parsed.draftToken)
         // Only restore step if not submitted
         if (parsed.step && parsed.step !== "submitted") setStep(parsed.step)
@@ -128,7 +125,6 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         lastName,
         email,
         contributionId,
-        companyOrOrg, // Include company or org in draft
         draftToken,
         step: step !== "submitted" ? step : "voice", // Don't restore to submitted
       }
@@ -144,7 +140,6 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     lastName,
     email,
     contributionId,
-    companyOrOrg,
     draftToken,
     step,
     profile.slug,
@@ -643,7 +638,6 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
       // Validation
       const errors: Record<string, string> = {}
       if (!firstName.trim()) errors.firstName = "First name is required"
-      if (!lastName.trim()) errors.lastName = "Last name is required"
       if (!email.trim()) errors.email = "Email is required"
       else if (!isValidEmail(email.trim())) errors.email = "Please enter a valid email"
 
@@ -668,11 +662,11 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               profileId: profile.id,
-              contributorName: `${firstName.trim()} ${lastName.trim()}`,
+              contributorName: `${firstName.trim()}${lastName.trim() ? ` ${lastName.trim()}` : ""}`,
               contributorEmail: email.trim().toLowerCase(),
-              companyOrOrg: companyOrOrg || null,
+              companyOrOrg: relationshipContext || null, // Use relationshipContext from Step 1
               relationship,
-              relationshipContext, // Include relationship context in API call
+              relationshipContext,
               duration,
               message: message.trim(),
               selectedTraitIds: allSelectedTraitIds,
@@ -709,7 +703,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contributionId: finalContributionId,
-            contributorName: `${firstName.trim()} ${lastName.trim()}`,
+            contributorName: `${firstName.trim()}${lastName.trim() ? ` ${lastName.trim()}` : ""}`,
             contributorEmail: email.trim().toLowerCase(),
           }),
         })
@@ -773,7 +767,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
 
               <div>
                 <Label htmlFor="lastName" className="text-neutral-900">
-                  Last name
+                  Last name <span className="text-neutral-400 font-normal">(optional)</span>
                 </Label>
                 <Input
                   id="lastName"
@@ -813,25 +807,6 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                   Your email is only used to verify authenticity. It's never shown publicly.
                 </p>
               </div>
-
-              <div>
-                <Label htmlFor="companyOrOrg" className="text-neutral-900">
-                  Company/Organization
-                </Label>
-                <Input
-                  id="companyOrOrg"
-                  type="text"
-                  value={companyOrOrg}
-                  onChange={(e) => {
-                    setCompanyOrOrg(e.target.value)
-                    setValidationErrors((prev) => ({ ...prev, companyOrOrg: "" }))
-                  }}
-                  className="mt-2"
-                />
-                {validationErrors.companyOrOrg && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.companyOrOrg}</p>
-                )}
-              </div>
             </div>
 
             {error && (
@@ -846,7 +821,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               </Button>
               <Button
                 onClick={handleIdentityUpdate}
-                disabled={loading}
+                disabled={loading || !firstName.trim() || !email.trim() || emailValidation !== "valid"}
                 className="flex-1"
                 size="lg"
                 data-continue-button

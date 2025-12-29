@@ -389,13 +389,13 @@ export function PremierProfileClient({
                     <div className="space-y-2">
                       {profileAnalysis.traitSignals.slice(0, 5).map((trait) => {
                         const maxCount = Math.max(...profileAnalysis.traitSignals.map((t) => t.count))
-                        const bgOpacity = 0.15 + (trait.count / maxCount) * 0.45
+                        const bgOpacity = 0.4 + (trait.count / maxCount) * 0.3
 
                         return (
                           <div
                             key={trait.label}
-                            className="flex items-center justify-between px-4 py-3 rounded-lg border border-blue-200/50 transition-all hover:border-blue-400/70 hover:shadow-sm"
-                            style={{ backgroundColor: `rgba(59, 130, 246, ${bgOpacity})` }}
+                            className="flex items-center justify-between px-4 py-3 rounded-lg border border-blue-100 transition-all hover:border-blue-200 hover:shadow-sm"
+                            style={{ backgroundColor: `rgba(219, 234, 254, ${bgOpacity})` }}
                           >
                             <span className="font-semibold text-sm sm:text-base text-neutral-900">{trait.label}</span>
                             <span className="text-xs font-semibold text-neutral-700">×{trait.count}</span>
@@ -415,7 +415,7 @@ export function PremierProfileClient({
                       {profileAnalysis.traitSignals.slice(0, 5).map((trait) => {
                         const isSelected = selectedHeatmapTrait === trait.label
                         const maxCount = Math.max(...profileAnalysis.traitSignals.map((t) => t.count))
-                        const bgOpacity = 0.15 + (trait.count / maxCount) * 0.45
+                        const bgOpacity = 0.4 + (trait.count / maxCount) * 0.3
 
                         return (
                           <button
@@ -425,23 +425,15 @@ export function PremierProfileClient({
                             }
                             className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all ${
                               isSelected
-                                ? "border-blue-600 shadow-md scale-[1.02]"
-                                : "border-blue-200/50 hover:border-blue-400/70 hover:shadow-sm hover:scale-[1.01]"
+                                ? "border-blue-400 shadow-md scale-[1.02] bg-blue-100"
+                                : "border-blue-100 hover:border-blue-200 hover:shadow-sm hover:scale-[1.01]"
                             }`}
                             style={{
-                              backgroundColor: isSelected
-                                ? "rgba(59, 130, 246, 0.7)"
-                                : `rgba(59, 130, 246, ${bgOpacity})`,
+                              backgroundColor: isSelected ? undefined : `rgba(219, 234, 254, ${bgOpacity})`,
                             }}
                           >
-                            <span
-                              className={`font-semibold text-sm sm:text-base ${isSelected ? "text-white" : "text-neutral-900"}`}
-                            >
-                              {trait.label}
-                            </span>
-                            <span className={`text-xs font-semibold ${isSelected ? "text-white" : "text-neutral-700"}`}>
-                              ×{trait.count}
-                            </span>
+                            <span className="font-semibold text-sm sm:text-base text-neutral-900">{trait.label}</span>
+                            <span className="text-xs font-semibold text-neutral-700">×{trait.count}</span>
                           </button>
                         )
                       })}
@@ -456,7 +448,7 @@ export function PremierProfileClient({
                       {profileAnalysis.traitSignals.slice(5, 15).map((trait) => {
                         const isSelected = selectedHeatmapTrait === trait.label
                         const maxCount = Math.max(...profileAnalysis.traitSignals.slice(5, 15).map((t) => t.count))
-                        const bgOpacity = 0.12 + (trait.count / maxCount) * 0.35
+                        const bgOpacity = 0.3 + (trait.count / maxCount) * 0.25
 
                         return (
                           <button
@@ -466,19 +458,15 @@ export function PremierProfileClient({
                             }
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                               isSelected
-                                ? "border-blue-600 shadow-md scale-105"
-                                : "border-blue-200/50 hover:border-blue-400/70 hover:shadow-sm hover:scale-105"
+                                ? "border-blue-400 shadow-md scale-105 bg-blue-100"
+                                : "border-blue-100/70 hover:border-blue-200 hover:shadow-sm hover:scale-105"
                             }`}
                             style={{
-                              backgroundColor: isSelected
-                                ? "rgba(59, 130, 246, 0.6)"
-                                : `rgba(59, 130, 246, ${bgOpacity})`,
+                              backgroundColor: isSelected ? undefined : `rgba(239, 246, 255, ${bgOpacity})`,
                             }}
                           >
-                            <span className={isSelected ? "text-white" : "text-neutral-800"}>{trait.label}</span>
-                            <span className={`text-xs font-semibold ${isSelected ? "text-white" : "text-neutral-600"}`}>
-                              ×{trait.count}
-                            </span>
+                            <span className="text-neutral-800">{trait.label}</span>
+                            <span className="text-xs font-semibold text-neutral-600">×{trait.count}</span>
                           </button>
                         )
                       })}
