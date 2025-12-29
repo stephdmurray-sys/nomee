@@ -23,20 +23,29 @@ async function extractFeedbackFromImage(imageUrl: string): Promise<{
   try {
     console.log("[SCREENSHOT_EXTRACTION] Starting vision-based extraction for:", imageUrl)
 
-    const systemPrompt = `You are a feedback extraction assistant. Extract structured data from this screenshot.
+    const systemPrompt = `You are a feedback extraction assistant. Extract structured data from this screenshot of positive feedback, recommendation, or testimonial.
 
-LOCKED TRAITS (select UP TO 3 that apply): ${LOCKED_TRAITS.join(", ")}
+THIS COULD BE FROM ANY SOURCE:
+- LinkedIn recommendation (look for profile info, job titles, dates)
+- Email (look for sender name, signature, company in signature)
+- Slack message (look for username, profile picture, workspace name)
+- Text message/DM (look for contact name, phone number context)
+- Facebook post/message (look for profile name, page name)
+- Teams message (look for display name, org context)
+- Other platforms (extract visible identifying info)
+
+LOCKED TRAITS (select UP TO 3 that best apply): ${LOCKED_TRAITS.join(", ")}
 
 Return ONLY valid JSON with this exact structure:
 {
-  "excerpt": "1-2 sentence verbatim positive quote from the feedback, or null if not found",
-  "giverName": "Full name of person who wrote this, or 'Unknown' if not clear",
-  "giverCompany": "Company/organization name, or null",
-  "giverRole": "Job title/role, or null",
-  "sourceType": "One of: LinkedIn, Email, Slack, Text, DM, Teams, Other, or null",
-  "approxDate": "YYYY-MM-DD format if visible, or null",
-  "traits": ["trait1", "trait2"],
-  "rawExtractedText": "All visible text from the image for debugging",
+  "excerpt": "1-2 sentence verbatim positive quote about the person (Stephanie/Steph/recipient), or null if not found",
+  "giverName": "Full name of person who wrote this (NOT the recipient). If only partial name visible, use what you can see. If unclear, use 'Unknown'",
+  "giverCompany": "Company/organization name if visible, or null",
+  "giverRole": "Job title/role if visible, or null",
+  "sourceType": "Best match from: LinkedIn, Email, Slack, Text, DM, Facebook, Teams, Other. If unclear, use 'Other'",
+  "approxDate": "YYYY-MM-DD format if date visible anywhere in screenshot, or null",
+  "traits": ["trait1", "trait2", "trait3"],
+  "rawExtractedText": "All visible text from the image verbatim for debugging",
   "confidence": {
     "overall": 0.85,
     "giverName": 0.9,
@@ -45,12 +54,19 @@ Return ONLY valid JSON with this exact structure:
   }
 }
 
-RULES:
-- Extract verbatim, don't rewrite
-- Only use traits from the LOCKED list
-- Confidence 0-1 scale (1 = very confident)
-- If you can see clear positive feedback, set overall confidence >= 0.7
-- If screenshot is unclear/not feedback, set overall < 0.5`
+CRITICAL EXTRACTION RULES:
+- Extract verbatim text, DO NOT rewrite or paraphrase
+- Excerpt should be the POSITIVE FEEDBACK CONTENT about the recipient, not metadata
+- giverName is who WROTE the feedback, not who received it
+- Only use traits from the LOCKED list provided above
+- Confidence scale: 0-1 (1 = very confident, 0.5 = moderate, <0.5 = uncertain)
+- If you can clearly see positive feedback with identifiable sender, set overall >= 0.7
+- If screenshot is blurry, unclear, or not feedback-related, set overall < 0.5
+- Look for sender info in: profile headers, email "From:" lines, message headers, signatures
+- For LinkedIn: extract from profile card (name, title @ company)
+- For Email: extract from sender line and email signature
+- For Slack/Teams: extract from message header and profile info
+- For Text/DM: extract from contact name or conversation header`
 
     const { text } = await generateText({
       model: "openai/gpt-4o",
@@ -134,11 +150,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Profile not found" }, { status: 403 })
     }
 
-    const { data: currentRecord } = await supabase
-      .from("imported_feedback")
-      .select("extraction_attempts")
-      .eq("id", recordId)
-      .single()
+    const { data: currentRecord } = await supabase.from("imported_feedback").select("*").eq("id", recordId).single()
 
     const attemptNumber = (currentRecord?.extraction_attempts || 0) + 1
 
@@ -150,42 +162,47 @@ export async function POST(request: NextRequest) {
       const redactedText = redactSensitiveData(extracted.rawExtractedText)
 
       // Determine if this should be included in analysis
-      // Include if: confidence >= 0.5 AND has excerpt OR has giver name
       const shouldIncludeInAnalysis =
         extracted.confidence.overall >= 0.5 && (extracted.excerpt !== null || extracted.giverName !== "Unknown")
 
-      console.log("[SCREENSHOT_EXTRACTION] Processing complete:", {
+      console.log("[SCREENSHOT_EXTRACTION] Extraction successful:", {
         recordId,
         attemptNumber,
+        giverName: extracted.giverName,
+        hasExcerpt: !!extracted.excerpt,
+        confidence: extracted.confidence.overall,
         shouldIncludeInAnalysis,
-        overallConfidence: extracted.confidence.overall,
       })
 
-      const { error } = await supabase
-        .from("imported_feedback")
-        .update({
-          ocr_text: redactedText,
-          ocr_confidence: extracted.confidence.overall,
-          included_in_analysis: shouldIncludeInAnalysis,
-          ai_extracted_excerpt: extracted.excerpt,
-          giver_name: extracted.giverName,
-          giver_company: extracted.giverCompany,
-          giver_role: extracted.giverRole,
-          source_type: extracted.sourceType,
-          approx_date: extracted.approxDate,
-          traits: extracted.traits,
-          confidence_score: extracted.confidence.overall,
-          confidence_details: extracted.confidence,
-          extraction_attempts: attemptNumber,
-          last_extraction_at: new Date().toISOString(),
-          last_extraction_error: null,
-        })
-        .eq("id", recordId)
-
-      if (error) {
-        console.error("[SCREENSHOT_EXTRACTION] Database update error:", error)
-        throw new Error("Failed to update database")
+      const updateData: any = {
+        ocr_text: redactedText,
+        ocr_confidence: extracted.confidence.overall,
+        included_in_analysis: shouldIncludeInAnalysis,
+        ai_extracted_excerpt: extracted.excerpt,
+        giver_name: extracted.giverName,
+        giver_company: extracted.giverCompany,
+        giver_role: extracted.giverRole,
+        source_type: extracted.sourceType,
+        approx_date: extracted.approxDate,
+        traits: extracted.traits,
+        confidence_score: extracted.confidence.overall,
       }
+
+      if ("extraction_attempts" in currentRecord) {
+        updateData.extraction_attempts = attemptNumber
+        updateData.last_extraction_at = new Date().toISOString()
+        updateData.last_extraction_error = null
+        updateData.confidence_details = extracted.confidence
+      }
+
+      const { error: updateError } = await supabase.from("imported_feedback").update(updateData).eq("id", recordId)
+
+      if (updateError) {
+        console.error("[SCREENSHOT_EXTRACTION] Database update error:", updateError)
+        throw new Error(`Failed to update database: ${updateError.message}`)
+      }
+
+      console.log("[SCREENSHOT_EXTRACTION] Database updated successfully for record:", recordId)
 
       return NextResponse.json({
         id: recordId,
@@ -195,24 +212,30 @@ export async function POST(request: NextRequest) {
         extracted: {
           excerpt: extracted.excerpt,
           giverName: extracted.giverName,
+          giverCompany: extracted.giverCompany,
+          giverRole: extracted.giverRole,
+          sourceType: extracted.sourceType,
           traits: extracted.traits,
         },
       })
     } catch (processingError) {
       console.error("[SCREENSHOT_EXTRACTION] Processing failed:", processingError)
 
-      await supabase
-        .from("imported_feedback")
-        .update({
-          ai_extracted_excerpt: null,
-          giver_name: "Review needed",
-          confidence_score: 0,
-          ocr_text: `Extraction failed: ${processingError instanceof Error ? processingError.message : "Unknown error"}`,
-          extraction_attempts: attemptNumber,
-          last_extraction_at: new Date().toISOString(),
-          last_extraction_error: processingError instanceof Error ? processingError.message : "Unknown error",
-        })
-        .eq("id", recordId)
+      const errorUpdateData: any = {
+        ai_extracted_excerpt: null,
+        giver_name: "Review needed",
+        confidence_score: 0,
+        ocr_text: `Extraction failed: ${processingError instanceof Error ? processingError.message : "Unknown error"}`,
+      }
+
+      if ("extraction_attempts" in currentRecord) {
+        errorUpdateData.extraction_attempts = attemptNumber
+        errorUpdateData.last_extraction_at = new Date().toISOString()
+        errorUpdateData.last_extraction_error =
+          processingError instanceof Error ? processingError.message : "Unknown error"
+      }
+
+      await supabase.from("imported_feedback").update(errorUpdateData).eq("id", recordId)
 
       return NextResponse.json({
         id: recordId,
