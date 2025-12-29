@@ -50,7 +50,10 @@ export function AiPatternSummary({ contributions, importedFeedback, topTraits }:
 
     const analyzableUploads = (importedFeedback || []).filter((u) => u.included_in_analysis && u.ocr_text)
 
-    const top3Traits = topTraits.slice(0, 3).map((t) => t.label.toLowerCase())
+    const top3Traits = topTraits
+      .slice(0, 3)
+      .filter((t) => t && t.label && typeof t.label === "string")
+      .map((t) => t.label.toLowerCase())
 
     const totalSources = contributions.length + analyzableUploads.length
     const uploadNote = analyzableUploads.length > 0 ? ` across ${totalSources} sources` : ""
@@ -79,7 +82,10 @@ export function AiPatternSummary({ contributions, importedFeedback, topTraits }:
           regex: /(helps|makes) (teams|everyone|us) (better|stronger|successful)/g,
           extract: () => "Makes teams better",
         },
-        { regex: /(quick|responsive|fast) (to respond|turnaround|communication)/g, extract: () => "Quick to respond" },
+        {
+          regex: /(quick|responsive|fast) (to respond|turnaround|communication)/g,
+          extract: () => "Quick to respond",
+        },
         {
           regex: /great (problem solver|communicator|collaborator|partner)/g,
           extract: (m: RegExpMatchArray) => `Great ${m[1]}`,
@@ -127,12 +133,22 @@ export function AiPatternSummary({ contributions, importedFeedback, topTraits }:
     ]
 
     relationshipGroups.forEach(({ key, variations }) => {
-      const filtered = contributions.filter((c) => variations.some((v) => c.relationship?.toLowerCase().includes(v)))
+      const validVariations = variations.filter((v) => v && typeof v === "string")
+
+      if (validVariations.length === 0) return
+
+      const filtered = contributions.filter((c) => {
+        if (!c.relationship || typeof c.relationship !== "string") return false
+        const relationshipLower = c.relationship.toLowerCase()
+        return validVariations.some((v) => relationshipLower.includes(v.toLowerCase()))
+      })
 
       if (filtered.length >= 2) {
         const qualityMap: Record<string, number> = {}
 
         filtered.forEach((c) => {
+          if (!c.written_note || typeof c.written_note !== "string") return
+
           const text = c.written_note.toLowerCase()
 
           const qualityRegexes = [

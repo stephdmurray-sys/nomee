@@ -71,6 +71,25 @@
   --trust-blue-border: rgba(59, 130, 246, 0.12);
   --trust-blue-hover: rgba(59, 130, 246, 0.1);
   --trust-blue-focus: rgba(59, 130, 246, 0.25);
+
+  /* Premium Pill Design System tokens */
+  /* Pill Neutrals */
+  --pill-bg: #ffffff;
+  --pill-text: #111111;
+  --pill-muted-text: #6b7280;
+  --pill-border: #e6e8ec;
+  --pill-border-hover: #d3d7de;
+  --pill-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+
+  /* Vibe Accent (calm, premium blue) */
+  --vibe-tint: #eef5ff;
+  --vibe-border-active: #9cc3ff;
+  --vibe-ring: #78afff;
+
+  /* Trait Accent (soft lavender/ink) */
+  --trait-tint: #f4f0ff;
+  --trait-border-active: #b9a7ff;
+  --trait-ring: #9d86ff;
 }
 
 .dark {
@@ -184,6 +203,20 @@
   --color-trust-blue-border: var(--trust-blue-border);
   --color-trust-blue-hover: var(--trust-blue-hover);
   --color-trust-blue-focus: var(--trust-blue-focus);
+
+  /* Expose premium pill design tokens to Tailwind */
+  --color-text: var(--pill-text);
+  --color-muted-text: var(--pill-muted-text);
+  --color-border: var(--pill-border);
+  --color-border-hover: var(--pill-border-hover);
+
+  --color-vibe-tint: var(--vibe-tint);
+  --color-vibe-border-active: var(--vibe-border-active);
+  --color-vibe-ring: var(--vibe-ring);
+
+  --color-trait-tint: var(--trait-tint);
+  --color-trait-border-active: var(--trait-border-active);
+  --color-trait-ring: var(--trait-ring);
 }
 
 /* Adding award-winning micro-interactions and premium utilities */

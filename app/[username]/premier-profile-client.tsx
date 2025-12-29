@@ -4,31 +4,29 @@ import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Share2, Copy } from "lucide-react"
 import { VoiceCard } from "@/components/voice-card"
-import { SiteHeader } from "@/components/site-header"
 import { AiPatternSummary } from "@/components/ai-pattern-summary"
 import { RelationshipFilter } from "@/components/relationship-filter"
 import { FloatingQuoteCards } from "@/components/floating-quote-cards" // Assuming FloatingQuoteCards is imported
+import { SnapshotRow } from "@/components/snapshot-row"
 import { filterByRelationship, type RelationshipFilterCategory } from "@/lib/relationship-filter"
 import { categorizeTestimonials } from "@/lib/categorize-testimonials"
 import { extractRepeatedPhrases } from "@/lib/extract-repeated-phrases"
 import { dedupeContributions } from "@/lib/dedupe-contributions"
 import { extractHighlightPatterns } from "@/lib/extract-highlight-patterns"
 import Link from "next/link"
-import type { Profile, Contribution, ImportedFeedback, Trait } from "@/lib/types"
+import type { Profile, Contribution, ImportedFeedback } from "@/lib/types"
 import { TRAIT_CATEGORIES } from "@/lib/trait-categories" // Assuming TRAIT_CATEGORIES is imported
 
 interface PremierProfileClientProps {
   profile: Profile
   contributions: Contribution[]
   importedFeedback: ImportedFeedback[]
-  traits: Trait[]
 }
 
 export function PremierProfileClient({
   profile,
   contributions: rawContributions,
   importedFeedback: rawImportedFeedback,
-  traits,
 }: PremierProfileClientProps) {
   console.log("[v0] PremierProfileClient: Profile loaded:", profile.slug)
   console.log("[v0] PremierProfileClient: Total contributions received:", rawContributions.length)
@@ -75,6 +73,8 @@ export function PremierProfileClient({
   const [howItFeelsRelationshipFilter, setHowItFeelsRelationshipFilter] = useState<RelationshipFilterCategory>("All")
   const [voiceRelationshipFilter, setVoiceRelationshipFilter] = useState<RelationshipFilterCategory>("All")
   const [selectedVibe, setSelectedVibe] = useState<string | null>(null)
+  const [snapshotVibeFilter, setSnapshotVibeFilter] = useState<string | null>(null)
+  const [snapshotTraitFilter, setSnapshotTraitFilter] = useState<string | null>(null)
 
   useEffect(() => {
     const timer = setTimeout(() => setHeroVisible(true), 100)
@@ -117,20 +117,85 @@ export function PremierProfileClient({
     setSelectedVibe(null)
   }
 
-  const traitsWithExamples = traits.map((trait) => ({
+  const handleSnapshotVibeClick = (vibe: string) => {
+    setSnapshotVibeFilter((prev) => (prev === vibe ? null : vibe))
+    setSnapshotTraitFilter(null) // Clear trait filter when vibe is selected
+    setSelectedVibe(null) // Clear old vibe filter
+  }
+
+  const handleSnapshotTraitClick = (trait: string) => {
+    setSnapshotTraitFilter((prev) => (prev === trait ? null : trait))
+    setSnapshotVibeFilter(null) // Clear vibe filter when trait is selected
+    setSelectedHeatmapTrait(null) // Clear heatmap trait filter
+  }
+
+  const handleClearAllFilters = () => {
+    setSnapshotVibeFilter(null)
+    setSnapshotTraitFilter(null)
+    setSelectedVibe(null)
+    setSelectedHeatmapTrait(null)
+  }
+
+  const traitSignals = useMemo(() => {
+    const traitCounts: Record<string, number> = {}
+
+    rawContributions.forEach((contribution) => {
+      if (contribution.traits_json) {
+        let traitsData: any = {}
+        try {
+          traitsData =
+            typeof contribution.traits_json === "string"
+              ? JSON.parse(contribution.traits_json)
+              : contribution.traits_json
+        } catch (e) {
+          console.error("[v0] Error parsing traits_json:", e)
+        }
+
+        // Get all traits except vibe/how_it_felt
+        Object.entries(traitsData).forEach(([category, traitIds]) => {
+          if (category !== "the_vibe" && category !== "how_it_felt" && Array.isArray(traitIds)) {
+            traitIds.forEach((traitId: string) => {
+              // Find trait label from any category
+              let traitLabel: string | undefined
+
+              Object.values(TRAIT_CATEGORIES).forEach((cat) => {
+                if (cat.title !== "The vibe") {
+                  const trait = cat.traits.find((t) => t.id === traitId)
+                  if (trait) traitLabel = trait.label
+                }
+              })
+
+              if (traitLabel) {
+                traitCounts[traitLabel] = (traitCounts[traitLabel] || 0) + 1
+              }
+            })
+          }
+        })
+      }
+    })
+
+    // Return sorted array of traits with counts, filtering out any undefined/empty labels
+    return Object.entries(traitCounts)
+      .filter(([label]) => label && label.trim().length > 0)
+      .sort(([, a], [, b]) => b - a)
+      .map(([label, count]) => ({ label, count }))
+  }, [rawContributions])
+
+  const traitsWithExamples = traitSignals.map((trait) => ({
     label: trait.label,
     count: trait.count,
     category: "leadership" as const,
-    examples: trait.examples || [],
+    examples: [],
   }))
 
-  const { howItFeels } = categorizeTestimonials(contributions)
-  const repeatedPhrases = extractRepeatedPhrases(contributions)
-  const topTraits = traits.slice(0, 5).map((t) => t.label)
+  const { howItFeels } = categorizeTestimonials(rawContributions)
+  const repeatedPhrases = extractRepeatedPhrases(rawContributions)
+  const topTraits = traitSignals.slice(0, 5).map((t) => t.label)
 
-  const highlightPatterns = extractHighlightPatterns(contributions, importedFeedback, traits)
+  const highlightPatterns = extractHighlightPatterns(rawContributions, importedFeedback, rawContributions)
 
   const getFrequencyLevel = (count: number): number => {
+    if (traitsWithExamples.length === 0) return 1
     const maxCount = Math.max(...traitsWithExamples.map((t) => t.count))
     const ratio = count / maxCount
     if (ratio >= 0.8) return 4
@@ -248,7 +313,121 @@ export function PremierProfileClient({
     })
   }, [filteredHowItFeels, selectedVibe])
 
-  const totalContributions = contributions.length
+  const totalContributions = rawContributions.length
+
+  const knownForTraits = useMemo(() => {
+    const traitCounts: Record<string, number> = {}
+
+    rawContributions.forEach((contribution) => {
+      if (contribution.traits_json) {
+        let traitsData: any = {}
+        try {
+          traitsData =
+            typeof contribution.traits_json === "string"
+              ? JSON.parse(contribution.traits_json)
+              : contribution.traits_json
+        } catch (e) {
+          console.error("[v0] Error parsing traits_json:", e)
+        }
+
+        // Get all traits except vibe/how_it_felt
+        Object.entries(traitsData).forEach(([category, traitIds]) => {
+          if (category !== "the_vibe" && category !== "how_it_felt" && Array.isArray(traitIds)) {
+            traitIds.forEach((traitId: string) => {
+              // Find trait label from any category
+              let traitLabel: string | undefined
+
+              Object.values(TRAIT_CATEGORIES).forEach((cat) => {
+                if (cat.title !== "The vibe") {
+                  const trait = cat.traits.find((t) => t.id === traitId)
+                  if (trait) traitLabel = trait.label
+                }
+              })
+
+              if (traitLabel) {
+                traitCounts[traitLabel] = (traitCounts[traitLabel] || 0) + 1
+              }
+            })
+          }
+        })
+      }
+    })
+
+    return Object.entries(traitCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 6)
+      .map(([label, count]) => ({ label, count }))
+  }, [rawContributions])
+
+  const filteredBySnapshotFilters = useMemo(() => {
+    let filtered = filteredHowItFeels
+
+    // Apply vibe filter
+    if (snapshotVibeFilter) {
+      filtered = filtered.filter((contribution) => {
+        if (!contribution.traits_json) return false
+
+        let traitsData: any = {}
+        try {
+          traitsData =
+            typeof contribution.traits_json === "string"
+              ? JSON.parse(contribution.traits_json)
+              : contribution.traits_json
+        } catch (e) {
+          return false
+        }
+
+        const vibeTraits = [...(traitsData.the_vibe || []), ...(traitsData.how_it_felt || [])]
+        return vibeTraits.some((traitId: string) => {
+          const vibeTrait = TRAIT_CATEGORIES.the_vibe?.traits.find((t) => t.id === traitId)
+          return vibeTrait?.label === snapshotVibeFilter
+        })
+      })
+    }
+
+    // Apply trait filter
+    if (snapshotTraitFilter) {
+      filtered = filtered.filter((contribution) => {
+        if (!contribution.traits_json) return false
+
+        let traitsData: any = {}
+        try {
+          traitsData =
+            typeof contribution.traits_json === "string"
+              ? JSON.parse(contribution.traits_json)
+              : contribution.traits_json
+        } catch (e) {
+          return false
+        }
+
+        // Check all non-vibe categories
+        return Object.entries(traitsData).some(([category, traitIds]) => {
+          if (category === "the_vibe" || category === "how_it_felt") return false
+          if (!Array.isArray(traitIds)) return false
+
+          return traitIds.some((traitId: string) => {
+            let traitLabel: string | undefined
+            Object.values(TRAIT_CATEGORIES).forEach((cat) => {
+              if (cat.title !== "The vibe") {
+                const trait = cat.traits.find((t) => t.id === traitId)
+                if (trait) traitLabel = trait.label
+              }
+            })
+            return traitLabel === snapshotTraitFilter
+          })
+        })
+      })
+    }
+
+    return filtered
+  }, [filteredHowItFeels, snapshotVibeFilter, snapshotTraitFilter])
+
+  const finalFilteredContributions = useMemo(() => {
+    if (selectedVibe) {
+      return filteredContributionsByVibe
+    }
+    return filteredBySnapshotFilters
+  }, [selectedVibe, filteredContributionsByVibe, filteredBySnapshotFilters])
 
   const getConfidenceLevel = (count: number) => {
     if (count <= 2)
@@ -278,10 +457,10 @@ export function PremierProfileClient({
 
   const confidenceLevel = getConfidenceLevel(totalContributions)
 
-  return (
-    <div className="min-h-screen bg-neutral-50">
-      <SiteHeader />
+  const hasActiveFilters = snapshotVibeFilter || snapshotTraitFilter || selectedVibe || selectedHeatmapTrait
 
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
       {/* Floating share cluster - Desktop only */}
       <div className="hidden sm:block fixed right-8 top-1/2 -translate-y-1/2 z-40">
         <div className="flex flex-col gap-3">
@@ -355,7 +534,7 @@ export function PremierProfileClient({
         </div>
 
         {/* Summary section */}
-        {totalContributions > 0 && traits.length > 0 && (
+        {totalContributions >= 3 && (
           <div
             className={`mb-8 sm:mb-10 md:mb-12 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
             style={{ transitionDelay: "200ms" }}
@@ -395,7 +574,7 @@ export function PremierProfileClient({
                 <AiPatternSummary
                   contributions={rawContributions}
                   importedFeedback={rawImportedFeedback}
-                  topTraits={traits.slice(0, 5).map((t) => ({ label: t.label, count: t.count }))}
+                  topTraits={traitSignals.slice(0, 5)}
                 />
 
                 <p className="text-xs text-neutral-500 pt-4 border-t border-neutral-100">
@@ -403,7 +582,7 @@ export function PremierProfileClient({
                   {totalUploads > 0 && (
                     <>
                       {" "}
-                      and {totalUploads} {totalUploads === 1 ? "upload" : "uploads"}
+                      and {totalUploads} {totalUploads === 1 ? "uploads" : "uploads"}
                     </>
                   )}{" "}
                   • Updates as more people contribute
@@ -416,6 +595,18 @@ export function PremierProfileClient({
 
       {/* Reduce spacing between sections on mobile */}
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 md:space-y-10 py-2 sm:py-4">
+        {totalContributions >= 3 && (vibeData.length > 0 || knownForTraits.length > 0) && (
+          <SnapshotRow
+            firstName={profile.full_name?.split(" ")[0] || "them"}
+            vibes={vibeData}
+            traits={knownForTraits}
+            onVibeClick={handleSnapshotVibeClick}
+            onTraitClick={handleSnapshotTraitClick}
+            selectedVibe={snapshotVibeFilter}
+            selectedTrait={snapshotTraitFilter}
+          />
+        )}
+
         {/* Voice notes section */}
         {voiceNotesCount > 0 && (
           <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
@@ -461,8 +652,7 @@ export function PremierProfileClient({
 
         {voiceNotesCount > 0 && <div className="border-t border-neutral-100" />}
 
-        {/* Pattern Recognition section */}
-        {traits.length > 0 && (
+        {traitSignals.length > 0 && (
           <section className="space-y-4 sm:space-y-6 pt-2 sm:pt-4 md:pt-6">
             <div className="space-y-2 max-w-3xl mx-auto text-center">
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">Pattern Recognition</h3>
@@ -489,7 +679,7 @@ export function PremierProfileClient({
                     Top signals
                   </h4>
                   <div className="space-y-2">
-                    {traits.slice(0, 5).map((trait) => (
+                    {traitSignals.slice(0, 5).map((trait) => (
                       <div
                         key={trait.label}
                         className="flex items-center justify-between px-4 py-3 rounded-lg border border-neutral-200 bg-neutral-50"
@@ -511,7 +701,7 @@ export function PremierProfileClient({
                     Top signals
                   </h4>
                   <div className="space-y-2">
-                    {traits.slice(0, 5).map((trait) => {
+                    {traitSignals.slice(0, 5).map((trait) => {
                       const isSelected = selectedHeatmapTrait === trait.label
                       const styles = getFrequencyStyles(trait.count, isSelected)
 
@@ -539,7 +729,7 @@ export function PremierProfileClient({
                     Emerging signals
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {traits.slice(5, 15).map((trait) => {
+                    {traitSignals.slice(5, 15).map((trait) => {
                       const isSelected = selectedHeatmapTrait === trait.label
                       const styles = getFrequencyStyles(trait.count, isSelected)
 
@@ -579,11 +769,11 @@ export function PremierProfileClient({
 
             <div className="flex flex-wrap justify-center gap-2 max-w-3xl mx-auto">
               {vibeData.map((vibe) => {
-                const isSelected = selectedVibe === vibe.label
+                const isSelected = snapshotVibeFilter === vibe.label
                 return (
                   <button
                     key={vibe.label}
-                    onClick={() => setSelectedVibe(isSelected ? null : vibe.label)}
+                    onClick={() => handleSnapshotVibeClick(vibe.label)}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                       isSelected
                         ? "bg-neutral-900 text-white ring-2 ring-neutral-900 ring-offset-2"
@@ -596,10 +786,10 @@ export function PremierProfileClient({
               })}
             </div>
 
-            {selectedVibe && (
+            {snapshotVibeFilter && (
               <div className="text-center">
                 <button
-                  onClick={handleClearVibeFilter}
+                  onClick={() => setSnapshotVibeFilter(null)}
                   className="text-sm text-neutral-600 hover:text-neutral-900 underline"
                 >
                   Clear filter
@@ -630,7 +820,7 @@ export function PremierProfileClient({
               </div>
 
               <FloatingQuoteCards
-                contributions={filteredContributionsByVibe}
+                contributions={finalFilteredContributions}
                 highlightPatterns={highlightPatterns}
                 profileName={profile.full_name}
               />
@@ -739,6 +929,40 @@ export function PremierProfileClient({
           </div>
         </section>
       </div>
+
+      {hasActiveFilters && (
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <span className="text-sm text-muted-text">Active filters:</span>
+            {snapshotVibeFilter && (
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vibe-tint border border-vibe-border-active text-sm font-medium">
+                {snapshotVibeFilter}
+              </span>
+            )}
+            {snapshotTraitFilter && (
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-trait-tint border border-trait-border-active text-sm font-medium">
+                {snapshotTraitFilter}
+              </span>
+            )}
+            {selectedVibe && (
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 border border-neutral-300 text-sm font-medium">
+                {selectedVibe}
+              </span>
+            )}
+            {selectedHeatmapTrait && (
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 border border-neutral-300 text-sm font-medium">
+                {selectedHeatmapTrait}
+              </span>
+            )}
+            <button
+              onClick={handleClearAllFilters}
+              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 underline underline-offset-2"
+            >
+              Clear filters
+            </button>
+          </div>
+        </section>
+      )}
     </div>
   )
 }
