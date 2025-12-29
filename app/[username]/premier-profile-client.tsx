@@ -35,7 +35,13 @@ export function PremierProfileClient({
   const contributions = dedupeContributions(rawContributions)
   const voiceContributions = contributions.filter((c) => c.voice_url)
   const voiceNotesCount = useMemo(() => {
-    return rawContributions.filter((c) => c.voice_url).length
+    const count = rawContributions.filter((c) => c.voice_url).length
+    console.log("[VOICE] Profile: Voice contributions detected", {
+      totalContributions: rawContributions.length,
+      voiceCount: count,
+      voiceContributionIds: rawContributions.filter((c) => c.voice_url).map((c) => c.id),
+    })
+    return count
   }, [rawContributions])
 
   const analyzableUploads = rawImportedFeedback.filter((u) => u.included_in_analysis && u.ocr_text)
@@ -333,9 +339,16 @@ export function PremierProfileClient({
 
               {filteredVoiceContributions.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredVoiceContributions.slice(0, 3).map((contribution) => (
-                    <VoiceCard key={contribution.id} contribution={contribution} profileName={profile.full_name} />
-                  ))}
+                  {filteredVoiceContributions.slice(0, 3).map((contribution) => {
+                    console.log("[VOICE] Profile: Rendering voice card", {
+                      contributionId: contribution.id,
+                      hasVoiceUrl: !!contribution.voice_url,
+                      voiceUrl: contribution.voice_url,
+                    })
+                    return (
+                      <VoiceCard key={contribution.id} contribution={contribution} profileName={profile.full_name} />
+                    )
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8">

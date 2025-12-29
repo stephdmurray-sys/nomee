@@ -7,7 +7,12 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file") as File
     const contributionId = formData.get("contributionId") as string
 
-    console.log("[v0] API - Attaching voice to contribution:", contributionId)
+    console.log("[VOICE] API: Attaching voice to contribution", {
+      contributionId,
+      hasFile: !!file,
+      fileSize: file?.size,
+      fileType: file?.type,
+    })
 
     if (!contributionId || !file) {
       return NextResponse.json(
@@ -20,9 +25,12 @@ export async function POST(request: NextRequest) {
 
     const timestamp = Date.now()
     const fileExt = file.name.split(".").pop() || "webm"
-    const fileName = `audio/${contributionId}.${fileExt}`
+    const fileName = `audio/${contributionId}-${timestamp}.${fileExt}`
 
-    console.log("[v0] API - Uploading voice file:", fileName)
+    console.log("[VOICE] API: Uploading to storage", {
+      fileName,
+      bucket: "nomee-audio",
+    })
 
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
@@ -31,11 +39,14 @@ export async function POST(request: NextRequest) {
       .from("nomee-audio")
       .upload(fileName, buffer, {
         contentType: file.type,
-        upsert: true, // Allow re-uploads
+        upsert: true,
       })
 
     if (uploadError) {
-      console.error("[v0] API - Voice upload error:", uploadError)
+      console.error("[VOICE] API: Upload error", {
+        error: uploadError,
+        message: uploadError.message,
+      })
 
       await supabase
         .from("contributions")
@@ -47,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Couldn't upload voice. Your message was already submitted successfully.",
+          error: "Failed to upload voice recording. Please try again.",
           code: "UPLOAD_ERROR",
           details: uploadError.message,
         },
@@ -57,57 +68,63 @@ export async function POST(request: NextRequest) {
 
     const { data: publicUrlData } = supabase.storage.from("nomee-audio").getPublicUrl(fileName)
 
-    console.log("[v0] API - Voice uploaded:", publicUrlData.publicUrl)
+    console.log("[VOICE] API: Upload successful, updating contribution", {
+      voiceUrl: publicUrlData.publicUrl,
+      contributionId,
+    })
 
-    let audioDuration: number | null = null
-    try {
-      // Note: Duration calculation would require audio processing
-      // For now, we'll leave it null and could add later if needed
-      audioDuration = null
-    } catch {
-      // Ignore duration calculation errors
-    }
-
-    const { error: updateError } = await supabase
+    const { data: updatedContribution, error: updateError } = await supabase
       .from("contributions")
       .update({
         voice_url: publicUrlData.publicUrl,
         audio_status: "uploaded",
         audio_path: fileName,
-        audio_duration_ms: audioDuration,
       })
       .eq("id", contributionId)
+      .select()
+      .single()
 
     if (updateError) {
-      console.error("[v0] API - Voice attachment error:", updateError)
+      console.error("[VOICE] API: DB update error", {
+        error: updateError,
+        message: updateError.message,
+      })
       return NextResponse.json(
         {
           ok: false,
-          error: "Couldn't attach voice. Your message was already submitted successfully.",
-          code: "VOICE_ATTACH_ERROR",
+          error: "Failed to attach voice to contribution. Please try again.",
+          code: "DB_UPDATE_ERROR",
           details: updateError.message,
         },
         { status: 500 },
       )
     }
 
-    console.log("[v0] API - ✅ Voice attached successfully")
+    console.log("[VOICE] API: ✅ Voice attached successfully", {
+      contributionId,
+      voiceUrl: publicUrlData.publicUrl,
+      hasVoiceUrl: !!updatedContribution.voice_url,
+    })
 
     return NextResponse.json(
       {
         ok: true,
         success: true,
         voiceUrl: publicUrlData.publicUrl,
-        message: "Voice recording attached",
+        message: "Voice recording attached successfully",
+        contribution: updatedContribution,
       },
       { status: 200 },
     )
   } catch (error) {
-    console.error("[v0] API - Unexpected error in voice attachment:", error)
+    console.error("[VOICE] API: Unexpected error", {
+      error,
+      message: error instanceof Error ? error.message : "Unknown error",
+    })
     return NextResponse.json(
       {
         ok: false,
-        error: "Couldn't attach voice. Your message was already submitted successfully.",
+        error: "An unexpected error occurred. Please try again.",
         code: "INTERNAL_ERROR",
         details: error instanceof Error ? error.message : "Unknown error",
       },

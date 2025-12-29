@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Copy, Check, Star, ExternalLink } from "lucide-react"
 import { IntimateAudioPlayer } from "@/components/intimate-audio-player"
 import { ImportedFeedbackUploadCard } from "@/components/imported-feedback-upload-card"
@@ -93,6 +93,15 @@ export default function DashboardClient({
       setTogglingId(null)
     }
   }
+
+  useEffect(() => {
+    const voiceCount = contributions.filter((c) => c.voice_url).length
+    console.log("[VOICE] Dashboard: Voice contributions loaded", {
+      totalContributions: contributions.length,
+      voiceCount,
+      voiceContributionIds: contributions.filter((c) => c.voice_url).map((c) => c.id),
+    })
+  }, [contributions])
 
   return (
     <>
@@ -308,6 +317,13 @@ export default function DashboardClient({
             {contributions.map((contribution) => {
               const isFeatured = contribution.is_featured
               const submissionPhrases = extractSubmissionPhrases(contribution)
+
+              const hasVoice = !!contribution.voice_url
+              console.log("[VOICE] Dashboard: Rendering contribution card", {
+                contributionId: contribution.id,
+                hasVoice,
+                voiceUrl: contribution.voice_url,
+              })
 
               return (
                 <Card

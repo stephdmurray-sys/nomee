@@ -45,6 +45,11 @@ export function VoiceCard({ contribution, isMobile = false, highlightPatterns = 
   const highlightedFull = fullText ? highlightQuote(fullText, effectivePatterns, 5) : null
 
   const hasAudio = !!contribution.voice_url
+  console.log("[VOICE] VoiceCard: Rendering card", {
+    contributionId: contribution.id,
+    hasAudio,
+    voiceUrl: contribution.voice_url,
+  })
 
   return (
     <div className={`rounded-xl p-6 bg-white border border-gray-200 ${isMobile ? "min-w-[85vw] snap-center" : ""}`}>

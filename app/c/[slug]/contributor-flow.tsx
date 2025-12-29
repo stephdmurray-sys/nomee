@@ -10,6 +10,7 @@ import { RELATIONSHIP_OPTIONS, DURATION_OPTIONS } from "@/lib/nomee-enums"
 import { TRAIT_CATEGORIES } from "@/lib/trait-categories"
 import { VoiceRecorder } from "@/components/voice-recorder"
 import { Label } from "@/components/ui/label"
+import { Check, Copy } from "lucide-react"
 
 type Profile = {
   id: string
@@ -67,6 +68,20 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   const [emailValidation, setEmailValidation] = useState<string>("")
 
   const firstNameValue = profile.full_name?.split(" ")[0] || profile.full_name || "them"
+
+  const [copiedMessage, setCopiedMessage] = useState(false)
+
+  const handleCopyMessage = async () => {
+    const typedMessage =
+      sessionStorage.getItem(`nomee_draft_message_${contributionId}`) ||
+      sessionStorage.getItem(`nomee_draft_message_${profile.slug}`) ||
+      ""
+
+    if (!typedMessage) return
+    await navigator.clipboard.writeText(typedMessage)
+    setCopiedMessage(true)
+    setTimeout(() => setCopiedMessage(false), 2000)
+  }
 
   useEffect(() => {
     const storedContributionId = sessionStorage.getItem(CONTRIBUTION_STORAGE_KEY)
@@ -189,6 +204,265 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     setEmailValidation(emailRegex.test(email) ? "valid" : "invalid")
+  }
+
+  const handleSaveMessage = async () => {
+    console.log("[COLLECTION] Step 4: handleSaveMessage called", {
+      contributionId,
+      hasContributionId: !!contributionId,
+      messageLength: message.length,
+    })
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const allSelectedTraitIds = Object.values(selectedTraits).flat()
+
+      const requestBody = {
+        profileId: profile.id,
+        contributionId: contributionId || undefined,
+        contributorName: null,
+        contributorEmail: null,
+        companyOrOrg: relationshipContext?.trim() || null,
+        relationship,
+        duration,
+        message: message.trim(),
+        selectedTraitIds: allSelectedTraitIds,
+        draftToken,
+      }
+
+      console.log("[COLLECTION] step4 calling /api/contributions/create", {
+        isUpdate: !!contributionId,
+        contributionId: contributionId,
+      })
+
+      const response = await fetch("/api/contributions/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      })
+
+      const result = await response.json()
+
+      console.log("[COLLECTION] step4 create response", {
+        status: response.status,
+        ok: response.ok,
+        body: result,
+      })
+
+      if ((response.status === 201 || response.status === 200) && result.success && result.contributionId) {
+        setContributionId(result.contributionId)
+        sessionStorage.setItem(CONTRIBUTION_STORAGE_KEY, result.contributionId)
+        console.log("[COLLECTION] step4 stored contributionId", {
+          id: result.contributionId,
+          wasUpdate: response.status === 200,
+          wasInsert: response.status === 201,
+        })
+
+        setMessageSaveStatus("saved")
+        setLoading(false)
+        setIsSaving(false)
+
+        sessionStorage.setItem(`nomee_draft_message_${result.contributionId}`, message)
+        sessionStorage.setItem(`nomee_draft_message_${profile.slug}`, message)
+        console.log("[COLLECTION] Step 4: Message saved to sessionStorage")
+
+        setStep("identity")
+        return
+      }
+
+      // Handle errors with real messages
+      const errorMsg = result.error || result.message || `Error ${response.status}: Unknown error`
+      console.error("[COLLECTION] step4 create failed:", errorMsg)
+      setError(errorMsg)
+      setMessageSaveStatus("failed")
+    } catch (err) {
+      console.error("[COLLECTION] step4 network error:", err)
+      setError("Network error. Please check your connection and try again.")
+      setMessageSaveStatus("failed")
+    } finally {
+      setLoading(false)
+      setIsSaving(false)
+    }
+  }
+
+  const handleIdentityUpdate = async () => {
+    // Validation
+    const errors: Record<string, string> = {}
+    if (!firstName.trim()) errors.firstName = "First name is required"
+    if (!email.trim()) errors.email = "Email is required"
+    else if (!validateEmailInline(email.trim())) errors.email = "Please enter a valid email"
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors)
+      return
+    }
+
+    if (isSaving) return
+    setIsSaving(true)
+
+    setLoading(true)
+    setError(null)
+    setValidationErrors({})
+
+    const stateContributionId = contributionId
+    const sessionContributionId = sessionStorage.getItem(CONTRIBUTION_STORAGE_KEY)
+
+    console.log("[COLLECTION] step5 submit start", {
+      stateContributionId,
+      sessionContributionId,
+    })
+
+    const finalContributionId = stateContributionId || sessionContributionId
+
+    console.log("[COLLECTION] step5 resolved contributionId", { id: finalContributionId })
+
+    if (!finalContributionId) {
+      console.error("[COLLECTION] step5 NO contributionId found - showing recovery error")
+      setError("We lost your draft. Please go back one step and click Continue again.")
+      setLoading(false)
+      setIsSaving(false)
+      return
+    }
+
+    try {
+      const updateBody = {
+        contributionId: finalContributionId,
+        contributorName: `${firstName.trim()}${lastName.trim() ? ` ${lastName.trim()}` : ""}`,
+        contributorEmail: email.trim().toLowerCase(),
+      }
+
+      console.log("[COLLECTION] step5 calling /api/contributions/update-identity")
+
+      const response = await fetch("/api/contributions/update-identity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateBody),
+      })
+
+      const result = await response.json()
+
+      console.log("[COLLECTION] step5 update-identity response", {
+        status: response.status,
+        ok: response.ok,
+        body: result,
+      })
+
+      if (response.ok && result.success) {
+        console.log("[COLLECTION] step5 SUCCESS - navigating to voice step")
+        // Clear sessionStorage on success
+        sessionStorage.removeItem(CONTRIBUTION_STORAGE_KEY)
+        setLoading(false)
+        setIsSaving(false)
+        setStep("voice")
+        return
+      }
+
+      const errorMsg = `Error ${response.status}: ${result.error || result.message || "Unknown error"}`
+      console.error("[COLLECTION] step5 update-identity failed:", {
+        status: response.status,
+        code: result.code,
+        error: result.error,
+        fullResult: result,
+      })
+      setError(errorMsg)
+    } catch (err) {
+      console.error("[COLLECTION] step5 network error:", err)
+      setError("Network error. Please check your connection and try again.")
+    } finally {
+      setLoading(false)
+      setIsSaving(false)
+    }
+  }
+
+  const handleSubmitWithVoice = async () => {
+    setLoading(true)
+    setError(null)
+
+    console.log("[VOICE] Step 6: handleSubmitWithVoice called", {
+      contributionId,
+      hasVoiceBlob: !!voiceBlob,
+      voiceBlobSize: voiceBlob?.size,
+    })
+
+    try {
+      if (voiceBlob && contributionId) {
+        const formData = new FormData()
+        formData.append("file", voiceBlob, "recording.webm")
+        formData.append("contributionId", contributionId)
+
+        console.log("[VOICE] Step 6: Uploading voice to /api/contributions/attach-voice")
+
+        const response = await fetch("/api/contributions/attach-voice", {
+          method: "POST",
+          body: formData,
+        })
+
+        const responseData = await response.json()
+
+        console.log("[VOICE] Step 6: Voice upload response", {
+          ok: response.ok,
+          status: response.status,
+          data: responseData,
+        })
+
+        if (!response.ok) {
+          console.error("[VOICE] Step 6: Voice upload failed", responseData)
+          setError(responseData.error || "Failed to upload voice note. Please try again.")
+          return
+        }
+
+        console.log("[VOICE] Step 6: ✅ Voice attached successfully", {
+          voiceUrl: responseData.voiceUrl,
+        })
+      }
+
+      sessionStorage.removeItem(`nomee-draft-${profile.slug}`)
+      sessionStorage.removeItem(`nomee-session-${profile.slug}`)
+      sessionStorage.removeItem(CONTRIBUTION_STORAGE_KEY)
+      sessionStorage.removeItem(`nomee_draft_message_${contributionId}`)
+      sessionStorage.removeItem(`nomee_draft_message_${profile.slug}`)
+
+      console.log("[VOICE] Step 6: Cleaned up sessionStorage, moving to submitted")
+      setStep("submitted")
+    } catch (err) {
+      console.error("[VOICE] Step 6: Error submitting:", err)
+      setError("Something went wrong. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSkipVoice = async () => {
+    console.log("[VOICE] Step 6: Skipping voice, moving to submitted")
+    setLoading(true)
+    try {
+      sessionStorage.removeItem(`nomee-draft-${profile.slug}`)
+      sessionStorage.removeItem(`nomee-session-${profile.slug}`)
+      sessionStorage.removeItem(CONTRIBUTION_STORAGE_KEY)
+      sessionStorage.removeItem(`nomee_draft_message_${contributionId}`)
+      sessionStorage.removeItem(`nomee_draft_message_${profile.slug}`)
+      setStep("submitted")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleTraitToggle = (category: string, traitId: string) => {
+    const currentSelected = selectedTraits[category] || []
+
+    if (currentSelected.includes(traitId)) {
+      setSelectedTraits({
+        ...selectedTraits,
+        [category]: currentSelected.filter((id) => id !== traitId),
+      })
+    } else if (currentSelected.length < 2) {
+      setSelectedTraits({
+        ...selectedTraits,
+        [category]: [...currentSelected, traitId],
+      })
+    }
   }
 
   // STEP 1: Emotional Entry
@@ -377,22 +651,6 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   if (step === "traits") {
     const totalSelected = Object.values(selectedTraits).flat().length
 
-    const handleTraitToggle = (category: string, traitId: string) => {
-      const currentSelected = selectedTraits[category] || []
-
-      if (currentSelected.includes(traitId)) {
-        setSelectedTraits({
-          ...selectedTraits,
-          [category]: currentSelected.filter((id) => id !== traitId),
-        })
-      } else if (currentSelected.length < 2) {
-        setSelectedTraits({
-          ...selectedTraits,
-          [category]: [...currentSelected, traitId],
-        })
-      }
-    }
-
     return (
       <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-3xl">
@@ -491,96 +749,6 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     const charCount = message.length
     const maxChars = 1200
 
-    const handleMessageSubmit = async () => {
-      if (!message.trim()) {
-        setValidationErrors({ message: "Please write a message" })
-        return
-      }
-
-      if (isSaving) return
-      setIsSaving(true)
-
-      setLoading(true)
-      setError(null)
-      setValidationErrors({})
-      setMessageSaveStatus("saving")
-
-      const existingContributionId = contributionId || sessionStorage.getItem(CONTRIBUTION_STORAGE_KEY)
-
-      console.log("[COLLECTION] step4 submit start", {
-        hasContributionId: !!existingContributionId,
-        inState: !!contributionId,
-        inSessionStorage: !!sessionStorage.getItem(CONTRIBUTION_STORAGE_KEY),
-        willUpdate: !!existingContributionId,
-        willInsert: !existingContributionId,
-      })
-
-      try {
-        const allSelectedTraitIds = Object.values(selectedTraits).flat()
-
-        const requestBody = {
-          profileId: profile.id,
-          contributionId: existingContributionId || undefined,
-          contributorName: null,
-          contributorEmail: null,
-          companyOrOrg: relationshipContext?.trim() || null,
-          relationship,
-          duration,
-          message: message.trim(),
-          selectedTraitIds: allSelectedTraitIds,
-          draftToken,
-        }
-
-        console.log("[COLLECTION] step4 calling /api/contributions/create", {
-          isUpdate: !!existingContributionId,
-          contributionId: existingContributionId,
-        })
-
-        const response = await fetch("/api/contributions/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody),
-        })
-
-        const result = await response.json()
-
-        console.log("[COLLECTION] step4 create response", {
-          status: response.status,
-          ok: response.ok,
-          body: result,
-        })
-
-        if ((response.status === 201 || response.status === 200) && result.success && result.contributionId) {
-          setContributionId(result.contributionId)
-          sessionStorage.setItem(CONTRIBUTION_STORAGE_KEY, result.contributionId)
-          console.log("[COLLECTION] step4 stored contributionId", {
-            id: result.contributionId,
-            wasUpdate: response.status === 200,
-            wasInsert: response.status === 201,
-          })
-
-          setMessageSaveStatus("saved")
-          setLoading(false)
-          setIsSaving(false)
-          setStep("identity")
-          return
-        }
-
-        // Handle errors with real messages
-        const errorMsg = result.error || result.message || `Error ${response.status}: Unknown error`
-        console.error("[COLLECTION] step4 create failed:", errorMsg)
-        setError(errorMsg)
-        setMessageSaveStatus("failed")
-      } catch (err) {
-        console.error("[COLLECTION] step4 network error:", err)
-        setError("Network error. Please check your connection and try again.")
-        setMessageSaveStatus("failed")
-      } finally {
-        setLoading(false)
-        setIsSaving(false)
-      }
-    }
-
     return (
       <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-2xl">
@@ -624,7 +792,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                 Back
               </Button>
               <Button
-                onClick={handleMessageSubmit}
+                onClick={handleSaveMessage}
                 disabled={loading || isSaving || !message.trim()}
                 className="flex-1"
                 size="lg"
@@ -641,100 +809,6 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
 
   // STEP 5: Identity - This step ONLY calls update-identity, NEVER create
   if (step === "identity") {
-    const isValidEmail = (email: string): boolean => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      return emailRegex.test(email)
-    }
-
-    const handleIdentityUpdate = async () => {
-      // Validation
-      const errors: Record<string, string> = {}
-      if (!firstName.trim()) errors.firstName = "First name is required"
-      if (!email.trim()) errors.email = "Email is required"
-      else if (!isValidEmail(email.trim())) errors.email = "Please enter a valid email"
-
-      if (Object.keys(errors).length > 0) {
-        setValidationErrors(errors)
-        return
-      }
-
-      if (isSaving) return
-      setIsSaving(true)
-
-      setLoading(true)
-      setError(null)
-      setValidationErrors({})
-
-      const stateContributionId = contributionId
-      const sessionContributionId = sessionStorage.getItem(CONTRIBUTION_STORAGE_KEY)
-
-      console.log("[COLLECTION] step5 submit start", {
-        stateContributionId,
-        sessionContributionId,
-      })
-
-      const finalContributionId = stateContributionId || sessionContributionId
-
-      console.log("[COLLECTION] step5 resolved contributionId", { id: finalContributionId })
-
-      if (!finalContributionId) {
-        console.error("[COLLECTION] step5 NO contributionId found - showing recovery error")
-        setError("We lost your draft. Please go back one step and click Continue again.")
-        setLoading(false)
-        setIsSaving(false)
-        return
-      }
-
-      try {
-        const updateBody = {
-          contributionId: finalContributionId,
-          contributorName: `${firstName.trim()}${lastName.trim() ? ` ${lastName.trim()}` : ""}`,
-          contributorEmail: email.trim().toLowerCase(),
-        }
-
-        console.log("[COLLECTION] step5 calling /api/contributions/update-identity")
-
-        const response = await fetch("/api/contributions/update-identity", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updateBody),
-        })
-
-        const result = await response.json()
-
-        console.log("[COLLECTION] step5 update-identity response", {
-          status: response.status,
-          ok: response.ok,
-          body: result,
-        })
-
-        if (response.ok && result.success) {
-          console.log("[COLLECTION] step5 SUCCESS - navigating to voice step")
-          // Clear sessionStorage on success
-          sessionStorage.removeItem(CONTRIBUTION_STORAGE_KEY)
-          setLoading(false)
-          setIsSaving(false)
-          setStep("voice")
-          return
-        }
-
-        const errorMsg = `Error ${response.status}: ${result.error || result.message || "Unknown error"}`
-        console.error("[COLLECTION] step5 update-identity failed:", {
-          status: response.status,
-          code: result.code,
-          error: result.error,
-          fullResult: result,
-        })
-        setError(errorMsg)
-      } catch (err) {
-        console.error("[COLLECTION] step5 network error:", err)
-        setError("Network error. Please check your connection and try again.")
-      } finally {
-        setLoading(false)
-        setIsSaving(false)
-      }
-    }
-
     return (
       <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-2xl">
@@ -789,7 +863,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                   className={validationErrors.email ? "border-red-500" : ""}
                 />
                 {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
-                {!validationErrors.email && isValidEmail(email) && (
+                {!validationErrors.email && emailValidation === "valid" && (
                   <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path
@@ -817,7 +891,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               </Button>
               <Button
                 onClick={handleIdentityUpdate}
-                disabled={loading || !firstName.trim() || !email.trim() || !isValidEmail(email.trim())}
+                disabled={loading || !firstName.trim() || !email.trim() || emailValidation !== "valid"}
                 className="flex-1"
                 size="lg"
               >
@@ -832,49 +906,16 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
 
   // STEP 6: Voice Recording (Optional)
   if (step === "voice") {
-    const handleSubmitWithVoice = async () => {
-      setLoading(true)
-      setError(null)
+    const typedMessage =
+      sessionStorage.getItem(`nomee_draft_message_${contributionId}`) ||
+      sessionStorage.getItem(`nomee_draft_message_${profile.slug}`) ||
+      ""
 
-      try {
-        if (voiceBlob && contributionId) {
-          const formData = new FormData()
-          formData.append("audio", voiceBlob, "recording.webm")
-          formData.append("contributionId", contributionId)
-
-          const response = await fetch("/api/contributions/upload-audio", {
-            method: "POST",
-            body: formData,
-          })
-
-          if (!response.ok) {
-            console.error("Failed to upload audio")
-          }
-        }
-
-        sessionStorage.removeItem(`nomee-draft-${profile.slug}`)
-        sessionStorage.removeItem(`nomee-session-${profile.slug}`)
-        sessionStorage.removeItem(CONTRIBUTION_STORAGE_KEY)
-        setStep("submitted")
-      } catch (err) {
-        console.error("Error submitting:", err)
-        setError("Something went wrong. Please try again.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    const handleSkipVoice = async () => {
-      setLoading(true)
-      try {
-        sessionStorage.removeItem(`nomee-draft-${profile.slug}`)
-        sessionStorage.removeItem(`nomee-session-${profile.slug}`)
-        sessionStorage.removeItem(CONTRIBUTION_STORAGE_KEY)
-        setStep("submitted")
-      } finally {
-        setLoading(false)
-      }
-    }
+    console.log("[VOICE] Step 6: Loaded typed message from sessionStorage", {
+      contributionId,
+      hasMessage: !!typedMessage,
+      messageLength: typedMessage.length,
+    })
 
     return (
       <div className="min-h-screen bg-white py-12 px-4">
@@ -887,6 +928,28 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               A short recording adds a personal touch. 30 seconds to 2 minutes works great.
             </p>
           </div>
+
+          {typedMessage && (
+            <Card className="mb-6 p-6 bg-blue-50/30 border-blue-200">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-sm font-semibold text-neutral-900">Read what you wrote (optional)</h3>
+                <Button size="sm" variant="ghost" onClick={handleCopyMessage} className="h-8 px-2 text-xs">
+                  {copiedMessage ? (
+                    <>
+                      <Check className="mr-1 h-3 w-3" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-1 h-3 w-3" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-sm text-neutral-700 leading-relaxed">{typedMessage}</p>
+            </Card>
+          )}
 
           <Card className="p-8">
             <VoiceRecorder onRecordingComplete={handleRecordingComplete} maxDuration={120} />
