@@ -4,13 +4,13 @@ import { PremierProfileClient } from "./premier-profile-client"
 import { generateVibeCheck } from "@/lib/generate-vibe-check"
 import { extractAnchorQuote } from "@/lib/extract-anchor-quote"
 import { generateInterpretationSentence } from "@/lib/generate-interpretation-sentence"
+import { buildProfileAnalysis } from "@/lib/build-profile-analysis"
 
 export default async function PublicNomeePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params
 
   const staticRoutes = ["how-it-works", "what-is-nomee", "pricing", "auth", "dashboard", "c", "api"]
   if (staticRoutes.includes(username)) {
-    // Return null to let Next.js handle the static route
     redirect("/" + username)
   }
 
@@ -51,6 +51,8 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
       slug: profile.slug,
       name: profile.full_name,
     })
+
+    const profileAnalysis = await buildProfileAnalysis(profile.id)
 
     const { data: contributions } = await supabase
       .from("contributions")
@@ -164,6 +166,7 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
         interpretationSentence={interpretationSentence}
         vibeLabels={vibeLabels}
         anchorQuote={anchorQuote}
+        profileAnalysis={profileAnalysis}
       />
     )
   } catch (error) {

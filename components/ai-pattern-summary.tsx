@@ -4,122 +4,100 @@ import { useEffect, useState } from "react"
 import { ChevronDown } from "lucide-react"
 
 export type TraitSignal = { label: string; count: number }
-
-interface Contribution {
-  id: string
-  written_note: string
-  relationship: string
-}
-
-interface ImportedFeedback {
-  id: string
-  ocr_text: string | null
-  ai_extracted_excerpt: string | null
-  traits: string[] | null
-  included_in_analysis: boolean
-}
+export type VibeSignal = { label: string; count: number }
 
 interface AiPatternSummaryProps {
-  contributions: Contribution[]
-  importedFeedback: ImportedFeedback[]
-  topTraits: TraitSignal[]
+  analysisText: string
+  traitSignals: TraitSignal[]
+  vibeSignals: VibeSignal[]
   firstName?: string
   contributionsCount: number
 }
 
 export function AiPatternSummary({
-  contributions,
-  importedFeedback,
-  topTraits,
+  analysisText,
+  traitSignals,
+  vibeSignals,
   firstName = "this person",
   contributionsCount,
 }: AiPatternSummaryProps) {
   const [summary, setSummary] = useState<{
     synthesis: string
-    patterns: string[]
+    patterns: Array<{ label: string; type: "trait" | "vibe" }>
   } | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [isExpanded, setIsExpanded] = useState(false)
 
   useEffect(() => {
     generateSummary()
-  }, [contributions, importedFeedback, topTraits, firstName, contributionsCount])
+  }, [analysisText, traitSignals, vibeSignals, firstName, contributionsCount])
 
   const generateSummary = () => {
-    if (contributionsCount === 0) {
-      setIsLoading(false)
+    const hasContent = analysisText.length >= 40 || traitSignals.length > 0 || vibeSignals.length > 0
+
+    if (!hasContent) {
+      setSummary(null)
       return
     }
 
-    if (topTraits.length === 0) {
-      // Even with no traits, generate a basic summary if we have contributions
-      setSummary({
-        synthesis: `${firstName} is building their professional reputation with early feedback.`,
-        patterns: [],
+    const patterns: Array<{ label: string; type: "trait" | "vibe" }> = []
+
+    // Prefer traits first, then fill with vibes
+    traitSignals.slice(0, 3).forEach((t) => {
+      patterns.push({ label: t.label, type: "trait" })
+    })
+
+    if (patterns.length < 3) {
+      vibeSignals.slice(0, 3 - patterns.length).forEach((v) => {
+        patterns.push({ label: v.label, type: "vibe" })
       })
-      setIsLoading(false)
-      return
     }
 
-    setIsLoading(true)
-
-    const traits = topTraits.slice(0, 3)
     let synthesis = ""
 
-    if (contributionsCount === 1) {
-      if (traits.length >= 2) {
-        synthesis = `Early signal from 1 person: ${firstName} comes through as ${traits[0].label.toLowerCase()} and ${traits[1].label.toLowerCase()}${traits.length >= 3 ? `, and ${traits[2].label.toLowerCase()}` : ""}.`
-      } else if (traits.length === 1) {
-        synthesis = `Early signal from 1 person: ${firstName} comes through as ${traits[0].label.toLowerCase()}.`
-      }
-    } else if (contributionsCount === 2) {
-      if (traits.length >= 2) {
-        synthesis = `So far, ${firstName} comes through as ${traits[0].label.toLowerCase()} and ${traits[1].label.toLowerCase()}${traits.length >= 3 ? `, with emphasis on ${traits[2].label.toLowerCase()}` : ""}.`
-      } else if (traits.length === 1) {
-        synthesis = `So far, ${firstName} comes through as ${traits[0].label.toLowerCase()}.`
-      }
-    } else if (contributionsCount >= 3 && contributionsCount < 5) {
-      if (traits.length >= 3) {
-        synthesis = `People describe working with ${firstName} as ${traits[0].label.toLowerCase()} and ${traits[1].label.toLowerCase()}, with emphasis on ${traits[2].label.toLowerCase()}.`
-      } else if (traits.length === 2) {
-        synthesis = `People describe working with ${firstName} as ${traits[0].label.toLowerCase()} and ${traits[1].label.toLowerCase()}.`
-      } else if (traits.length === 1) {
-        synthesis = `People describe working with ${firstName} as ${traits[0].label.toLowerCase()}.`
-      }
-    } else {
-      // contributionsCount >= 5: Use "consistently"
-      if (traits.length >= 3) {
-        synthesis = `People consistently describe working with ${firstName} as ${traits[0].label.toLowerCase()} and ${traits[1].label.toLowerCase()}, with emphasis on ${traits[2].label.toLowerCase()}.`
-      } else if (traits.length === 2) {
-        synthesis = `People consistently describe working with ${firstName} as ${traits[0].label.toLowerCase()} and ${traits[1].label.toLowerCase()}.`
-      } else if (traits.length === 1) {
-        synthesis = `People consistently describe working with ${firstName} as ${traits[0].label.toLowerCase()}.`
-      }
-    }
+    const topThreeTraits = traitSignals.slice(0, 3)
 
-    const patterns = traits.map((t) => t.label)
+    if (contributionsCount === 1 && topThreeTraits.length > 0) {
+      if (topThreeTraits.length >= 2) {
+        synthesis = `Early signal from 1 person: ${firstName} comes through as ${topThreeTraits[0].label.toLowerCase()} and ${topThreeTraits[1].label.toLowerCase()}${topThreeTraits.length >= 3 ? `, and ${topThreeTraits[2].label.toLowerCase()}` : ""}.`
+      } else {
+        synthesis = `Early signal from 1 person: ${firstName} comes through as ${topThreeTraits[0].label.toLowerCase()}.`
+      }
+    } else if (contributionsCount === 2 && topThreeTraits.length > 0) {
+      if (topThreeTraits.length >= 2) {
+        synthesis = `So far, ${firstName} comes through as ${topThreeTraits[0].label.toLowerCase()} and ${topThreeTraits[1].label.toLowerCase()}${topThreeTraits.length >= 3 ? `, with emphasis on ${topThreeTraits[2].label.toLowerCase()}` : ""}.`
+      } else {
+        synthesis = `So far, ${firstName} comes through as ${topThreeTraits[0].label.toLowerCase()}.`
+      }
+    } else if (contributionsCount >= 3 && contributionsCount < 5 && topThreeTraits.length > 0) {
+      if (topThreeTraits.length >= 3) {
+        synthesis = `People describe working with ${firstName} as ${topThreeTraits[0].label.toLowerCase()} and ${topThreeTraits[1].label.toLowerCase()}, with emphasis on ${topThreeTraits[2].label.toLowerCase()}.`
+      } else if (topThreeTraits.length === 2) {
+        synthesis = `People describe working with ${firstName} as ${topThreeTraits[0].label.toLowerCase()} and ${topThreeTraits[1].label.toLowerCase()}.`
+      } else {
+        synthesis = `People describe working with ${firstName} as ${topThreeTraits[0].label.toLowerCase()}.`
+      }
+    } else if (contributionsCount >= 5 && topThreeTraits.length > 0) {
+      if (topThreeTraits.length >= 3) {
+        synthesis = `People consistently describe working with ${firstName} as ${topThreeTraits[0].label.toLowerCase()} and ${topThreeTraits[1].label.toLowerCase()}, with emphasis on ${topThreeTraits[2].label.toLowerCase()}.`
+      } else if (topThreeTraits.length === 2) {
+        synthesis = `People consistently describe working with ${firstName} as ${topThreeTraits[0].label.toLowerCase()} and ${topThreeTraits[1].label.toLowerCase()}.`
+      } else {
+        synthesis = `People consistently describe working with ${firstName} as ${topThreeTraits[0].label.toLowerCase()}.`
+      }
+    } else if (analysisText.length >= 40) {
+      synthesis = `Across shared highlights and notes, ${firstName} is building their professional reputation.`
+    }
 
     setSummary({
       synthesis,
-      patterns: patterns.slice(0, 3),
+      patterns,
     })
-
-    setIsLoading(false)
   }
 
-  if (isLoading && contributionsCount > 0) {
+  if (!summary) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-24 bg-neutral-100 rounded-lg"></div>
-        <div className="h-8 bg-neutral-100 rounded-lg w-1/2"></div>
-      </div>
-    )
-  }
-
-  if (!summary || contributionsCount === 0) {
-    return (
-      <div className="text-center py-12 text-neutral-500">
-        <p className="text-lg">Summary will appear once contributions are received.</p>
+      <div className="text-center py-8 text-neutral-500">
+        <p className="text-base leading-relaxed">Summary will appear once feedback or highlights are added.</p>
       </div>
     )
   }
@@ -156,15 +134,21 @@ export function AiPatternSummary({
           <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Most mentioned signals</p>
           <div className="flex flex-wrap gap-3">
             {summary.patterns.map((pattern, index) => {
-              const prefixes = ["Known for being", "Reputation for", "Recognized for"]
-              const prefix = prefixes[index % prefixes.length]
-              // Format: "Known for being thoughtful" or "Reputation for strategic work"
-              const displayText =
-                index === 1
-                  ? `${prefix} ${pattern.toLowerCase()} work`
-                  : index === 2
-                    ? `${prefix} ${pattern.toLowerCase()} approach`
-                    : `${prefix} ${pattern.toLowerCase()}`
+              let displayText = ""
+
+              if (pattern.type === "trait") {
+                const prefixes = ["Known for being", "Reputation for", "Recognized for"]
+                const prefix = prefixes[index % prefixes.length]
+                displayText =
+                  index === 1
+                    ? `${prefix} ${pattern.label.toLowerCase()} work`
+                    : index === 2
+                      ? `${prefix} ${pattern.label.toLowerCase()} approach`
+                      : `${prefix} ${pattern.label.toLowerCase()}`
+              } else {
+                // Vibe
+                displayText = `Brings a ${pattern.label.toLowerCase()} energy`
+              }
 
               return (
                 <span
