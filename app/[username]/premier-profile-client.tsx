@@ -6,8 +6,8 @@ import { Share2, Copy } from "lucide-react"
 import { VoiceCard } from "@/components/voice-card"
 import { SiteHeader } from "@/components/site-header"
 import { AiPatternSummary } from "@/components/ai-pattern-summary"
-import { TestimonialGroup } from "@/components/testimonial-group"
 import { RelationshipFilter } from "@/components/relationship-filter"
+import { FloatingQuoteCards } from "@/components/floating-quote-cards" // Assuming FloatingQuoteCards is imported
 import { filterByRelationship, type RelationshipFilterCategory } from "@/lib/relationship-filter"
 import { categorizeTestimonials } from "@/lib/categorize-testimonials"
 import { extractRepeatedPhrases } from "@/lib/extract-repeated-phrases"
@@ -15,6 +15,7 @@ import { dedupeContributions } from "@/lib/dedupe-contributions"
 import { extractHighlightPatterns } from "@/lib/extract-highlight-patterns"
 import Link from "next/link"
 import type { Profile, Contribution, ImportedFeedback, Trait } from "@/lib/types"
+import { TRAIT_CATEGORIES } from "@/lib/trait-categories" // Assuming TRAIT_CATEGORIES is imported
 
 interface PremierProfileClientProps {
   profile: Profile
@@ -73,6 +74,7 @@ export function PremierProfileClient({
   const [showCopied, setShowCopied] = useState(false)
   const [howItFeelsRelationshipFilter, setHowItFeelsRelationshipFilter] = useState<RelationshipFilterCategory>("All")
   const [voiceRelationshipFilter, setVoiceRelationshipFilter] = useState<RelationshipFilterCategory>("All")
+  const [selectedVibe, setSelectedVibe] = useState<string | null>(null)
 
   useEffect(() => {
     const timer = setTimeout(() => setHeroVisible(true), 100)
@@ -109,6 +111,10 @@ export function PremierProfileClient({
     } else {
       handleCopyLink()
     }
+  }
+
+  const handleClearVibeFilter = () => {
+    setSelectedVibe(null)
   }
 
   const traitsWithExamples = traits.map((trait) => ({
@@ -184,6 +190,63 @@ export function PremierProfileClient({
   const filteredVoiceContributions = useMemo(() => {
     return filterByRelationship(voiceContributions, voiceRelationshipFilter)
   }, [voiceContributions, voiceRelationshipFilter])
+
+  const vibeData = useMemo(() => {
+    const vibeCounts: Record<string, number> = {}
+
+    rawContributions.forEach((contribution) => {
+      if (contribution.traits_json) {
+        let traitsData: any = {}
+        try {
+          traitsData =
+            typeof contribution.traits_json === "string"
+              ? JSON.parse(contribution.traits_json)
+              : contribution.traits_json
+        } catch (e) {
+          console.error("[v0] Error parsing traits_json:", e)
+        }
+
+        const vibeTraits = [...(traitsData.the_vibe || []), ...(traitsData.how_it_felt || [])]
+
+        vibeTraits.forEach((traitId: string) => {
+          const vibeTrait = TRAIT_CATEGORIES.the_vibe?.traits.find((t) => t.id === traitId)
+          if (vibeTrait) {
+            vibeCounts[vibeTrait.label] = (vibeCounts[vibeTrait.label] || 0) + 1
+          }
+        })
+      }
+    })
+
+    const sortedVibes = Object.entries(vibeCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 6)
+      .map(([label, count]) => ({ label, count }))
+
+    return sortedVibes
+  }, [rawContributions])
+
+  const filteredContributionsByVibe = useMemo(() => {
+    if (!selectedVibe) return filteredHowItFeels
+
+    return filteredHowItFeels.filter((contribution) => {
+      if (!contribution.traits_json) return false
+
+      let traitsData: any = {}
+      try {
+        traitsData =
+          typeof contribution.traits_json === "string" ? JSON.parse(contribution.traits_json) : contribution.traits_json
+      } catch (e) {
+        return false
+      }
+
+      const vibeTraits = [...(traitsData.the_vibe || []), ...(traitsData.how_it_felt || [])]
+
+      return vibeTraits.some((traitId: string) => {
+        const vibeTrait = TRAIT_CATEGORIES.the_vibe?.traits.find((t) => t.id === traitId)
+        return vibeTrait?.label === selectedVibe
+      })
+    })
+  }, [filteredHowItFeels, selectedVibe])
 
   const totalContributions = contributions.length
 
@@ -502,6 +565,50 @@ export function PremierProfileClient({
           </section>
         )}
 
+        {/* The vibe around {Name} section */}
+        {totalContributions >= 3 && vibeData.length > 0 && (
+          <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
+            <div className="space-y-3 max-w-2xl mx-auto text-center">
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">
+                The vibe around {profile.full_name?.split(" ")[0]}
+              </h3>
+              <p className="text-sm sm:text-base text-neutral-600">
+                The most common feelings people mentioned about their experience
+              </p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2 max-w-3xl mx-auto">
+              {vibeData.map((vibe) => {
+                const isSelected = selectedVibe === vibe.label
+                return (
+                  <button
+                    key={vibe.label}
+                    onClick={() => setSelectedVibe(isSelected ? null : vibe.label)}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      isSelected
+                        ? "bg-neutral-900 text-white ring-2 ring-neutral-900 ring-offset-2"
+                        : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                    }`}
+                  >
+                    {vibe.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {selectedVibe && (
+              <div className="text-center">
+                <button
+                  onClick={handleClearVibeFilter}
+                  className="text-sm text-neutral-600 hover:text-neutral-900 underline"
+                >
+                  Clear filter
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
         {/* How it feels section */}
         {howItFeels.length > 0 && (
           <>
@@ -522,29 +629,11 @@ export function PremierProfileClient({
                 />
               </div>
 
-              {filteredHowItFeels.length > 0 ? (
-                <TestimonialGroup
-                  title=""
-                  contributions={filteredHowItFeels}
-                  selectedTraits={selectedTraits}
-                  hoveredTrait={hoveredTrait}
-                  profileName={profile.full_name}
-                  highlightPatterns={highlightPatterns}
-                  isFirstGroup={true}
-                />
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-neutral-600">
-                    No perspectives yet from {howItFeelsRelationshipFilter.toLowerCase()}.
-                  </p>
-                  <button
-                    onClick={() => setHowItFeelsRelationshipFilter("All")}
-                    className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium min-h-[44px] px-4"
-                  >
-                    View all perspectives
-                  </button>
-                </div>
-              )}
+              <FloatingQuoteCards
+                contributions={filteredContributionsByVibe}
+                highlightPatterns={highlightPatterns}
+                profileName={profile.full_name}
+              />
             </section>
           </>
         )}

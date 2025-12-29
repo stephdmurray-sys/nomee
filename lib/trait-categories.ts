@@ -1,25 +1,25 @@
 export const TRAIT_CATEGORIES = {
-  how_it_felt: {
-    title: "How it felt",
+  the_vibe: {
+    title: "The vibe",
     traits: [
-      { id: "trustworthy", label: "Trustworthy" },
-      { id: "supportive", label: "Supportive" },
-      { id: "respectful", label: "Respectful" },
-      { id: "encouraging", label: "Encouraging" },
-      { id: "safe", label: "Safe" },
-      { id: "valuing", label: "Valuing" },
+      { id: "energized", label: "Energized" },
+      { id: "focused", label: "Focused" },
+      { id: "clear", label: "Clear" },
+      { id: "motivated", label: "Motivated" },
+      { id: "inspired", label: "Inspired" },
+      { id: "confident", label: "Confident" },
       { id: "calm", label: "Calm" },
-      { id: "steady", label: "Steady" },
-      { id: "uplifting", label: "Uplifting" },
-      { id: "fair", label: "Fair" },
-      { id: "grounding", label: "Grounding" },
-      { id: "motivating", label: "Motivating" },
+      { id: "supported", label: "Supported" },
+      { id: "seen", label: "Seen" },
+      { id: "safe", label: "Safe" },
+      { id: "elevated", label: "Elevated" },
+      { id: "unstuck", label: "Unstuck" },
     ],
   },
   communication: {
     title: "Communication",
     traits: [
-      { id: "clear", label: "Clear" },
+      { id: "clear_comm", label: "Clear" },
       { id: "responsive", label: "Responsive" },
       { id: "thoughtful", label: "Thoughtful" },
       { id: "direct", label: "Direct" },
@@ -61,7 +61,7 @@ export const TRAIT_CATEGORIES = {
       { id: "protective", label: "Protective" },
       { id: "inclusive", label: "Inclusive" },
       { id: "adaptable", label: "Adaptable" },
-      { id: "confident", label: "Confident" },
+      { id: "confident_leader", label: "Confident" },
       { id: "ownership_mindset", label: "Ownership mindset" },
       { id: "gives_credit", label: "Gives credit" },
       { id: "sets_direction", label: "Sets direction" },
@@ -71,3 +71,14 @@ export const TRAIT_CATEGORIES = {
 
 export type TraitCategoryKey = keyof typeof TRAIT_CATEGORIES
 export type TraitId = string
+
+export function mapLegacyCategory(categoryKey: string): string {
+  if (categoryKey === "how_it_felt") {
+    return "the_vibe"
+  }
+  return categoryKey
+}
+
+export function isVibeTrait(categoryKey: string): boolean {
+  return categoryKey === "the_vibe" || categoryKey === "how_it_felt"
+}

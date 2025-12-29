@@ -53,7 +53,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   const [selectedTraits, setSelectedTraits] = useState<TraitSelections>({})
   const [message, setMessage] = useState("")
   const [firstName, setFirstName] = useState("")
-  const [lastInitial, setLastInitial] = useState("")
+  const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
   const [contributionId, setContributionId] = useState<string | null>(null)
@@ -67,8 +67,12 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   const firstNameValue = profile.full_name?.split(" ")[0] || profile.full_name || "them"
 
   useEffect(() => {
+    // Check if this is a fresh page load (no session marker)
+    const sessionMarker = sessionStorage.getItem(`nomee-session-${profile.slug}`)
     const sessionData = sessionStorage.getItem(`nomee-draft-${profile.slug}`)
-    if (sessionData) {
+
+    if (sessionMarker && sessionData) {
+      // User refreshed during an active session - restore their progress
       try {
         const parsed = JSON.parse(sessionData)
         console.log("[v0] Restored draft from sessionStorage:", parsed)
@@ -77,21 +81,35 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         if (parsed.selectedTraits) setSelectedTraits(parsed.selectedTraits)
         if (parsed.message) setMessage(parsed.message)
         if (parsed.firstName) setFirstName(parsed.firstName)
-        if (parsed.lastInitial) setLastInitial(parsed.lastInitial)
+        if (parsed.lastName) setLastName(parsed.lastName)
         if (parsed.email) setEmail(parsed.email)
         if (parsed.contributionId) setContributionId(parsed.contributionId)
         if (parsed.draftToken) setDraftToken(parsed.draftToken)
+        // Only restore step if not submitted
         if (parsed.step && parsed.step !== "submitted") setStep(parsed.step)
       } catch (err) {
         console.error("[v0] Failed to parse sessionStorage:", err)
       }
+    } else {
+      // Fresh page load - clear any stale drafts and start from beginning
+      sessionStorage.removeItem(`nomee-draft-${profile.slug}`)
     }
+
+    // Set session marker to indicate active session
+    sessionStorage.setItem(`nomee-session-${profile.slug}`, "active")
 
     // Generate or restore draft token
     if (!draftToken) {
       const token = `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       setDraftToken(token)
     }
+
+    // Clear session marker when user leaves the page
+    const handleBeforeUnload = () => {
+      sessionStorage.removeItem(`nomee-session-${profile.slug}`)
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
   }, [profile.slug])
 
   useEffect(() => {
@@ -102,7 +120,8 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         selectedTraits,
         message,
         firstName,
-        lastInitial,
+        // Updated to save full last name
+        lastName,
         email,
         contributionId,
         draftToken,
@@ -116,7 +135,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     selectedTraits,
     message,
     firstName,
-    lastInitial,
+    lastName,
     email,
     contributionId,
     draftToken,
@@ -185,7 +204,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
           <ProgressBar currentStep={1} totalSteps={6} />
           <div className="mb-8">
             <p className="mb-4 text-sm text-neutral-600">Step 1 of 6</p>
-            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">How did you work with {profile.full_name}?</h1>
+            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">How do you know {profile.full_name}?</h1>
           </div>
 
           <Card className="p-8">
@@ -244,7 +263,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
           <ProgressBar currentStep={2} totalSteps={6} />
           <div className="mb-8">
             <p className="mb-4 text-sm text-neutral-600">Step 2 of 6</p>
-            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">How long did you work with them?</h1>
+            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">How long have you known them?</h1>
           </div>
 
           <Card className="p-8">
@@ -337,6 +356,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                 <Card key={categoryKey} className="p-6">
                   <div className="mb-4">
                     <h2 className="text-xl font-semibold text-neutral-900">{category.title}</h2>
+                    {categoryKey === "the_vibe" && <p className="text-sm text-neutral-600 mt-1">Pick up to 2</p>}
                     <div className="mt-2 flex items-center justify-between">
                       <span className={`text-sm ${isMaxed ? "text-neutral-900 font-medium" : "text-neutral-600"}`}>
                         {selected.length} of 2 selected {isMaxed && "✓"}
@@ -505,7 +525,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
           <div className="mb-8">
             <p className="mb-4 text-sm text-neutral-600">Step 4 of 6</p>
             <h1 className="mb-2 text-3xl font-semibold text-neutral-900">
-              In 1–3 sentences, what stood out about working with {profile.full_name}?
+              In 1–3 sentences, what stood out about your experience with {profile.full_name}?
             </h1>
             <p className="text-neutral-600">Think of a moment, behavior, or quality that made an impression.</p>
           </div>
@@ -569,7 +589,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
       // Validation
       const errors: Record<string, string> = {}
       if (!firstName.trim()) errors.firstName = "First name is required"
-      if (!lastInitial.trim()) errors.lastInitial = "Last initial is required"
+      if (!lastName.trim()) errors.lastName = "Last name is required"
       if (!email.trim()) errors.email = "Email is required"
       else if (!isValidEmail(email.trim())) errors.email = "Please enter a valid email"
 
@@ -594,7 +614,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               profileId: profile.id,
-              contributorName: `${firstName.trim()} ${lastInitial.trim()}.`,
+              contributorName: `${firstName.trim()} ${lastName.trim()}`,
               contributorEmail: email.trim().toLowerCase(),
               companyOrOrg: "Unknown",
               relationship,
@@ -634,7 +654,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contributionId: finalContributionId,
-            contributorName: `${firstName.trim()} ${lastInitial.trim()}.`,
+            contributorName: `${firstName.trim()} ${lastName.trim()}`,
             contributorEmail: email.trim().toLowerCase(),
           }),
         })
@@ -697,23 +717,20 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               </div>
 
               <div>
-                <Label htmlFor="lastInitial" className="text-neutral-900">
-                  Last initial
+                <Label htmlFor="lastName" className="text-neutral-900">
+                  Last name
                 </Label>
                 <Input
-                  id="lastInitial"
+                  id="lastName"
                   type="text"
-                  maxLength={1}
-                  value={lastInitial}
+                  value={lastName}
                   onChange={(e) => {
-                    setLastInitial(e.target.value.toUpperCase())
-                    setValidationErrors((prev) => ({ ...prev, lastInitial: "" }))
+                    setLastName(e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, lastName: "" }))
                   }}
                   className="mt-2"
                 />
-                {validationErrors.lastInitial && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.lastInitial}</p>
-                )}
+                {validationErrors.lastName && <p className="mt-1 text-sm text-red-600">{validationErrors.lastName}</p>}
               </div>
 
               <div>
