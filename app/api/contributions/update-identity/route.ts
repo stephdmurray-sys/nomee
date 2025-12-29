@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createPublicServerClient } from "@/lib/supabase/public-server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { checkRateLimit } from "@/lib/rate-limiter"
 import crypto from "crypto"
 
@@ -7,16 +7,21 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    console.log("[v0] API - Received identity update request")
+    console.log("[COLLECTION] /api/contributions/update-identity received", {
+      keys: Object.keys(body),
+      hasContributionId: !!body.contributionId,
+      hasName: !!body.contributorName,
+      hasEmail: !!body.contributorEmail,
+    })
 
     const { contributionId, contributorName, contributorEmail } = body
 
     if (!contributionId || !contributorName || !contributorEmail) {
-      console.log("[v0] API - Missing required fields")
+      console.log("[COLLECTION] update-identity: Missing required fields")
       return NextResponse.json(
         {
           success: false,
-          error: "All fields are required",
+          error: "All fields are required (contributionId, contributorName, contributorEmail)",
           code: "MISSING_FIELDS",
         },
         { status: 400 },
@@ -25,15 +30,15 @@ export async function POST(request: NextRequest) {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(contributorEmail)) {
-      console.log("[v0] API - Invalid email format")
+      console.log("[COLLECTION] update-identity: Invalid email format")
       return NextResponse.json(
         { success: false, error: "Invalid email format", code: "INVALID_EMAIL" },
         { status: 400 },
       )
     }
 
-    const supabase = await createPublicServerClient()
-    console.log("[v0] API - Supabase client created successfully")
+    const supabase = createAdminClient()
+    console.log("[COLLECTION] update-identity: Supabase admin client created")
 
     const normalizedEmail = contributorEmail.toLowerCase().trim()
 
@@ -46,7 +51,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!rateLimit.allowed) {
-      console.log("[v0] API - Rate limit exceeded for:", normalizedEmail)
+      console.log("[COLLECTION] update-identity: Rate limit exceeded for:", normalizedEmail)
       return NextResponse.json(
         {
           success: false,
@@ -66,8 +71,18 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (fetchError || !contribution) {
-      console.log("[v0] API - Contribution not found:", fetchError)
-      return NextResponse.json({ success: false, error: "Contribution not found", code: "NOT_FOUND" }, { status: 404 })
+      console.log("[COLLECTION] update-identity: Contribution not found", {
+        errorCode: fetchError?.code,
+        errorMessage: fetchError?.message,
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Contribution not found. Please go back and save your message again.",
+          code: "NOT_FOUND",
+        },
+        { status: 404 },
+      )
     }
 
     const emailHash = crypto.createHash("sha256").update(normalizedEmail).digest("hex")
@@ -83,7 +98,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (existing) {
-      console.log("[v0] API - Duplicate submission detected")
+      console.log("[COLLECTION] update-identity: Duplicate submission detected")
       return NextResponse.json(
         {
           success: false,
@@ -95,7 +110,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update the contribution with identity information
-    console.log("[v0] API - Updating contribution with identity")
+    console.log("[COLLECTION] update-identity: Updating contribution", { contributionId })
     const { error: updateError } = await supabase
       .from("contributions")
       .update({
@@ -106,11 +121,14 @@ export async function POST(request: NextRequest) {
       .eq("id", contributionId)
 
     if (updateError) {
-      console.error("[v0] API - Update error:", updateError)
+      console.error("[COLLECTION] update-identity: Update error", {
+        errorCode: updateError.code,
+        errorMessage: updateError.message,
+      })
       return NextResponse.json(
         {
           success: false,
-          error: "Failed to update contribution",
+          error: `Database update failed: ${updateError.message}`,
           code: "UPDATE_ERROR",
           details: updateError.message,
         },
@@ -118,7 +136,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log("[v0] API - ✅ Identity updated successfully")
+    console.log("[COLLECTION] update-identity: SUCCESS", { contributionId })
 
     return NextResponse.json(
       {
@@ -128,11 +146,13 @@ export async function POST(request: NextRequest) {
       { status: 200 },
     )
   } catch (error) {
-    console.error("[v0] API - Unexpected error:", error)
+    console.error("[COLLECTION] update-identity: Unexpected error", {
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+    })
     return NextResponse.json(
       {
         success: false,
-        error: "Server error. Please try again.",
+        error: `Server error: ${error instanceof Error ? error.message : "Unknown error"}`,
         code: "INTERNAL_ERROR",
         details: error instanceof Error ? error.message : "Unknown error",
       },

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createPublicServerClient } from "@/lib/supabase/public-server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { checkRateLimit, detectSpamPatterns, detectInappropriateContent } from "@/lib/rate-limiter"
 import { RELATIONSHIP_VALUES, DURATION_VALUES } from "@/lib/nomee-enums"
 import { TRAIT_CATEGORIES } from "@/lib/trait-categories"
@@ -9,7 +9,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    console.log("[v0] API - Received contribution request")
+    console.log("[COLLECTION] /api/contributions/create received", {
+      keys: Object.keys(body),
+      hasProfileId: !!body.profileId,
+      hasRelationship: !!body.relationship,
+      hasDuration: !!body.duration,
+      hasMessage: !!body.message,
+    })
 
     const {
       profileId,
@@ -17,18 +23,19 @@ export async function POST(request: NextRequest) {
       contributorEmail,
       companyOrOrg,
       relationship,
-      relationshipContext, // Added relationshipContext parameter
+      relationshipContext,
       duration,
       message,
       selectedTraitIds,
     } = body
 
-    if (!contributorName || !contributorEmail || !relationship || !duration || !message) {
-      console.log("[v0] API - Missing required fields")
+    if (!relationship || !duration || !message) {
+      console.log("[COLLECTION] create: Missing required fields (relationship, duration, or message)")
       return NextResponse.json(
         {
           ok: false,
-          error: "All fields are required",
+          success: false,
+          error: "Relationship, duration, and message are required",
           code: "MISSING_FIELDS",
         },
         { status: 400 },
@@ -36,10 +43,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!RELATIONSHIP_VALUES.includes(relationship)) {
-      console.log("[v0] API - Invalid relationship value:", relationship)
+      console.log("[COLLECTION] create: Invalid relationship value:", relationship)
       return NextResponse.json(
         {
           ok: false,
+          success: false,
           error: "Invalid relationship value",
           code: "INVALID_RELATIONSHIP",
         },
@@ -48,10 +56,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!DURATION_VALUES.includes(duration)) {
-      console.log("[v0] API - Invalid duration value:", duration)
+      console.log("[COLLECTION] create: Invalid duration value:", duration)
       return NextResponse.json(
         {
           ok: false,
+          success: false,
           error: "Invalid duration value",
           code: "INVALID_DURATION",
         },
@@ -59,18 +68,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(contributorEmail)) {
-      console.log("[v0] API - Invalid email format")
-      return NextResponse.json({ ok: false, error: "Invalid email format", code: "INVALID_EMAIL" }, { status: 400 })
-    }
+    const supabase = createAdminClient()
+    console.log("[COLLECTION] create: Supabase admin client created")
 
-    const supabase = await createPublicServerClient()
-    console.log("[v0] API - Supabase client created successfully")
+    // Use pending email if none provided (identity collected at Step 5)
+    const normalizedEmail = contributorEmail ? contributorEmail.toLowerCase().trim() : "pending@nomee.app"
 
-    const normalizedEmail = contributorEmail.toLowerCase().trim()
-
+    // Only check rate limit if real email provided
     if (normalizedEmail !== "pending@nomee.app") {
+      if (contributorEmail) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(contributorEmail)) {
+          console.log("[COLLECTION] create: Invalid email format")
+          return NextResponse.json(
+            { ok: false, success: false, error: "Invalid email format", code: "INVALID_EMAIL" },
+            { status: 400 },
+          )
+        }
+      }
+
       const rateLimit = await checkRateLimit(supabase, {
         identifier: normalizedEmail,
         action: "submission",
@@ -79,11 +95,12 @@ export async function POST(request: NextRequest) {
       })
 
       if (!rateLimit.allowed) {
-        console.log("[v0] API - Rate limit exceeded for:", normalizedEmail)
+        console.log("[COLLECTION] create: Rate limit exceeded for:", normalizedEmail)
         return NextResponse.json(
           {
             ok: false,
-            error: `The email "${normalizedEmail}" has reached its submission limit. You can only submit 3 times per email within 24 hours.`,
+            success: false,
+            error: `The email "${normalizedEmail}" has reached its submission limit.`,
             code: "RATE_LIMIT",
             resetAt: rateLimit.resetAt.toISOString(),
           },
@@ -96,7 +113,7 @@ export async function POST(request: NextRequest) {
     const isInappropriate = detectInappropriateContent(message)
 
     if (isSpam || isInappropriate) {
-      console.log("[v0] API - Content flagged:", { isSpam, isInappropriate })
+      console.log("[COLLECTION] create: Content flagged:", { isSpam, isInappropriate })
     }
 
     const { data: profile, error: profileError } = await supabase
@@ -106,12 +123,19 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (profileError || !profile) {
-      console.log("[v0] API - Profile not found:", profileError)
-      return NextResponse.json({ ok: false, error: "Profile not found", code: "PROFILE_NOT_FOUND" }, { status: 404 })
+      console.log("[COLLECTION] create: Profile not found", {
+        errorCode: profileError?.code,
+        errorMessage: profileError?.message,
+      })
+      return NextResponse.json(
+        { ok: false, success: false, error: "Profile not found", code: "PROFILE_NOT_FOUND" },
+        { status: 404 },
+      )
     }
 
     const emailHash = crypto.createHash("sha256").update(normalizedEmail).digest("hex")
 
+    // Only check for duplicates if real email provided
     if (normalizedEmail !== "pending@nomee.app") {
       const { data: existing } = await supabase
         .from("contributions")
@@ -122,11 +146,12 @@ export async function POST(request: NextRequest) {
         .maybeSingle()
 
       if (existing) {
-        console.log("[v0] API - Duplicate submission detected")
+        console.log("[COLLECTION] create: Duplicate submission detected")
         return NextResponse.json(
           {
             ok: false,
-            error: `The email "${normalizedEmail}" has already submitted for this person. Each email can only submit once.`,
+            success: false,
+            error: `The email "${normalizedEmail}" has already submitted for this person.`,
             code: "DUPLICATE_SUBMISSION",
           },
           { status: 409 },
@@ -134,7 +159,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log("[v0] API - Mapping traits to 4 categories")
+    console.log("[COLLECTION] create: Mapping traits to 4 categories")
 
     const traitCategories = {
       traits_category1: [] as string[],
@@ -144,17 +169,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (selectedTraitIds && Array.isArray(selectedTraitIds) && selectedTraitIds.length > 0) {
-      // Map trait IDs to labels based on TRAIT_CATEGORIES
-      Object.entries(TRAIT_CATEGORIES).forEach(([categoryKey, category], index) => {
+      Object.entries(TRAIT_CATEGORIES).forEach(([categoryKey, category]) => {
         const categoryTraitIds = category.traits.map((t) => t.id)
-        const matchingTraitIds = selectedTraitIds.filter((id) => categoryTraitIds.includes(id))
+        const matchingTraitIds = selectedTraitIds.filter((id: string) => categoryTraitIds.includes(id))
 
         if (matchingTraitIds.length > 0) {
           const labels = matchingTraitIds
-            .map((id) => category.traits.find((t) => t.id === id)?.label)
+            .map((id: string) => category.traits.find((t) => t.id === id)?.label)
             .filter(Boolean) as string[]
 
-          // Map to database columns: how_it_felt=1, communication=2, execution=3, collaboration_and_leadership=4
           if (categoryKey === "how_it_felt") {
             traitCategories.traits_category1 = labels.slice(0, 2)
           } else if (categoryKey === "communication") {
@@ -168,19 +191,20 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    console.log("[v0] API - Trait categories mapped:", traitCategories)
+    console.log("[COLLECTION] create: Trait categories mapped:", traitCategories)
 
     const confirmationToken = crypto.randomBytes(32).toString("hex")
+    const finalContributorName = contributorName || "Pending Contributor"
 
     const { data: newContribution, error: insertError } = await supabase
       .from("contributions")
       .insert({
         owner_id: profileId,
-        contributor_name: contributorName,
+        contributor_name: finalContributorName,
         contributor_email: normalizedEmail,
         contributor_company: companyOrOrg || "Unknown",
         relationship,
-        relationship_context: relationshipContext || null, // Added relationship_context field
+        relationship_context: relationshipContext || null,
         duration,
         written_note: message,
         email_hash: emailHash,
@@ -205,11 +229,15 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (insertError) {
-      console.error("[v0] API - Insert error:", insertError)
+      console.error("[COLLECTION] create: Insert error", {
+        errorCode: insertError.code,
+        errorMessage: insertError.message,
+      })
       return NextResponse.json(
         {
           ok: false,
-          error: "Database error. Please try again.",
+          success: false,
+          error: `Database insert failed: ${insertError.message}`,
           code: "DB_INSERT_ERROR",
           details: insertError.message,
         },
@@ -218,14 +246,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!newContribution) {
-      console.error("[v0] API - No contribution returned")
+      console.error("[COLLECTION] create: No contribution returned")
       return NextResponse.json(
-        { ok: false, error: "Failed to create contribution", code: "NO_RESULT" },
+        { ok: false, success: false, error: "Failed to create contribution", code: "NO_RESULT" },
         { status: 500 },
       )
     }
 
-    console.log("[v0] API - ✅ Contribution created successfully:", newContribution.id)
+    console.log("[COLLECTION] create: SUCCESS", { contributionId: newContribution.id })
 
     return NextResponse.json(
       {
@@ -237,11 +265,14 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     )
   } catch (error) {
-    console.error("[v0] API - Unexpected error:", error)
+    console.error("[COLLECTION] create: Unexpected error", {
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+    })
     return NextResponse.json(
       {
         ok: false,
-        error: "Server error. Please try again.",
+        success: false,
+        error: `Server error: ${error instanceof Error ? error.message : "Unknown error"}`,
         code: "INTERNAL_ERROR",
         details: error instanceof Error ? error.message : "Unknown error",
       },

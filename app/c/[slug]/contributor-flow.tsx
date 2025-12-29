@@ -3,14 +3,12 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { RELATIONSHIP_OPTIONS, DURATION_OPTIONS } from "@/lib/nomee-enums"
 import { TRAIT_CATEGORIES } from "@/lib/trait-categories"
 import { VoiceRecorder } from "@/components/voice-recorder"
-import { Check } from "lucide-react"
 
 type Profile = {
   id: string
@@ -25,6 +23,8 @@ type StepName = "entry" | "relationship" | "duration" | "traits" | "message" | "
 type ContributorFlowProps = {
   profile: Profile
 }
+
+const CONTRIBUTION_STORAGE_KEY = "nomee:contributionId"
 
 function ProgressBar({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
   const percentage = (currentStep / totalSteps) * 100
@@ -48,10 +48,11 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   const [error, setError] = useState<string | null>(null)
   const [messageSaveStatus, setMessageSaveStatus] = useState<string>("idle")
   const [saveRetryCount, setSaveRetryCount] = useState<number>(0)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Form data
   const [relationship, setRelationship] = useState("")
-  const [relationshipContext, setRelationshipContext] = useState("") // Added state for relationship context
+  const [relationshipContext, setRelationshipContext] = useState("")
   const [duration, setDuration] = useState("")
   const [selectedTraits, setSelectedTraits] = useState<TraitSelections>({})
   const [message, setMessage] = useState("")
@@ -67,6 +68,21 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   const firstNameValue = profile.full_name?.split(" ")[0] || profile.full_name || "them"
 
   useEffect(() => {
+    const storedContributionId = sessionStorage.getItem(CONTRIBUTION_STORAGE_KEY)
+    if (storedContributionId && !contributionId) {
+      console.log("[COLLECTION] Recovered contributionId from sessionStorage:", storedContributionId)
+      setContributionId(storedContributionId)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (contributionId) {
+      sessionStorage.setItem(CONTRIBUTION_STORAGE_KEY, contributionId)
+      console.log("[COLLECTION] Stored contributionId to sessionStorage:", contributionId)
+    }
+  }, [contributionId])
+
+  useEffect(() => {
     // Check if this is a fresh page load (no session marker)
     const sessionMarker = sessionStorage.getItem(`nomee-session-${profile.slug}`)
     const sessionData = sessionStorage.getItem(`nomee-draft-${profile.slug}`)
@@ -75,9 +91,8 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
       // User refreshed during an active session - restore their progress
       try {
         const parsed = JSON.parse(sessionData)
-        console.log("[v0] Restored draft from sessionStorage:", parsed)
         if (parsed.relationship) setRelationship(parsed.relationship)
-        if (parsed.relationshipContext) setRelationshipContext(parsed.relationshipContext) // Restore relationship context
+        if (parsed.relationshipContext) setRelationshipContext(parsed.relationshipContext)
         if (parsed.duration) setDuration(parsed.duration)
         if (parsed.selectedTraits) setSelectedTraits(parsed.selectedTraits)
         if (parsed.message) setMessage(parsed.message)
@@ -89,7 +104,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         // Only restore step if not submitted
         if (parsed.step && parsed.step !== "submitted") setStep(parsed.step)
       } catch (err) {
-        console.error("[v0] Failed to parse sessionStorage:", err)
+        console.error("[COLLECTION] Failed to parse sessionStorage:", err)
       }
     } else {
       // Fresh page load - clear any stale drafts and start from beginning
@@ -117,7 +132,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     if (step !== "entry") {
       const draftData = {
         relationship,
-        relationshipContext, // Include relationship context in draft
+        relationshipContext,
         duration,
         selectedTraits,
         message,
@@ -126,7 +141,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         email,
         contributionId,
         draftToken,
-        step: step !== "submitted" ? step : "voice", // Don't restore to submitted
+        step: step !== "submitted" ? step : "voice",
       }
       sessionStorage.setItem(`nomee-draft-${profile.slug}`, JSON.stringify(draftData))
     }
@@ -163,7 +178,6 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   }, [loading])
 
   const handleRecordingComplete = (blob: Blob) => {
-    console.log("[v0] Received recording blob:", blob.size, "bytes")
     setVoiceBlob(blob)
   }
 
@@ -471,72 +485,10 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     )
   }
 
-  // STEP 5: Written Message
+  // STEP 5: Written Message - This step NOW creates the contribution
   if (step === "message") {
     const charCount = message.length
     const maxChars = 1200
-
-    const saveMessageWithRetry = async (retryAttempt = 0): Promise<boolean> => {
-      try {
-        console.log("[v0] Attempting to save contribution (attempt", retryAttempt + 1, ")")
-        const allSelectedTraitIds = Object.values(selectedTraits).flat()
-
-        const response = await fetch("/api/contributions/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            profileId: profile.id,
-            contributorName: "Pending",
-            contributorEmail: "pending@nomee.app",
-            companyOrOrg: "Unknown",
-            relationship,
-            relationshipContext, // Include relationship context in API call
-            duration,
-            message: message.trim(),
-            selectedTraitIds: allSelectedTraitIds,
-            draftToken, // Include draft token for future recovery
-          }),
-        })
-
-        const result = await response.json()
-
-        if (response.status === 201 && result.success && result.contributionId) {
-          console.log("[v0] ✅ Contribution saved successfully:", result.contributionId)
-          setContributionId(result.contributionId)
-          setMessageSaveStatus("saved")
-          setSaveRetryCount(0)
-          return true
-        }
-
-        // Log detailed error for debugging
-        console.error("[v0] Save failed:", {
-          status: response.status,
-          code: result.code,
-          error: result.error,
-          details: result.details,
-        })
-
-        // Retry logic for transient failures
-        if (retryAttempt < 2 && response.status >= 500) {
-          console.log("[v0] Retrying save after", (retryAttempt + 1) * 1000, "ms")
-          await new Promise((resolve) => setTimeout(resolve, (retryAttempt + 1) * 1000))
-          return saveMessageWithRetry(retryAttempt + 1)
-        }
-
-        return false
-      } catch (err) {
-        console.error("[v0] Network error on save attempt", retryAttempt + 1, ":", err)
-
-        // Retry on network errors
-        if (retryAttempt < 2) {
-          console.log("[v0] Retrying save after network error")
-          await new Promise((resolve) => setTimeout(resolve, (retryAttempt + 1) * 1000))
-          return saveMessageWithRetry(retryAttempt + 1)
-        }
-
-        return false
-      }
-    }
 
     const handleMessageSubmit = async () => {
       if (!message.trim()) {
@@ -544,26 +496,75 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         return
       }
 
+      if (isSaving) return
+      setIsSaving(true)
+
       setLoading(true)
       setError(null)
       setValidationErrors({})
       setMessageSaveStatus("saving")
 
-      const saved = await saveMessageWithRetry()
+      console.log("[COLLECTION] step4 submit start", {
+        hasContributionId: !!contributionId,
+        draftKeyPresent: !!sessionStorage.getItem(CONTRIBUTION_STORAGE_KEY),
+      })
 
-      if (saved) {
-        // Success - proceed normally
-        setLoading(false)
-        setStep("identity")
-      } else {
-        // Save failed, but allow user to continue
-        console.log("[v0] Save failed, but allowing user to continue with local backup")
+      try {
+        const allSelectedTraitIds = Object.values(selectedTraits).flat()
+
+        const requestBody = {
+          profileId: profile.id,
+          contributorName: null,
+          contributorEmail: null,
+          companyOrOrg: relationshipContext?.trim() || null,
+          relationship,
+          relationshipContext: relationshipContext || null,
+          duration,
+          message: message.trim(),
+          selectedTraitIds: allSelectedTraitIds,
+          draftToken,
+        }
+
+        console.log("[COLLECTION] step4 calling /api/contributions/create")
+
+        const response = await fetch("/api/contributions/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody),
+        })
+
+        const result = await response.json()
+
+        console.log("[COLLECTION] step4 create response", {
+          status: response.status,
+          ok: response.ok,
+          body: result,
+        })
+
+        if (response.status === 201 && result.success && result.contributionId) {
+          setContributionId(result.contributionId)
+          sessionStorage.setItem(CONTRIBUTION_STORAGE_KEY, result.contributionId)
+          console.log("[COLLECTION] step4 stored contributionId", { id: result.contributionId })
+
+          setMessageSaveStatus("saved")
+          setLoading(false)
+          setIsSaving(false)
+          setStep("identity")
+          return
+        }
+
+        // Handle errors with real messages
+        const errorMsg = result.error || result.message || `Error ${response.status}: Unknown error`
+        console.error("[COLLECTION] step4 create failed:", errorMsg)
+        setError(errorMsg)
         setMessageSaveStatus("failed")
-        setError(null) // Clear error to not block UI
+      } catch (err) {
+        console.error("[COLLECTION] step4 network error:", err)
+        setError("Network error. Please check your connection and try again.")
+        setMessageSaveStatus("failed")
+      } finally {
         setLoading(false)
-
-        // Show non-blocking notice and proceed
-        setStep("identity")
+        setIsSaving(false)
       }
     }
 
@@ -585,7 +586,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               onChange={(e) => {
                 setMessage(e.target.value.slice(0, maxChars))
                 setValidationErrors((prev) => ({ ...prev, message: "" }))
-                setMessageSaveStatus("idle") // Reset status when user types
+                setMessageSaveStatus("idle")
               }}
               placeholder={`Working with ${firstNameValue} felt like having someone who truly…`}
               className="min-h-[180px] text-base"
@@ -601,24 +602,22 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               </div>
             )}
 
-            {messageSaveStatus === "failed" && (
-              <div className="mt-4 rounded-lg bg-blue-50 border border-blue-200 p-4">
-                <p className="text-sm text-blue-800">💾 Your message is saved locally — you can continue safely</p>
-              </div>
+            {error && (
+              <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-800">{error}</div>
             )}
 
             <div className="mt-8 flex gap-4">
-              <Button onClick={() => setStep("traits")} variant="outline" size="lg" disabled={loading}>
+              <Button onClick={() => setStep("traits")} variant="outline" size="lg" disabled={loading || isSaving}>
                 Back
               </Button>
               <Button
                 onClick={handleMessageSubmit}
-                disabled={loading || !message.trim()}
+                disabled={loading || isSaving || !message.trim()}
                 className="flex-1"
                 size="lg"
                 data-continue-button
               >
-                {loading ? "Saving..." : "Continue"}
+                {loading || isSaving ? "Saving..." : "Continue"}
               </Button>
             </div>
           </Card>
@@ -627,7 +626,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     )
   }
 
-  // STEP 6: Identity
+  // STEP 6: Identity - This step ONLY calls update-identity, NEVER create
   if (step === "identity") {
     const isValidEmail = (email: string): boolean => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -646,85 +645,41 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         return
       }
 
+      if (isSaving) return
+      setIsSaving(true)
+
       setLoading(true)
       setError(null)
       setValidationErrors({})
 
+      const stateContributionId = contributionId
+      const sessionContributionId = sessionStorage.getItem(CONTRIBUTION_STORAGE_KEY)
+
+      console.log("[COLLECTION] step5 submit start", {
+        stateContributionId,
+        sessionContributionId,
+      })
+
+      const finalContributionId = stateContributionId || sessionContributionId
+
+      console.log("[COLLECTION] step5 resolved contributionId", { id: finalContributionId })
+
+      if (!finalContributionId) {
+        console.error("[COLLECTION] step5 NO contributionId found - showing recovery error")
+        setError("We lost your draft. Please go back one step and click Continue again.")
+        setLoading(false)
+        setIsSaving(false)
+        return
+      }
+
       try {
-        let finalContributionId = contributionId
-
-        console.log("[v0] handleIdentityUpdate - Starting with:", {
-          contributionId,
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: email.trim().toLowerCase(),
-          relationship,
-          relationshipContext,
-          duration,
-          messageLength: message.trim().length,
-          selectedTraitsCount: Object.values(selectedTraits).flat().length,
-        })
-
-        if (!finalContributionId) {
-          console.log("[v0] No contributionId - creating contribution now with identity")
-          const allSelectedTraitIds = Object.values(selectedTraits).flat()
-
-          const companyValue = relationshipContext?.trim() || null
-
-          const requestBody = {
-            profileId: profile.id,
-            contributorName: `${firstName.trim()}${lastName.trim() ? ` ${lastName.trim()}` : ""}`,
-            contributorEmail: email.trim().toLowerCase(),
-            companyOrOrg: companyValue,
-            relationship,
-            relationshipContext: companyValue,
-            duration,
-            message: message.trim(),
-            selectedTraitIds: allSelectedTraitIds,
-            draftToken,
-          }
-          console.log("[v0] Creating contribution with body:", requestBody)
-
-          const createResponse = await fetch("/api/contributions/create", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody),
-          })
-
-          const createResult = await createResponse.json()
-          console.log("[v0] Create API response:", { status: createResponse.status, result: createResult })
-
-          if (createResponse.status === 201 && createResult.success && createResult.contributionId) {
-            console.log("[v0] ✅ Contribution created with identity:", createResult.contributionId)
-            finalContributionId = createResult.contributionId
-            setContributionId(finalContributionId)
-            setLoading(false)
-            setStep("voice")
-            return
-          } else {
-            // Handle create errors
-            let userMessage = `Couldn't save right now. Please try again.`
-            if (createResponse.status === 429 || createResult.code === "RATE_LIMIT") {
-              userMessage = createResult.error || "This email has reached its submission limit."
-            } else if (createResponse.status === 409 || createResult.code === "DUPLICATE_SUBMISSION") {
-              userMessage = createResult.error || "This email has already submitted for this person."
-            } else if (createResult.error) {
-              userMessage = createResult.error
-            }
-            console.error("[v0] Create failed:", { userMessage, code: createResult.code, fullResult: createResult })
-            setError(userMessage)
-            setLoading(false)
-            return
-          }
-        }
-
-        console.log("[v0] Updating contribution with identity info, contributionId:", finalContributionId)
         const updateBody = {
           contributionId: finalContributionId,
           contributorName: `${firstName.trim()}${lastName.trim() ? ` ${lastName.trim()}` : ""}`,
           contributorEmail: email.trim().toLowerCase(),
         }
-        console.log("[v0] Update identity body:", updateBody)
+
+        console.log("[COLLECTION] step5 calling /api/contributions/update-identity")
 
         const response = await fetch("/api/contributions/update-identity", {
           method: "POST",
@@ -733,37 +688,42 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         })
 
         const result = await response.json()
-        console.log("[v0] Update identity API response:", { status: response.status, result })
+
+        console.log("[COLLECTION] step5 update-identity response", {
+          status: response.status,
+          ok: response.ok,
+          body: result,
+        })
 
         if (response.ok && result.success) {
-          console.log("[v0] ✅ Identity updated successfully")
+          console.log("[COLLECTION] step5 SUCCESS - navigating to voice step")
+          // Clear sessionStorage on success
+          sessionStorage.removeItem(CONTRIBUTION_STORAGE_KEY)
           setLoading(false)
+          setIsSaving(false)
           setStep("voice")
           return
         }
 
-        // Handle errors
-        let userMessage = `Couldn't save right now. Please try again.`
-        if (response.status === 429 || result.code === "RATE_LIMIT") {
-          userMessage = result.error || "This email has reached its submission limit."
-        } else if (response.status === 409 || result.code === "DUPLICATE_SUBMISSION") {
-          userMessage = result.error || "This email has already submitted for this person."
-        } else if (result.error) {
-          userMessage = result.error
-        }
-
-        console.error("[v0] Update identity failed:", { userMessage, code: result.code, fullResult: result })
-        setError(userMessage)
-        setLoading(false)
+        const errorMsg = `Error ${response.status}: ${result.error || result.message || "Unknown error"}`
+        console.error("[COLLECTION] step5 update-identity failed:", {
+          status: response.status,
+          code: result.code,
+          error: result.error,
+          fullResult: result,
+        })
+        setError(errorMsg)
       } catch (err) {
-        console.error("[v0] handleIdentityUpdate error:", err)
+        console.error("[COLLECTION] step5 network error:", err)
         setError("Network error. Please check your connection and try again.")
+      } finally {
         setLoading(false)
+        setIsSaving(false)
       }
     }
 
     return (
-      <div className="min-h-screen bg-neutral-50 py-12 px-4">
+      <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-2xl">
           <ProgressBar currentStep={5} totalSteps={6} />
           <div className="mb-8">
@@ -774,18 +734,18 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
           <Card className="p-8">
             <div className="space-y-6">
               <div>
-                <Label htmlFor="firstName" className="text-neutral-900">
+                <label htmlFor="firstName" className="mb-2 block text-sm font-medium text-neutral-700">
                   First name
-                </Label>
+                </label>
                 <Input
                   id="firstName"
-                  type="text"
                   value={firstName}
                   onChange={(e) => {
                     setFirstName(e.target.value)
                     setValidationErrors((prev) => ({ ...prev, firstName: "" }))
                   }}
-                  className="mt-2"
+                  placeholder="Joe"
+                  className={validationErrors.firstName ? "border-red-500" : ""}
                   autoFocus
                 />
                 {validationErrors.firstName && (
@@ -794,26 +754,21 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               </div>
 
               <div>
-                <Label htmlFor="lastName" className="text-neutral-900">
-                  Last name <span className="text-neutral-400 font-normal">(optional)</span>
-                </Label>
+                <label htmlFor="lastName" className="mb-2 block text-sm font-medium text-neutral-700">
+                  Last name <span className="text-neutral-400">(optional)</span>
+                </label>
                 <Input
                   id="lastName"
-                  type="text"
                   value={lastName}
-                  onChange={(e) => {
-                    setLastName(e.target.value)
-                    setValidationErrors((prev) => ({ ...prev, lastName: "" }))
-                  }}
-                  className="mt-2"
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Rowe"
                 />
-                {validationErrors.lastName && <p className="mt-1 text-sm text-red-600">{validationErrors.lastName}</p>}
               </div>
 
               <div>
-                <Label htmlFor="email" className="text-neutral-900">
+                <label htmlFor="email" className="mb-2 block text-sm font-medium text-neutral-700">
                   Email
-                </Label>
+                </label>
                 <div className="relative">
                   <Input
                     id="email"
@@ -822,12 +777,16 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                     onChange={(e) => {
                       setEmail(e.target.value)
                       setValidationErrors((prev) => ({ ...prev, email: "" }))
-                      validateEmailInline(e.target.value)
                     }}
-                    className="mt-2 pr-10"
+                    placeholder="joerowe@gmail.com"
+                    className={validationErrors.email ? "border-red-500" : ""}
                   />
-                  {emailValidation === "valid" && (
-                    <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-600 mt-1" />
+                  {email && isValidEmail(email) && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <svg className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                   )}
                 </div>
                 {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
@@ -838,23 +797,21 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
             </div>
 
             {error && (
-              <div className="mt-6 rounded-lg bg-red-50 border border-red-200 p-4">
-                <p className="text-sm font-medium text-red-800">{error}</p>
-              </div>
+              <div className="mt-6 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-800">{error}</div>
             )}
 
             <div className="mt-8 flex gap-4">
-              <Button onClick={() => setStep("message")} variant="outline" size="lg" disabled={loading}>
+              <Button onClick={() => setStep("message")} variant="outline" size="lg" disabled={loading || isSaving}>
                 Back
               </Button>
               <Button
                 onClick={handleIdentityUpdate}
-                disabled={loading || !firstName.trim() || !email.trim() || emailValidation !== "valid"}
+                disabled={loading || isSaving || !firstName.trim() || !email.trim() || !isValidEmail(email.trim())}
                 className="flex-1"
                 size="lg"
                 data-continue-button
               >
-                {loading ? "Finishing..." : "Continue to voice (optional)"}
+                {loading || isSaving ? "Saving..." : "Continue to voice (optional)"}
               </Button>
             </div>
           </Card>
@@ -863,109 +820,111 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     )
   }
 
-  // STEP 7: Voice (Optional)
+  // ... existing code for voice and submitted steps ...
+  // STEP 7: Voice Recording (Optional)
   if (step === "voice") {
     const handleSubmitWithVoice = async () => {
-      if (!voiceBlob || !contributionId) {
-        setStep("submitted")
-        return
-      }
-
       setLoading(true)
       setError(null)
 
       try {
-        console.log("[v0] Uploading voice recording, blob size:", voiceBlob.size)
-        const formData = new FormData()
-        formData.append("file", voiceBlob, `voice-${Date.now()}.webm`)
-        formData.append("contributionId", contributionId)
+        if (voiceBlob && contributionId) {
+          const formData = new FormData()
+          formData.append("audio", voiceBlob, "recording.webm")
+          formData.append("contributionId", contributionId)
 
-        const response = await fetch("/api/contributions/attach-voice", {
-          method: "POST",
-          body: formData,
-        })
+          const response = await fetch("/api/contributions/upload-audio", {
+            method: "POST",
+            body: formData,
+          })
 
-        const result = await response.json()
-
-        if (!response.ok || !result.success) {
-          console.log("[v0] Voice upload failed, but continuing anyway")
-          setError("Voice upload failed, but your message was saved successfully")
-        } else {
-          console.log("[v0] ✅ Voice uploaded successfully")
+          if (!response.ok) {
+            console.error("Failed to upload audio")
+          }
         }
-      } catch (err) {
-        console.error("[v0] Voice upload error:", err)
-        setError("Voice upload failed, but your message was saved successfully")
-      }
 
-      setLoading(false)
-      setStep("submitted")
+        sessionStorage.removeItem(`nomee-draft-${profile.slug}`)
+        sessionStorage.removeItem(`nomee-session-${profile.slug}`)
+        sessionStorage.removeItem(CONTRIBUTION_STORAGE_KEY)
+        setStep("submitted")
+      } catch (err) {
+        console.error("Error submitting:", err)
+        setError("Something went wrong. Please try again.")
+      } finally {
+        setLoading(false)
+      }
     }
 
-    const handleSkipVoice = () => {
-      console.log("[v0] User skipped voice recording")
-      setStep("submitted")
+    const handleSkipVoice = async () => {
+      setLoading(true)
+      try {
+        sessionStorage.removeItem(`nomee-draft-${profile.slug}`)
+        sessionStorage.removeItem(`nomee-session-${profile.slug}`)
+        sessionStorage.removeItem(CONTRIBUTION_STORAGE_KEY)
+        setStep("submitted")
+      } finally {
+        setLoading(false)
+      }
     }
 
     return (
-      <div className="min-h-screen bg-neutral-50 py-12 px-4">
+      <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-2xl">
           <ProgressBar currentStep={6} totalSteps={6} />
           <div className="mb-8">
-            <p className="mb-4 text-sm text-neutral-600">Step 6 of 6 (Optional)</p>
-            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">Want to read it in your own voice?</h1>
-            <p className="text-neutral-600">Adds a personal touch — completely optional.</p>
+            <p className="mb-4 text-sm text-neutral-600">Step 6 of 6 (optional)</p>
+            <h1 className="mb-2 text-3xl font-semibold text-neutral-900">Add a voice note</h1>
+            <p className="text-neutral-600">
+              A short recording adds a personal touch. 30 seconds to 2 minutes works great.
+            </p>
           </div>
 
-          <VoiceRecorder quote={message} onRecordingComplete={handleRecordingComplete} />
+          <Card className="p-8">
+            <VoiceRecorder onRecordingComplete={handleRecordingComplete} maxDuration={120} />
 
-          {error && (
-            <div className="mt-6 rounded-lg bg-amber-50 border border-amber-200 p-4">
-              <p className="text-sm text-amber-800">{error}</p>
-            </div>
-          )}
-
-          <div className="mt-8 flex flex-col gap-3">
-            {voiceBlob ? (
-              <Button size="lg" onClick={handleSubmitWithVoice} disabled={loading} data-continue-button>
-                {loading ? "Submitting..." : "Submit with voice note"}
-              </Button>
-            ) : (
-              <Button size="lg" variant="outline" onClick={handleSkipVoice} data-continue-button>
-                Skip — submit without voice
-              </Button>
+            {error && (
+              <div className="mt-6 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-800">{error}</div>
             )}
-          </div>
+
+            <div className="mt-8 flex gap-4">
+              <Button onClick={() => setStep("identity")} variant="outline" size="lg" disabled={loading}>
+                Back
+              </Button>
+              {voiceBlob ? (
+                <Button onClick={handleSubmitWithVoice} disabled={loading} className="flex-1" size="lg">
+                  {loading ? "Submitting..." : "Submit with voice"}
+                </Button>
+              ) : (
+                <Button onClick={handleSkipVoice} disabled={loading} className="flex-1" size="lg">
+                  {loading ? "Submitting..." : "Skip & Submit"}
+                </Button>
+              )}
+            </div>
+          </Card>
         </div>
       </div>
     )
   }
 
-  // STEP 8: Confirmation (ALWAYS SHOWS)
+  // STEP 8: Submitted
   if (step === "submitted") {
-    sessionStorage.removeItem(`nomee-draft-${profile.slug}`)
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4 py-12">
+        <div className="w-full max-w-2xl">
+          <Card className="p-12 text-center">
+            <div className="mb-6 text-6xl">🎉</div>
+            <h1 className="mb-4 text-4xl font-semibold text-neutral-900">Thank you!</h1>
+            <p className="mb-8 text-lg text-neutral-600">
+              Your recognition has been shared with {profile.full_name}. They'll be thrilled to see it!
+            </p>
+            <Button onClick={() => (window.location.href = `/${profile.slug}`)} size="lg" className="px-8">
+              View {profile.full_name}'s Nomee
+            </Button>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-white px-4">
-      <Card className="mx-auto max-w-2xl p-12 text-center">
-        <div className="mb-6 flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-        </div>
-
-        <h1 className="mb-4 text-3xl font-semibold text-neutral-900">Thank you — your voice matters</h1>
-        <p className="mb-8 text-neutral-600">
-          {profile.full_name} will see your Nomee and appreciate you taking the time to share your perspective.
-        </p>
-
-        <Button variant="outline" size="lg" onClick={() => (window.location.href = "/")}>
-          Build your own Nomee
-        </Button>
-      </Card>
-    </div>
-  )
+  return null
 }
