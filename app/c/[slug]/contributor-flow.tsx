@@ -653,28 +653,46 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
       try {
         let finalContributionId = contributionId
 
+        console.log("[v0] handleIdentityUpdate - Starting with:", {
+          contributionId,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim().toLowerCase(),
+          relationship,
+          relationshipContext,
+          duration,
+          messageLength: message.trim().length,
+          selectedTraitsCount: Object.values(selectedTraits).flat().length,
+        })
+
         if (!finalContributionId) {
           console.log("[v0] No contributionId - creating contribution now with identity")
           const allSelectedTraitIds = Object.values(selectedTraits).flat()
 
+          const companyValue = relationshipContext?.trim() || null
+
+          const requestBody = {
+            profileId: profile.id,
+            contributorName: `${firstName.trim()}${lastName.trim() ? ` ${lastName.trim()}` : ""}`,
+            contributorEmail: email.trim().toLowerCase(),
+            companyOrOrg: companyValue,
+            relationship,
+            relationshipContext: companyValue,
+            duration,
+            message: message.trim(),
+            selectedTraitIds: allSelectedTraitIds,
+            draftToken,
+          }
+          console.log("[v0] Creating contribution with body:", requestBody)
+
           const createResponse = await fetch("/api/contributions/create", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              profileId: profile.id,
-              contributorName: `${firstName.trim()}${lastName.trim() ? ` ${lastName.trim()}` : ""}`,
-              contributorEmail: email.trim().toLowerCase(),
-              companyOrOrg: relationshipContext || null, // Use relationshipContext from Step 1
-              relationship,
-              relationshipContext,
-              duration,
-              message: message.trim(),
-              selectedTraitIds: allSelectedTraitIds,
-              draftToken,
-            }),
+            body: JSON.stringify(requestBody),
           })
 
           const createResult = await createResponse.json()
+          console.log("[v0] Create API response:", { status: createResponse.status, result: createResult })
 
           if (createResponse.status === 201 && createResult.success && createResult.contributionId) {
             console.log("[v0] ✅ Contribution created with identity:", createResult.contributionId)
@@ -685,30 +703,37 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
             return
           } else {
             // Handle create errors
-            let userMessage = "Couldn't save right now. Please try again."
+            let userMessage = `Couldn't save right now. Please try again.`
             if (createResponse.status === 429 || createResult.code === "RATE_LIMIT") {
               userMessage = createResult.error || "This email has reached its submission limit."
             } else if (createResponse.status === 409 || createResult.code === "DUPLICATE_SUBMISSION") {
               userMessage = createResult.error || "This email has already submitted for this person."
+            } else if (createResult.error) {
+              userMessage = createResult.error
             }
+            console.error("[v0] Create failed:", { userMessage, code: createResult.code, fullResult: createResult })
             setError(userMessage)
             setLoading(false)
             return
           }
         }
 
-        console.log("[v0] Updating contribution with identity info")
+        console.log("[v0] Updating contribution with identity info, contributionId:", finalContributionId)
+        const updateBody = {
+          contributionId: finalContributionId,
+          contributorName: `${firstName.trim()}${lastName.trim() ? ` ${lastName.trim()}` : ""}`,
+          contributorEmail: email.trim().toLowerCase(),
+        }
+        console.log("[v0] Update identity body:", updateBody)
+
         const response = await fetch("/api/contributions/update-identity", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contributionId: finalContributionId,
-            contributorName: `${firstName.trim()}${lastName.trim() ? ` ${lastName.trim()}` : ""}`,
-            contributorEmail: email.trim().toLowerCase(),
-          }),
+          body: JSON.stringify(updateBody),
         })
 
         const result = await response.json()
+        console.log("[v0] Update identity API response:", { status: response.status, result })
 
         if (response.ok && result.success) {
           console.log("[v0] ✅ Identity updated successfully")
@@ -718,17 +743,20 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         }
 
         // Handle errors
-        let userMessage = "Couldn't update right now. Please try again."
+        let userMessage = `Couldn't save right now. Please try again.`
         if (response.status === 429 || result.code === "RATE_LIMIT") {
           userMessage = result.error || "This email has reached its submission limit."
         } else if (response.status === 409 || result.code === "DUPLICATE_SUBMISSION") {
           userMessage = result.error || "This email has already submitted for this person."
+        } else if (result.error) {
+          userMessage = result.error
         }
 
+        console.error("[v0] Update identity failed:", { userMessage, code: result.code, fullResult: result })
         setError(userMessage)
         setLoading(false)
       } catch (err) {
-        console.error("[v0] Error updating identity:", err)
+        console.error("[v0] handleIdentityUpdate error:", err)
         setError("Network error. Please check your connection and try again.")
         setLoading(false)
       }
