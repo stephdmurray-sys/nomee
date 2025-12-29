@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { RELATIONSHIP_OPTIONS, DURATION_OPTIONS } from "@/lib/nomee-enums"
 import { TRAIT_CATEGORIES } from "@/lib/trait-categories"
 import { VoiceRecorder } from "@/components/voice-recorder"
+import { Label } from "@/components/ui/label"
 
 type Profile = {
   id: string
@@ -485,7 +486,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     )
   }
 
-  // STEP 5: Written Message - This step NOW creates the contribution
+  // STEP 4: Written Message - This step NOW creates the contribution
   if (step === "message") {
     const charCount = message.length
     const maxChars = 1200
@@ -504,9 +505,14 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
       setValidationErrors({})
       setMessageSaveStatus("saving")
 
+      const existingContributionId = contributionId || sessionStorage.getItem(CONTRIBUTION_STORAGE_KEY)
+
       console.log("[COLLECTION] step4 submit start", {
-        hasContributionId: !!contributionId,
-        draftKeyPresent: !!sessionStorage.getItem(CONTRIBUTION_STORAGE_KEY),
+        hasContributionId: !!existingContributionId,
+        inState: !!contributionId,
+        inSessionStorage: !!sessionStorage.getItem(CONTRIBUTION_STORAGE_KEY),
+        willUpdate: !!existingContributionId,
+        willInsert: !existingContributionId,
       })
 
       try {
@@ -514,18 +520,21 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
 
         const requestBody = {
           profileId: profile.id,
+          contributionId: existingContributionId || undefined,
           contributorName: null,
           contributorEmail: null,
           companyOrOrg: relationshipContext?.trim() || null,
           relationship,
-          relationshipContext: relationshipContext || null,
           duration,
           message: message.trim(),
           selectedTraitIds: allSelectedTraitIds,
           draftToken,
         }
 
-        console.log("[COLLECTION] step4 calling /api/contributions/create")
+        console.log("[COLLECTION] step4 calling /api/contributions/create", {
+          isUpdate: !!existingContributionId,
+          contributionId: existingContributionId,
+        })
 
         const response = await fetch("/api/contributions/create", {
           method: "POST",
@@ -541,10 +550,14 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
           body: result,
         })
 
-        if (response.status === 201 && result.success && result.contributionId) {
+        if ((response.status === 201 || response.status === 200) && result.success && result.contributionId) {
           setContributionId(result.contributionId)
           sessionStorage.setItem(CONTRIBUTION_STORAGE_KEY, result.contributionId)
-          console.log("[COLLECTION] step4 stored contributionId", { id: result.contributionId })
+          console.log("[COLLECTION] step4 stored contributionId", {
+            id: result.contributionId,
+            wasUpdate: response.status === 200,
+            wasInsert: response.status === 201,
+          })
 
           setMessageSaveStatus("saved")
           setLoading(false)
@@ -626,7 +639,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     )
   }
 
-  // STEP 6: Identity - This step ONLY calls update-identity, NEVER create
+  // STEP 5: Identity - This step ONLY calls update-identity, NEVER create
   if (step === "identity") {
     const isValidEmail = (email: string): boolean => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -734,9 +747,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
           <Card className="p-8">
             <div className="space-y-6">
               <div>
-                <label htmlFor="firstName" className="mb-2 block text-sm font-medium text-neutral-700">
-                  First name
-                </label>
+                <Label htmlFor="firstName">First name</Label>
                 <Input
                   id="firstName"
                   value={firstName}
@@ -746,7 +757,6 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                   }}
                   placeholder="Joe"
                   className={validationErrors.firstName ? "border-red-500" : ""}
-                  autoFocus
                 />
                 {validationErrors.firstName && (
                   <p className="mt-1 text-sm text-red-600">{validationErrors.firstName}</p>
@@ -754,9 +764,9 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               </div>
 
               <div>
-                <label htmlFor="lastName" className="mb-2 block text-sm font-medium text-neutral-700">
-                  Last name <span className="text-neutral-400">(optional)</span>
-                </label>
+                <Label htmlFor="lastName">
+                  Last name <span className="text-neutral-500">(optional)</span>
+                </Label>
                 <Input
                   id="lastName"
                   value={lastName}
@@ -766,31 +776,32 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               </div>
 
               <div>
-                <label htmlFor="email" className="mb-2 block text-sm font-medium text-neutral-700">
-                  Email
-                </label>
-                <div className="relative">
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value)
-                      setValidationErrors((prev) => ({ ...prev, email: "" }))
-                    }}
-                    placeholder="joerowe@gmail.com"
-                    className={validationErrors.email ? "border-red-500" : ""}
-                  />
-                  {email && isValidEmail(email) && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <svg className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, email: "" }))
+                  }}
+                  placeholder="joe@example.com"
+                  className={validationErrors.email ? "border-red-500" : ""}
+                />
                 {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
-                <p className="mt-2 text-sm text-neutral-500">
+                {!validationErrors.email && isValidEmail(email) && (
+                  <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Valid email
+                  </p>
+                )}
+                <p className="mt-2 text-sm text-neutral-600">
                   Your email is only used to verify authenticity. It's never shown publicly.
                 </p>
               </div>
@@ -801,17 +812,16 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
             )}
 
             <div className="mt-8 flex gap-4">
-              <Button onClick={() => setStep("message")} variant="outline" size="lg" disabled={loading || isSaving}>
+              <Button onClick={() => setStep("message")} variant="outline" size="lg" disabled={loading}>
                 Back
               </Button>
               <Button
                 onClick={handleIdentityUpdate}
-                disabled={loading || isSaving || !firstName.trim() || !email.trim() || !isValidEmail(email.trim())}
+                disabled={loading || !firstName.trim() || !email.trim() || !isValidEmail(email.trim())}
                 className="flex-1"
                 size="lg"
-                data-continue-button
               >
-                {loading || isSaving ? "Saving..." : "Continue to voice (optional)"}
+                {loading ? "Saving..." : "Continue to voice (optional)"}
               </Button>
             </div>
           </Card>
@@ -820,8 +830,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     )
   }
 
-  // ... existing code for voice and submitted steps ...
-  // STEP 7: Voice Recording (Optional)
+  // STEP 6: Voice Recording (Optional)
   if (step === "voice") {
     const handleSubmitWithVoice = async () => {
       setLoading(true)
@@ -906,7 +915,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     )
   }
 
-  // STEP 8: Submitted
+  // STEP 7: Submitted
   if (step === "submitted") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4 py-12">

@@ -15,15 +15,16 @@ export async function POST(request: NextRequest) {
       hasRelationship: !!body.relationship,
       hasDuration: !!body.duration,
       hasMessage: !!body.message,
+      contributionId: body.contributionId || null, // Log if this is an update vs insert
     })
 
     const {
       profileId,
+      contributionId, // Accept contributionId to support updates
       contributorName,
       contributorEmail,
       companyOrOrg,
       relationship,
-      relationshipContext,
       duration,
       message,
       selectedTraitIds,
@@ -71,11 +72,17 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
     console.log("[COLLECTION] create: Supabase admin client created")
 
-    // Use pending email if none provided (identity collected at Step 5)
-    const normalizedEmail = contributorEmail ? contributorEmail.toLowerCase().trim() : "pending@nomee.app"
+    const normalizedEmail = contributorEmail
+      ? contributorEmail.toLowerCase().trim()
+      : `pending+${crypto.randomUUID()}@nomee.app`
+
+    console.log("[COLLECTION] create: Using email", {
+      isPlaceholder: !contributorEmail,
+      email: normalizedEmail.includes("pending+") ? "pending+[UUID]@nomee.app" : normalizedEmail,
+    })
 
     // Only check rate limit if real email provided
-    if (normalizedEmail !== "pending@nomee.app") {
+    if (!normalizedEmail.startsWith("pending+")) {
       if (contributorEmail) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!emailRegex.test(contributorEmail)) {
@@ -135,8 +142,61 @@ export async function POST(request: NextRequest) {
 
     const emailHash = crypto.createHash("sha256").update(normalizedEmail).digest("hex")
 
+    if (contributionId) {
+      console.log("[COLLECTION] create: Updating existing contribution", { contributionId })
+
+      const { data: updatedContribution, error: updateError } = await supabase
+        .from("contributions")
+        .update({
+          relationship,
+          duration,
+          written_note: message,
+          contributor_company: companyOrOrg || "Unknown",
+          flagged: isSpam || isInappropriate,
+          flag_reason: isSpam
+            ? "Auto-flagged: spam patterns detected"
+            : isInappropriate
+              ? "Auto-flagged: inappropriate content detected"
+              : null,
+          flagged_at: isSpam || isInappropriate ? new Date().toISOString() : null,
+        })
+        .eq("id", contributionId)
+        .select("id")
+        .single()
+
+      if (updateError) {
+        console.error("[COLLECTION] create: Update error", {
+          errorCode: updateError.code,
+          errorMessage: updateError.message,
+          constraint: updateError.details,
+        })
+        return NextResponse.json(
+          {
+            ok: false,
+            success: false,
+            error: `Database update failed: ${updateError.message}`,
+            code: "DB_UPDATE_ERROR",
+            details: updateError.message,
+          },
+          { status: 500 },
+        )
+      }
+
+      console.log("[COLLECTION] create: SUCCESS (updated)", { contributionId })
+
+      return NextResponse.json(
+        {
+          ok: true,
+          success: true,
+          contributionId: contributionId,
+          message: "Your Nomee has been updated successfully",
+        },
+        { status: 200 },
+      )
+    }
+
     // Only check for duplicates if real email provided
-    if (normalizedEmail !== "pending@nomee.app") {
+    if (!normalizedEmail.startsWith("pending+")) {
       const { data: existing } = await supabase
         .from("contributions")
         .select("id, status")
@@ -151,7 +211,7 @@ export async function POST(request: NextRequest) {
           {
             ok: false,
             success: false,
-            error: `The email "${normalizedEmail}" has already submitted for this person.`,
+            error: `This email has already submitted feedback for this person. Each contributor can only submit once.`,
             code: "DUPLICATE_SUBMISSION",
           },
           { status: 409 },
@@ -231,6 +291,9 @@ export async function POST(request: NextRequest) {
       console.error("[COLLECTION] create: Insert error", {
         errorCode: insertError.code,
         errorMessage: insertError.message,
+        errorDetails: insertError.details,
+        errorHint: insertError.hint,
+        constraint: insertError.details, // Log constraint name for debugging
       })
       return NextResponse.json(
         {
@@ -252,7 +315,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log("[COLLECTION] create: SUCCESS", { contributionId: newContribution.id })
+    console.log("[COLLECTION] create: SUCCESS (inserted)", {
+      contributionId: newContribution.id,
+      usedPlaceholder: normalizedEmail.startsWith("pending+"),
+    })
 
     return NextResponse.json(
       {
