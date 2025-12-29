@@ -18,7 +18,6 @@ interface PremierProfileClientProps {
   totalContributions: number
   uniqueCompanies: string[]
   interpretationSentence: string
-  vibeLabels: string[]
   anchorQuote: string
   profileAnalysis: ProfileAnalysis
 }
@@ -148,21 +147,38 @@ export function PremierProfileClient({
             <p className="text-base sm:text-lg md:text-xl text-neutral-600 mb-3 leading-relaxed">{profile.headline}</p>
           )}
 
-          <p className="text-sm text-neutral-500 uppercase tracking-wide">
-            Nomee Profile · Based on feedback from {profileAnalysis.counts.contributions}{" "}
-            {profileAnalysis.counts.contributions === 1 ? "person" : "people"}
-            {profileAnalysis.counts.uploads > 0 &&
-              ` · ${profileAnalysis.counts.uploads} ${profileAnalysis.counts.uploads === 1 ? "upload" : "uploads"}`}
-          </p>
-
-          <div
-            className={`inline-flex items-center gap-2 mt-3 px-3 py-1.5 rounded-full border ${confidenceLevel.bgColor} ${confidenceLevel.borderColor}`}
-          >
-            <div className={`w-2 h-2 rounded-full ${confidenceLevel.color.replace("text-", "bg-")}`}></div>
-            <span className={`text-xs font-semibold ${confidenceLevel.color}`}>{confidenceLevel.label}</span>
+          <div className="flex flex-wrap items-center gap-3 py-3">
+            <p className="text-sm text-neutral-500 uppercase tracking-wide font-medium">Nomee Profile</p>
+            <span className="text-neutral-300">·</span>
+            <p className="text-sm text-neutral-700 font-medium">
+              {profileAnalysis.counts.contributions} {profileAnalysis.counts.contributions === 1 ? "person" : "people"}
+            </p>
+            {profileAnalysis.counts.voiceNotes > 0 && (
+              <>
+                <span className="text-neutral-300">·</span>
+                <p className="text-sm text-neutral-700 font-medium">
+                  {profileAnalysis.counts.voiceNotes} voice {profileAnalysis.counts.voiceNotes === 1 ? "note" : "notes"}
+                </p>
+              </>
+            )}
+            {profileAnalysis.counts.uploads > 0 && (
+              <>
+                <span className="text-neutral-300">·</span>
+                <p className="text-sm text-neutral-700 font-medium">
+                  {profileAnalysis.counts.uploads} {profileAnalysis.counts.uploads === 1 ? "screenshot" : "screenshots"}
+                </p>
+              </>
+            )}
+            <span className="text-neutral-300">·</span>
+            <div
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${confidenceLevel.bgColor} ${confidenceLevel.borderColor}`}
+            >
+              <div className={`w-1.5 h-1.5 rounded-full ${confidenceLevel.color.replace("text-", "bg-")}`}></div>
+              <span className={`text-xs font-semibold ${confidenceLevel.color}`}>{confidenceLevel.label}</span>
+            </div>
           </div>
 
-          <p className="text-xs text-neutral-500 mt-2">Each contributor can submit once.</p>
+          <p className="text-xs text-neutral-500 mt-1">Each contributor can submit once.</p>
 
           {/* Mobile share buttons */}
           <div className="flex gap-3 mt-4 sm:hidden">
@@ -180,6 +196,116 @@ export function PremierProfileClient({
               <Copy className="h-4 w-4" />
               {showCopied ? "Copied!" : "Copy link"}
             </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="w-full bg-white border-y border-neutral-100">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Left: AI Summary (2/3 width) */}
+            <div className="lg:col-span-2">
+              <div className="border-l-4 border-blue-500 pl-6 sm:pl-8 space-y-6">
+                <div className="space-y-3">
+                  <h3 className="text-2xl sm:text-3xl font-semibold text-neutral-900 leading-tight">
+                    Summary of working with {firstName}
+                  </h3>
+
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-500">
+                    <span className="uppercase tracking-wide font-medium text-neutral-400">Updated automatically</span>
+                    <div className="flex flex-wrap items-center gap-2 text-neutral-600">
+                      <span>
+                        {profileAnalysis.counts.contributions}{" "}
+                        {profileAnalysis.counts.contributions === 1 ? "contribution" : "contributions"}
+                      </span>
+                      {profileAnalysis.counts.voiceNotes > 0 && (
+                        <>
+                          <span>•</span>
+                          <span>
+                            {profileAnalysis.counts.voiceNotes} voice{" "}
+                            {profileAnalysis.counts.voiceNotes === 1 ? "note" : "notes"}
+                          </span>
+                        </>
+                      )}
+                      {profileAnalysis.counts.uploads > 0 && (
+                        <>
+                          <span>•</span>
+                          <span>
+                            {profileAnalysis.counts.uploads}{" "}
+                            {profileAnalysis.counts.uploads === 1 ? "upload" : "uploads"}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <AiPatternSummary
+                  analysisText={profileAnalysis.analysisText}
+                  traitSignals={profileAnalysis.traitSignals}
+                  vibeSignals={profileAnalysis.vibeSignals}
+                  firstName={firstName}
+                  contributionsCount={profileAnalysis.counts.contributions}
+                />
+
+                <p className="text-xs text-neutral-500 pt-4 border-t border-neutral-100">
+                  Generated from {profileAnalysis.counts.contributions}{" "}
+                  {profileAnalysis.counts.contributions === 1 ? "contribution" : "contributions"}
+                  {profileAnalysis.counts.uploads > 0 &&
+                    ` and ${profileAnalysis.counts.uploads} ${profileAnalysis.counts.uploads === 1 ? "upload" : "uploads"}`}
+                  {" • "}Updates as more people contribute
+                </p>
+              </div>
+            </div>
+
+            {/* Right: Vibe Card (1/3 width) - ALWAYS VISIBLE */}
+            <div className="lg:col-span-1">
+              <div className="h-full rounded-xl border border-neutral-200 bg-neutral-50/50 p-6">
+                <h3 className="text-lg font-semibold text-neutral-900 mb-4">{firstName}'s vibe</h3>
+                {(() => {
+                  const contributorsWithVibes = new Set(
+                    rawContributions
+                      .filter((c) => c.traits_category4 && c.traits_category4.length > 0)
+                      .map((c) => c.contributor_id || c.contributor_name),
+                  ).size
+
+                  if (contributorsWithVibes < 2) {
+                    return (
+                      <p className="text-sm text-neutral-500 leading-relaxed">
+                        Vibe appears once 2+ people contribute.
+                      </p>
+                    )
+                  }
+
+                  if (profileAnalysis.vibeSignals.length === 0) {
+                    return (
+                      <p className="text-sm text-neutral-500 leading-relaxed">
+                        Vibe appears once 2+ people contribute.
+                      </p>
+                    )
+                  }
+
+                  return (
+                    <div className="space-y-3">
+                      {profileAnalysis.vibeSignals.slice(0, 3).map((vibe, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between px-4 py-3 rounded-lg bg-white border border-purple-100 hover:border-purple-200 hover:shadow-sm transition-all duration-200"
+                        >
+                          <span className="text-sm font-semibold text-purple-900">{vibe.label}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-purple-700">×{vibe.count}</span>
+                            <span className="text-xs text-purple-500">
+                              ({Math.round((vibe.count / contributorsWithVibes) * 100)}%)
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -251,7 +377,6 @@ export function PremierProfileClient({
                 {firstName ? `${firstName}'s vibe` : "Their vibe"}
               </h3>
               {(() => {
-                // Count unique contributors who selected vibes
                 const contributorsWithVibes = new Set(
                   rawContributions
                     .filter((c) => c.traits_category4 && c.traits_category4.length > 0)
@@ -288,6 +413,63 @@ export function PremierProfileClient({
           </div>
         </div>
       </section>
+
+      {profileAnalysis.traitSignals.length > 0 && (
+        <section className="w-full bg-neutral-50">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            <div className="space-y-6">
+              <div className="space-y-2 max-w-3xl mx-auto text-center">
+                <h3 className="text-2xl sm:text-3xl font-semibold text-neutral-900">Pattern Recognition</h3>
+                <p className="text-sm text-neutral-500 leading-relaxed">
+                  Not hand-picked — patterns emerge as more people contribute.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                {/* Top Signals */}
+                <div className="p-6 rounded-xl border border-neutral-200 bg-white">
+                  <h4 className="text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-4">Top Signals</h4>
+                  <div className="space-y-2">
+                    {profileAnalysis.traitSignals.slice(0, 5).map((trait) => (
+                      <div
+                        key={trait.label}
+                        className="flex items-center justify-between px-4 py-3 rounded-lg border border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-white transition-all"
+                      >
+                        <span className="font-semibold text-sm text-neutral-900">{trait.label}</span>
+                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-neutral-200 text-neutral-700">
+                          ×{trait.count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Emerging Signals */}
+                {profileAnalysis.traitSignals.length > 5 && (
+                  <div className="p-6 rounded-xl border border-neutral-200 bg-white">
+                    <h4 className="text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-4">
+                      Emerging Signals
+                    </h4>
+                    <div className="space-y-2">
+                      {profileAnalysis.traitSignals.slice(5, 10).map((trait) => (
+                        <div
+                          key={trait.label}
+                          className="flex items-center justify-between px-4 py-3 rounded-lg border border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-white transition-all"
+                        >
+                          <span className="font-medium text-sm text-neutral-900">{trait.label}</span>
+                          <span className="text-xs font-medium px-2 py-1 rounded-full bg-neutral-200 text-neutral-700">
+                            ×{trait.count}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Voice Notes Section */}
       {voiceContributions.length > 0 && (
@@ -462,11 +644,11 @@ export function PremierProfileClient({
 
       {/* How it feels Section */}
       {howItFeelsContributions.length > 0 && (
-        <section className="w-full bg-white">
+        <section className="w-full bg-neutral-50">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
             <div className="space-y-6">
               <div className="space-y-3 max-w-2xl mx-auto text-center">
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">How it feels</h3>
+                <h3 className="text-2xl sm:text-3xl font-semibold text-neutral-900">How it feels</h3>
                 <p className="text-sm text-neutral-500 leading-relaxed">
                   Day-to-day collaboration style and working patterns
                 </p>
@@ -481,36 +663,46 @@ export function PremierProfileClient({
               </div>
 
               {filteredHowItFeels.length > 0 ? (
-                <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
+                <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
                   {filteredHowItFeels.map((contribution) => (
                     <div
                       key={contribution.id}
-                      className="break-inside-avoid bg-white border border-neutral-200 rounded-xl p-5 sm:p-6 hover:shadow-md transition-shadow"
+                      className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all"
                     >
-                      <p className="text-sm sm:text-base text-neutral-700 leading-relaxed mb-4">
-                        {contribution.written_note}
-                      </p>
+                      <p className="text-sm leading-relaxed text-neutral-700 mb-4">{contribution.written_note}</p>
 
-                      {contribution.combined_traits && contribution.combined_traits.length > 0 && (
+                      {(contribution.traits_category1?.length ||
+                        contribution.traits_category2?.length ||
+                        contribution.traits_category3?.length) && (
                         <div className="flex flex-wrap gap-2 mb-4">
-                          {contribution.combined_traits.slice(0, 6).map((trait, idx) => (
-                            <span
-                              key={idx}
-                              className="inline-flex px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100"
-                            >
-                              {trait}
-                            </span>
-                          ))}
+                          {[
+                            ...(contribution.traits_category1 || []),
+                            ...(contribution.traits_category2 || []),
+                            ...(contribution.traits_category3 || []),
+                          ]
+                            .slice(0, 5)
+                            .map((trait, idx) => (
+                              <span
+                                key={idx}
+                                className="px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100 hover:border-blue-200 hover:bg-blue-100 transition-colors"
+                              >
+                                {trait}
+                              </span>
+                            ))}
                         </div>
                       )}
 
-                      <div className="pt-3 border-t border-neutral-100">
-                        <p className="text-xs font-semibold text-neutral-900">{contribution.contributor_name}</p>
+                      <div className="border-t border-neutral-100 pt-3">
+                        <div className="text-sm font-semibold text-neutral-900">{contribution.contributor_name}</div>
                         {contribution.relationship && (
-                          <p className="text-xs text-neutral-500">{contribution.relationship}</p>
+                          <div className="text-xs text-neutral-600 capitalize mt-0.5">
+                            {contribution.relationship.replace(/_/g, " ")}
+                          </div>
                         )}
-                        {contribution.contributor_company && (
-                          <p className="text-xs text-neutral-500">{contribution.contributor_company}</p>
+                        {contribution.contributor_company ? (
+                          <div className="text-xs text-neutral-500 mt-0.5">{contribution.contributor_company}</div>
+                        ) : (
+                          <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
                         )}
                       </div>
                     </div>
@@ -519,7 +711,7 @@ export function PremierProfileClient({
               ) : (
                 <div className="text-center py-8">
                   <p className="text-neutral-600">
-                    No perspectives yet from {howItFeelsRelationshipFilter.toLowerCase()}.
+                    No written perspectives yet from {howItFeelsRelationshipFilter.toLowerCase()}.
                   </p>
                   <button
                     onClick={() => setHowItFeelsRelationshipFilter("All")}
@@ -534,56 +726,53 @@ export function PremierProfileClient({
         </section>
       )}
 
-      {/* Screenshots & Highlights Section - Always show */}
-      <section className="w-full bg-white border-t border-neutral-100">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
-          <div className="space-y-6">
-            <div className="space-y-3 max-w-2xl mx-auto text-center">
-              <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">
-                Screenshots and highlights
-              </h3>
-              <p className="text-sm text-neutral-500 leading-relaxed">
-                {importedFeedback.length > 0
-                  ? `${firstName} saved ${importedFeedback.length} ${importedFeedback.length === 1 ? "piece" : "pieces"} of feedback`
-                  : "Saved moments that add context—screenshots, DMs, and written praise"}
-              </p>
-            </div>
+      {/* Screenshots & Highlights - Always render when data exists */}
+      {importedFeedback.length > 0 && (
+        <section className="w-full bg-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
+            <div className="space-y-6">
+              <div className="space-y-2 max-w-2xl mx-auto text-center">
+                <h3 className="text-2xl sm:text-3xl font-semibold text-neutral-900">Screenshots and highlights</h3>
+                <p className="text-sm text-neutral-500 leading-relaxed">
+                  {profile.full_name?.split(" ")[0]} saved {importedFeedback.length} piece
+                  {importedFeedback.length === 1 ? "" : "s"} of feedback
+                </p>
+              </div>
 
-            {importedFeedback.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {importedFeedback.map((feedback) => (
-                  <div key={feedback.id} className="rounded-xl border border-neutral-200 bg-white p-5 space-y-4">
-                    <p className="text-sm text-neutral-700 leading-relaxed">
-                      {feedback.ai_extracted_excerpt || feedback.ocr_text || "Feedback saved"}
-                    </p>
-                    <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
-                      <div>
-                        <p className="text-sm font-medium text-neutral-900">
-                          {feedback.giver_name || "Anonymous"}
-                          {feedback.giver_title && (
-                            <span className="text-neutral-500 font-normal"> · {feedback.giver_title}</span>
-                          )}
-                        </p>
-                        {feedback.giver_company && <p className="text-xs text-neutral-500">{feedback.giver_company}</p>}
-                      </div>
-                      {feedback.source_type && (
-                        <span className="px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-600 text-xs font-medium capitalize">
-                          {feedback.source_type}
-                        </span>
+                  <div
+                    key={feedback.id}
+                    className="rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all"
+                  >
+                    <p className="text-sm leading-relaxed text-neutral-700 mb-4">{feedback.ai_extracted_excerpt}</p>
+
+                    <div className="border-t border-neutral-100 pt-3">
+                      <div className="text-sm font-semibold text-neutral-900">{feedback.giver_name}</div>
+                      {feedback.giver_title && (
+                        <div className="text-xs text-neutral-600 mt-0.5">{feedback.giver_title}</div>
+                      )}
+                      {feedback.giver_company ? (
+                        <div className="text-xs text-neutral-500 mt-0.5">{feedback.giver_company}</div>
+                      ) : (
+                        <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
                       )}
                     </div>
+
+                    {feedback.source && (
+                      <div className="mt-3 pt-3 border-t border-neutral-100">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-700 text-xs font-medium border border-neutral-200">
+                          {feedback.source}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-12 text-neutral-500">
-                <p className="text-base">No highlights added yet.</p>
-                <p className="text-sm mt-1">Screenshots, DMs, and written praise will appear here.</p>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Final CTA */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
@@ -595,6 +784,24 @@ export function PremierProfileClient({
           </p>
           <Button asChild className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-3 rounded-full">
             <a href="/signup">Get started for free</a>
+          </Button>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="w-full bg-neutral-50 border-t border-neutral-200">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24 text-center">
+          <h3 className="text-2xl sm:text-3xl font-semibold text-neutral-900 mb-4">Build your own Nomee profile</h3>
+          <p className="text-sm sm:text-base text-neutral-600 mb-8 leading-relaxed max-w-xl mx-auto">
+            Get feedback from people you've worked with. Create a profile that shows how you collaborate, solve
+            problems, and make an impact.
+          </p>
+          <Button
+            size="lg"
+            className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-6 text-base min-h-[44px]"
+            onClick={() => (window.location.href = "/")}
+          >
+            Get started for free
           </Button>
         </div>
       </section>
