@@ -355,7 +355,9 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               return (
                 <Card key={categoryKey} className="p-6">
                   <div className="mb-4">
-                    <h2 className="text-xl font-semibold text-neutral-900">{category.title}</h2>
+                    <h2 className="text-xl font-semibold text-neutral-900">
+                      {categoryKey === "the_vibe" ? `${firstNameValue}'s vibe` : category.title}
+                    </h2>
                     {categoryKey === "the_vibe" && <p className="text-sm text-neutral-600 mt-1">Pick up to 2</p>}
                     <div className="mt-2 flex items-center justify-between">
                       <span className={`text-sm ${isMaxed ? "text-neutral-900 font-medium" : "text-neutral-600"}`}>

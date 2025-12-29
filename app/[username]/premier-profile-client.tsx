@@ -570,7 +570,7 @@ export function PremierProfileClient({
           <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
             <div className="space-y-3 max-w-2xl mx-auto text-center">
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">
-                The vibe around {profile.full_name?.split(" ")[0]}
+                {profile.full_name?.split(" ")[0]}'s vibe
               </h3>
               <p className="text-sm sm:text-base text-neutral-600">
                 The most common feelings people mentioned about their experience
