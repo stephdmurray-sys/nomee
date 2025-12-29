@@ -386,7 +386,22 @@ export default function DashboardClient({
                   <div className="border-t pt-4 text-sm text-neutral-600">
                     <div className="font-medium text-neutral-900">{contribution.contributor_name}</div>
                     <div>
-                      {contribution.relationship} · {contribution.contributor_company}
+                      {contribution.relationship}
+                      {contribution.relationship_context && (
+                        <span className="text-neutral-700"> · {contribution.relationship_context}</span>
+                      )}
+                      {!contribution.relationship_context && !contribution.contributor_company && (
+                        <>
+                          {" · "}
+                          <span className="text-neutral-500">Not provided</span>
+                          <Badge variant="outline" className="ml-2 text-xs border-amber-300 text-amber-700 bg-amber-50">
+                            Missing context
+                          </Badge>
+                        </>
+                      )}
+                      {contribution.contributor_company && contribution.contributor_company !== "Unknown" && (
+                        <span className="text-neutral-700"> · {contribution.contributor_company}</span>
+                      )}
                     </div>
                     {contribution.contributor_email && (
                       <div className="text-xs text-neutral-500 mt-1">{contribution.contributor_email}</div>

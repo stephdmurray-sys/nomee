@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
       contributorEmail,
       companyOrOrg,
       relationship,
+      relationshipContext, // Added relationshipContext parameter
       duration,
       message,
       selectedTraitIds,
@@ -179,6 +180,7 @@ export async function POST(request: NextRequest) {
         contributor_email: normalizedEmail,
         contributor_company: companyOrOrg || "Unknown",
         relationship,
+        relationship_context: relationshipContext || null, // Added relationship_context field
         duration,
         written_note: message,
         email_hash: emailHash,

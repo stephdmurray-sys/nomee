@@ -239,9 +239,14 @@ export function FloatingQuoteCards({
                     <div className="font-medium text-sm text-neutral-900">{contribution.contributor_name}</div>
                     <div className="text-xs text-neutral-500 mt-1">
                       {getRelationshipLabel(contribution.relationship)}
-                      {contribution.contributor_company && (
-                        <span className="text-neutral-400"> · {contribution.contributor_company}</span>
+                      {contribution.relationship_context && (
+                        <span className="text-neutral-600"> · {contribution.relationship_context}</span>
                       )}
+                      {!contribution.relationship_context &&
+                        contribution.contributor_company &&
+                        contribution.contributor_company !== "Unknown" && (
+                          <span className="text-neutral-400"> · {contribution.contributor_company}</span>
+                        )}
                     </div>
                   </div>
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -349,9 +354,14 @@ export function FloatingQuoteCards({
                       <div className="font-medium text-sm text-neutral-900">{contribution.contributor_name}</div>
                       <div className="text-xs text-neutral-500 mt-1">
                         {getRelationshipLabel(contribution.relationship)}
-                        {contribution.contributor_company && (
-                          <span className="text-neutral-400"> · {contribution.contributor_company}</span>
+                        {contribution.relationship_context && (
+                          <span className="text-neutral-600"> · {contribution.relationship_context}</span>
                         )}
+                        {!contribution.relationship_context &&
+                          contribution.contributor_company &&
+                          contribution.contributor_company !== "Unknown" && (
+                            <span className="text-neutral-400"> · {contribution.contributor_company}</span>
+                          )}
                       </div>
                     </div>
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">

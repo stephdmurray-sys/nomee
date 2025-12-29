@@ -49,6 +49,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
 
   // Form data
   const [relationship, setRelationship] = useState("")
+  const [relationshipContext, setRelationshipContext] = useState("") // Added state for relationship context
   const [duration, setDuration] = useState("")
   const [selectedTraits, setSelectedTraits] = useState<TraitSelections>({})
   const [message, setMessage] = useState("")
@@ -77,6 +78,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         const parsed = JSON.parse(sessionData)
         console.log("[v0] Restored draft from sessionStorage:", parsed)
         if (parsed.relationship) setRelationship(parsed.relationship)
+        if (parsed.relationshipContext) setRelationshipContext(parsed.relationshipContext) // Restore relationship context
         if (parsed.duration) setDuration(parsed.duration)
         if (parsed.selectedTraits) setSelectedTraits(parsed.selectedTraits)
         if (parsed.message) setMessage(parsed.message)
@@ -116,11 +118,11 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     if (step !== "entry") {
       const draftData = {
         relationship,
+        relationshipContext, // Include relationship context in draft
         duration,
         selectedTraits,
         message,
         firstName,
-        // Updated to save full last name
         lastName,
         email,
         contributionId,
@@ -131,6 +133,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     }
   }, [
     relationship,
+    relationshipContext,
     duration,
     selectedTraits,
     message,
@@ -198,6 +201,18 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
 
   // STEP 2: Working Relationship
   if (step === "relationship") {
+    const contextRequiredForRelationships = [
+      "manager",
+      "teammate",
+      "direct_report",
+      "client",
+      "vendor",
+      "collaborator",
+      "advisor",
+    ]
+
+    const isContextRequired = contextRequiredForRelationships.some((type) => relationship.toLowerCase().includes(type))
+
     return (
       <div className="min-h-screen bg-white py-12 px-4">
         <div className="mx-auto max-w-2xl">
@@ -230,6 +245,32 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
               <p className="mt-2 text-sm text-red-600">{validationErrors.relationship}</p>
             )}
 
+            {relationship && (
+              <div className="mt-6">
+                <label htmlFor="relationship-context" className="block text-sm font-medium text-neutral-900 mb-2">
+                  What was the context?{isContextRequired && <span className="text-red-600 ml-1">*</span>}
+                </label>
+                <p className="text-sm text-neutral-600 mb-3">
+                  Company, project, or community (ex: Brightside Health, Nike launch, PTA)
+                </p>
+                <input
+                  id="relationship-context"
+                  type="text"
+                  placeholder="Add context…"
+                  value={relationshipContext}
+                  onChange={(e) => {
+                    setRelationshipContext(e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, relationshipContext: "" }))
+                  }}
+                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  maxLength={100}
+                />
+                {validationErrors.relationshipContext && (
+                  <p className="mt-2 text-sm text-red-600">{validationErrors.relationshipContext}</p>
+                )}
+              </div>
+            )}
+
             <div className="mt-8 flex gap-4">
               <Button onClick={() => setStep("entry")} variant="outline" size="lg">
                 Back
@@ -238,6 +279,12 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                 onClick={() => {
                   if (!relationship) {
                     setValidationErrors({ relationship: "Please select your relationship" })
+                    return
+                  }
+                  if (isContextRequired && !relationshipContext.trim()) {
+                    setValidationErrors({
+                      relationshipContext: "Please provide context for this relationship type",
+                    })
                     return
                   }
                   setStep("duration")
@@ -444,6 +491,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
             contributorEmail: "pending@nomee.app",
             companyOrOrg: "Unknown",
             relationship,
+            relationshipContext, // Include relationship context in API call
             duration,
             message: message.trim(),
             selectedTraitIds: allSelectedTraitIds,
@@ -616,10 +664,8 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               profileId: profile.id,
-              contributorName: `${firstName.trim()} ${lastName.trim()}`,
-              contributorEmail: email.trim().toLowerCase(),
-              companyOrOrg: "Unknown",
               relationship,
+              relationshipContext, // Include relationship context in API call
               duration,
               message: message.trim(),
               selectedTraitIds: allSelectedTraitIds,
