@@ -200,6 +200,7 @@ export function PremierProfileClient({
         </div>
       </section>
 
+      {/* Hero section with Summary + Vibe side-by-side */}
       <section className="w-full bg-white border-y border-neutral-100">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
@@ -310,167 +311,6 @@ export function PremierProfileClient({
         </div>
       </section>
 
-      {/* Summary Section - Always show */}
-      <section className="w-full bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
-          <div className="max-w-3xl mx-auto">
-            <div className="border-l-4 border-blue-500 pl-6 sm:pl-8 space-y-6">
-              <div className="space-y-3">
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900 leading-tight">
-                  Summary of working with {firstName}
-                </h3>
-
-                <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-neutral-500">
-                  <span className="uppercase tracking-wide font-medium text-neutral-400">Updated automatically</span>
-                  <div className="flex flex-wrap items-center gap-2 text-neutral-600">
-                    <span>
-                      {profileAnalysis.counts.contributions}{" "}
-                      {profileAnalysis.counts.contributions === 1 ? "contribution" : "contributions"}
-                    </span>
-                    {profileAnalysis.counts.voiceNotes > 0 && (
-                      <>
-                        <span>•</span>
-                        <span>
-                          {profileAnalysis.counts.voiceNotes} voice{" "}
-                          {profileAnalysis.counts.voiceNotes === 1 ? "note" : "notes"}
-                        </span>
-                      </>
-                    )}
-                    {profileAnalysis.counts.uploads > 0 && (
-                      <>
-                        <span>•</span>
-                        <span>
-                          {profileAnalysis.counts.uploads} {profileAnalysis.counts.uploads === 1 ? "upload" : "uploads"}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <AiPatternSummary
-                analysisText={profileAnalysis.analysisText}
-                traitSignals={profileAnalysis.traitSignals}
-                vibeSignals={profileAnalysis.vibeSignals}
-                firstName={firstName}
-                contributionsCount={profileAnalysis.counts.contributions}
-              />
-
-              <p className="text-xs text-neutral-500 pt-4 border-t border-neutral-100">
-                Generated from {profileAnalysis.counts.contributions}{" "}
-                {profileAnalysis.counts.contributions === 1 ? "contribution" : "contributions"}
-                {profileAnalysis.counts.uploads > 0 &&
-                  ` and ${profileAnalysis.counts.uploads} ${profileAnalysis.counts.uploads === 1 ? "upload" : "uploads"}`}
-                {" • "}Updates as more people contribute
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Vibe Section - Always show */}
-      <section className="w-full bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="max-w-3xl mx-auto">
-            <div className="rounded-xl border border-neutral-200 bg-neutral-50/50 p-6 sm:p-8">
-              <h3 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-4">
-                {firstName ? `${firstName}'s vibe` : "Their vibe"}
-              </h3>
-              {(() => {
-                const contributorsWithVibes = new Set(
-                  rawContributions
-                    .filter((c) => c.traits_category4 && c.traits_category4.length > 0)
-                    .map((c) => c.contributor_id || c.contributor_name),
-                ).size
-
-                if (contributorsWithVibes < 2) {
-                  return <p className="text-sm text-neutral-500">Vibe appears once 2+ people contribute.</p>
-                }
-
-                if (profileAnalysis.vibeSignals.length === 0) {
-                  return <p className="text-sm text-neutral-500">Vibe appears once 2+ people contribute.</p>
-                }
-
-                return (
-                  <div className="flex flex-wrap gap-3">
-                    {profileAnalysis.vibeSignals.slice(0, 6).map((vibe, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-4 py-2.5 rounded-full bg-purple-50 text-purple-700 text-sm font-medium border border-purple-100 transition-all duration-200 ease-out cursor-default hover:scale-105 hover:shadow-md hover:shadow-purple-100/50 hover:bg-purple-100 hover:border-purple-200"
-                      >
-                        {vibe.label}
-                        {vibe.count > 1 && (
-                          <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-200 text-purple-800">
-                            ×{vibe.count}
-                          </span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                )
-              })()}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {profileAnalysis.traitSignals.length > 0 && (
-        <section className="w-full bg-neutral-50">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-            <div className="space-y-6">
-              <div className="space-y-2 max-w-3xl mx-auto text-center">
-                <h3 className="text-2xl sm:text-3xl font-semibold text-neutral-900">Pattern Recognition</h3>
-                <p className="text-sm text-neutral-500 leading-relaxed">
-                  Not hand-picked — patterns emerge as more people contribute.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                {/* Top Signals */}
-                <div className="p-6 rounded-xl border border-neutral-200 bg-white">
-                  <h4 className="text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-4">Top Signals</h4>
-                  <div className="space-y-2">
-                    {profileAnalysis.traitSignals.slice(0, 5).map((trait) => (
-                      <div
-                        key={trait.label}
-                        className="flex items-center justify-between px-4 py-3 rounded-lg border border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-white transition-all"
-                      >
-                        <span className="font-semibold text-sm text-neutral-900">{trait.label}</span>
-                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-neutral-200 text-neutral-700">
-                          ×{trait.count}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Emerging Signals */}
-                {profileAnalysis.traitSignals.length > 5 && (
-                  <div className="p-6 rounded-xl border border-neutral-200 bg-white">
-                    <h4 className="text-xs font-semibold text-neutral-600 uppercase tracking-wider mb-4">
-                      Emerging Signals
-                    </h4>
-                    <div className="space-y-2">
-                      {profileAnalysis.traitSignals.slice(5, 10).map((trait) => (
-                        <div
-                          key={trait.label}
-                          className="flex items-center justify-between px-4 py-3 rounded-lg border border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-white transition-all"
-                        >
-                          <span className="font-medium text-sm text-neutral-900">{trait.label}</span>
-                          <span className="text-xs font-medium px-2 py-1 rounded-full bg-neutral-200 text-neutral-700">
-                            ×{trait.count}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Voice Notes Section */}
       {voiceContributions.length > 0 && (
         <section className="w-full bg-white">
@@ -513,7 +353,7 @@ export function PremierProfileClient({
         </section>
       )}
 
-      {/* Pattern Recognition Section */}
+      {/* Pattern Recognition Section - Enhanced with trust-blue transparency WOW factor */}
       {profileAnalysis.traitSignals.length > 0 && (
         <section className="w-full bg-white">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
@@ -547,23 +387,26 @@ export function PremierProfileClient({
                       Top signals
                     </h4>
                     <div className="space-y-2">
-                      {profileAnalysis.traitSignals.slice(0, 5).map((trait) => (
-                        <div
-                          key={trait.label}
-                          className="flex items-center justify-between px-4 py-3 rounded-lg border border-neutral-200 bg-neutral-50"
-                        >
-                          <span className="font-semibold text-sm sm:text-base text-neutral-900">{trait.label}</span>
-                          <span className="text-xs font-semibold px-2 py-1 rounded-full bg-neutral-200 text-neutral-700">
-                            ×{trait.count}
-                          </span>
-                        </div>
-                      ))}
+                      {profileAnalysis.traitSignals.slice(0, 5).map((trait) => {
+                        const maxCount = Math.max(...profileAnalysis.traitSignals.map((t) => t.count))
+                        const bgOpacity = 0.15 + (trait.count / maxCount) * 0.45
+
+                        return (
+                          <div
+                            key={trait.label}
+                            className="flex items-center justify-between px-4 py-3 rounded-lg border border-blue-200/50 transition-all hover:border-blue-400/70 hover:shadow-sm"
+                            style={{ backgroundColor: `rgba(59, 130, 246, ${bgOpacity})` }}
+                          >
+                            <span className="font-semibold text-sm sm:text-base text-neutral-900">{trait.label}</span>
+                            <span className="text-xs font-semibold text-neutral-700">×{trait.count}</span>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 max-w-5xl mx-auto">
-                  {/* Left panel: Top signals */}
                   <div className="p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white">
                     <h4 className="text-xs sm:text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
                       Top signals
@@ -572,7 +415,7 @@ export function PremierProfileClient({
                       {profileAnalysis.traitSignals.slice(0, 5).map((trait) => {
                         const isSelected = selectedHeatmapTrait === trait.label
                         const maxCount = Math.max(...profileAnalysis.traitSignals.map((t) => t.count))
-                        const opacity = 0.3 + (trait.count / maxCount) * 0.7
+                        const bgOpacity = 0.15 + (trait.count / maxCount) * 0.45
 
                         return (
                           <button
@@ -582,19 +425,21 @@ export function PremierProfileClient({
                             }
                             className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all ${
                               isSelected
-                                ? "border-blue-500 bg-blue-50 shadow-sm"
-                                : "border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-white"
+                                ? "border-blue-600 shadow-md scale-[1.02]"
+                                : "border-blue-200/50 hover:border-blue-400/70 hover:shadow-sm hover:scale-[1.01]"
                             }`}
-                            style={{ opacity: isSelected ? 1 : opacity }}
+                            style={{
+                              backgroundColor: isSelected
+                                ? "rgba(59, 130, 246, 0.7)"
+                                : `rgba(59, 130, 246, ${bgOpacity})`,
+                            }}
                           >
                             <span
-                              className={`font-semibold text-sm sm:text-base ${isSelected ? "text-blue-900" : "text-neutral-900"}`}
+                              className={`font-semibold text-sm sm:text-base ${isSelected ? "text-white" : "text-neutral-900"}`}
                             >
                               {trait.label}
                             </span>
-                            <span
-                              className={`text-xs font-semibold ${isSelected ? "text-blue-700" : "text-neutral-500"}`}
-                            >
+                            <span className={`text-xs font-semibold ${isSelected ? "text-white" : "text-neutral-700"}`}>
                               ×{trait.count}
                             </span>
                           </button>
@@ -603,7 +448,6 @@ export function PremierProfileClient({
                     </div>
                   </div>
 
-                  {/* Right panel: Emerging signals */}
                   <div className="p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white">
                     <h4 className="text-xs sm:text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4">
                       Emerging signals
@@ -611,6 +455,8 @@ export function PremierProfileClient({
                     <div className="flex flex-wrap gap-2">
                       {profileAnalysis.traitSignals.slice(5, 15).map((trait) => {
                         const isSelected = selectedHeatmapTrait === trait.label
+                        const maxCount = Math.max(...profileAnalysis.traitSignals.slice(5, 15).map((t) => t.count))
+                        const bgOpacity = 0.12 + (trait.count / maxCount) * 0.35
 
                         return (
                           <button
@@ -620,14 +466,17 @@ export function PremierProfileClient({
                             }
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                               isSelected
-                                ? "border-blue-500 bg-blue-50 text-blue-900"
-                                : "border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-300 hover:bg-white"
+                                ? "border-blue-600 shadow-md scale-105"
+                                : "border-blue-200/50 hover:border-blue-400/70 hover:shadow-sm hover:scale-105"
                             }`}
+                            style={{
+                              backgroundColor: isSelected
+                                ? "rgba(59, 130, 246, 0.6)"
+                                : `rgba(59, 130, 246, ${bgOpacity})`,
+                            }}
                           >
-                            {trait.label}
-                            <span
-                              className={`text-xs font-semibold ${isSelected ? "text-blue-700" : "text-neutral-500"}`}
-                            >
+                            <span className={isSelected ? "text-white" : "text-neutral-800"}>{trait.label}</span>
+                            <span className={`text-xs font-semibold ${isSelected ? "text-white" : "text-neutral-600"}`}>
                               ×{trait.count}
                             </span>
                           </button>
@@ -784,24 +633,6 @@ export function PremierProfileClient({
           </p>
           <Button asChild className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-3 rounded-full">
             <a href="/signup">Get started for free</a>
-          </Button>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="w-full bg-neutral-50 border-t border-neutral-200">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24 text-center">
-          <h3 className="text-2xl sm:text-3xl font-semibold text-neutral-900 mb-4">Build your own Nomee profile</h3>
-          <p className="text-sm sm:text-base text-neutral-600 mb-8 leading-relaxed max-w-xl mx-auto">
-            Get feedback from people you've worked with. Create a profile that shows how you collaborate, solve
-            problems, and make an impact.
-          </p>
-          <Button
-            size="lg"
-            className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-6 text-base min-h-[44px]"
-            onClick={() => (window.location.href = "/")}
-          >
-            Get started for free
           </Button>
         </div>
       </section>

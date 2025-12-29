@@ -58,6 +58,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
   const [email, setEmail] = useState("")
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
   const [contributionId, setContributionId] = useState<string | null>(null)
+  const [companyOrOrg, setCompanyOrOrg] = useState("") // Added state for company or org
 
   const [messageSaveStatus, setMessageSaveStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle")
   const [saveRetryCount, setSaveRetryCount] = useState(0)
@@ -86,6 +87,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         if (parsed.lastName) setLastName(parsed.lastName)
         if (parsed.email) setEmail(parsed.email)
         if (parsed.contributionId) setContributionId(parsed.contributionId)
+        if (parsed.companyOrOrg) setCompanyOrOrg(parsed.companyOrOrg) // Restore company or org
         if (parsed.draftToken) setDraftToken(parsed.draftToken)
         // Only restore step if not submitted
         if (parsed.step && parsed.step !== "submitted") setStep(parsed.step)
@@ -126,6 +128,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
         lastName,
         email,
         contributionId,
+        companyOrOrg, // Include company or org in draft
         draftToken,
         step: step !== "submitted" ? step : "voice", // Don't restore to submitted
       }
@@ -141,6 +144,7 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
     lastName,
     email,
     contributionId,
+    companyOrOrg,
     draftToken,
     step,
     profile.slug,
@@ -664,6 +668,9 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               profileId: profile.id,
+              contributorName: `${firstName.trim()} ${lastName.trim()}`,
+              contributorEmail: email.trim().toLowerCase(),
+              companyOrOrg: companyOrOrg || null,
               relationship,
               relationshipContext, // Include relationship context in API call
               duration,
@@ -805,6 +812,25 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
                 <p className="mt-2 text-sm text-neutral-500">
                   Your email is only used to verify authenticity. It's never shown publicly.
                 </p>
+              </div>
+
+              <div>
+                <Label htmlFor="companyOrOrg" className="text-neutral-900">
+                  Company/Organization
+                </Label>
+                <Input
+                  id="companyOrOrg"
+                  type="text"
+                  value={companyOrOrg}
+                  onChange={(e) => {
+                    setCompanyOrOrg(e.target.value)
+                    setValidationErrors((prev) => ({ ...prev, companyOrOrg: "" }))
+                  }}
+                  className="mt-2"
+                />
+                {validationErrors.companyOrOrg && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.companyOrOrg}</p>
+                )}
               </div>
             </div>
 
