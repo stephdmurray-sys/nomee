@@ -40,9 +40,10 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-neutral-50">
       <nav className="sticky top-0 z-50 border-b bg-white">
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Nomee</h1>
+          <Link href="/" className="text-2xl font-bold hover:opacity-80 transition-opacity">
+            Nomee
+          </Link>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-neutral-600">{user.email}</span>
             {publicUrl && (
               <Button variant="outline" asChild>
                 <a href={publicUrl} target="_blank" rel="noopener noreferrer">
@@ -60,7 +61,9 @@ export default async function DashboardPage() {
 
       <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="mb-12">
-          <h2 className="mb-2 text-4xl font-bold text-neutral-900">Welcome back, {profile.full_name}</h2>
+          <h2 className="mb-2 text-4xl font-bold text-neutral-900">
+            Welcome back, {profile.full_name?.split(" ")[0] || profile.full_name}
+          </h2>
           <p className="text-xl text-neutral-600">Your professional reputation — captured and ready to share</p>
         </div>
 
