@@ -7,10 +7,6 @@ interface Contribution {
   id: string
   written_note: string
   relationship: string
-  traits_category1?: string[]
-  traits_category2?: string[]
-  traits_category3?: string[]
-  traits_category4?: string[]
 }
 
 interface ImportedFeedback {
@@ -25,9 +21,15 @@ interface AiPatternSummaryProps {
   contributions: Contribution[]
   importedFeedback: ImportedFeedback[]
   topTraits: { label: string; count: number }[]
+  firstName?: string
 }
 
-export function AiPatternSummary({ contributions, importedFeedback, topTraits }: AiPatternSummaryProps) {
+export function AiPatternSummary({
+  contributions,
+  importedFeedback,
+  topTraits,
+  firstName = "this person",
+}: AiPatternSummaryProps) {
   const [summary, setSummary] = useState<{
     synthesis: string
     patterns: string[]
@@ -38,7 +40,7 @@ export function AiPatternSummary({ contributions, importedFeedback, topTraits }:
 
   useEffect(() => {
     generateSummary()
-  }, [contributions, importedFeedback, topTraits])
+  }, [contributions, importedFeedback, topTraits, firstName])
 
   const generateSummary = () => {
     if (contributions.length === 0 || topTraits.length === 0) {
@@ -50,140 +52,22 @@ export function AiPatternSummary({ contributions, importedFeedback, topTraits }:
 
     const analyzableUploads = (importedFeedback || []).filter((u) => u.included_in_analysis && u.ocr_text)
 
-    const top3Traits = topTraits
-      .slice(0, 3)
-      .filter((t) => t && t.label && typeof t.label === "string")
-      .map((t) => t.label.toLowerCase())
+    const traits = topTraits.slice(0, 3)
+    let synthesis = ""
 
-    const totalSources = contributions.length + analyzableUploads.length
-    const uploadNote = analyzableUploads.length > 0 ? ` across ${totalSources} sources` : ""
-
-    const synthesis = `People consistently describe working with this person as ${top3Traits.slice(0, 2).join(" and ")}, with a strong emphasis on ${top3Traits[2] || "collaboration"}${uploadNote}.`
-
-    const patterns: string[] = []
-
-    const behaviorPatterns: Record<string, number> = {}
-
-    const allTexts = [...contributions.map((c) => c.written_note), ...analyzableUploads.map((u) => u.ocr_text || "")]
-
-    allTexts.forEach((text) => {
-      const textLower = text.toLowerCase()
-
-      const behaviorRegexes = [
-        {
-          regex: /(brings|delivers|provides) (\w+) (ideas|solutions|perspectives|thinking)/g,
-          extract: (m: RegExpMatchArray) => `Brings ${m[2]} ${m[3]}`,
-        },
-        {
-          regex: /(always|consistently) (delivers|shows up|communicates|follows through)/g,
-          extract: (m: RegExpMatchArray) => `${m[1].charAt(0).toUpperCase() + m[1].slice(1)} ${m[2]}`,
-        },
-        {
-          regex: /(helps|makes) (teams|everyone|us) (better|stronger|successful)/g,
-          extract: () => "Makes teams better",
-        },
-        {
-          regex: /(quick|responsive|fast) (to respond|turnaround|communication)/g,
-          extract: () => "Quick to respond",
-        },
-        {
-          regex: /great (problem solver|communicator|collaborator|partner)/g,
-          extract: (m: RegExpMatchArray) => `Great ${m[1]}`,
-        },
-      ]
-
-      behaviorRegexes.forEach(({ regex, extract }) => {
-        let match
-        while ((match = regex.exec(textLower)) !== null) {
-          const key = extract(match)
-          behaviorPatterns[key] = (behaviorPatterns[key] || 0) + 1
-        }
-      })
-    })
-
-    const sortedBehaviors = Object.entries(behaviorPatterns)
-      .filter(([_, count]) => count >= 2)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-
-    sortedBehaviors.forEach(([behavior]) => {
-      patterns.push(behavior)
-    })
-
-    if (patterns.length < 3) {
-      const traitTemplates = [
-        (trait: string) => `Known for being ${trait}`,
-        (trait: string) => `Reputation for ${trait} work`,
-        (trait: string) => `Recognized for ${trait} approach`,
-      ]
-
-      let templateIndex = 0
-      for (let i = patterns.length; i < 3 && i < top3Traits.length; i++) {
-        patterns.push(traitTemplates[templateIndex](top3Traits[i]))
-        templateIndex++
-      }
+    if (traits.length >= 3) {
+      synthesis = `People consistently describe working with ${firstName} as ${traits[0].label.toLowerCase()} and ${traits[1].label.toLowerCase()}, with a strong emphasis on ${traits[2].label.toLowerCase()}.`
+    } else if (traits.length === 2) {
+      synthesis = `People describe working with ${firstName} as ${traits[0].label.toLowerCase()} and ${traits[1].label.toLowerCase()}.`
+    } else if (traits.length === 1) {
+      synthesis = `People describe working with ${firstName} as ${traits[0].label.toLowerCase()}.`
     }
 
-    const relationshipInsights: { role: string; qualities: string[] }[] = []
-
-    const relationshipGroups = [
-      { key: "client", variations: ["client"] },
-      { key: "peer", variations: ["peer", "together", "colleague"] },
-      { key: "manager", variations: ["manager", "lead", "direct report"] },
-    ]
-
-    relationshipGroups.forEach(({ key, variations }) => {
-      const validVariations = variations.filter((v) => v && typeof v === "string")
-
-      if (validVariations.length === 0) return
-
-      const filtered = contributions.filter((c) => {
-        if (!c.relationship || typeof c.relationship !== "string") return false
-        const relationshipLower = c.relationship.toLowerCase()
-        return validVariations.some((v) => relationshipLower.includes(v.toLowerCase()))
-      })
-
-      if (filtered.length >= 2) {
-        const qualityMap: Record<string, number> = {}
-
-        filtered.forEach((c) => {
-          if (!c.written_note || typeof c.written_note !== "string") return
-
-          const text = c.written_note.toLowerCase()
-
-          const qualityRegexes = [
-            /\b(reliable|dependable|consistent|trustworthy)\b/g,
-            /\b(creative|innovative|strategic|visionary)\b/g,
-            /\b(problem solver|solution-oriented|resourceful)\b/g,
-            /\b(collaborative|team player|supportive)\b/g,
-          ]
-
-          qualityRegexes.forEach((regex) => {
-            let match
-            while ((match = regex.exec(text)) !== null) {
-              qualityMap[match[1]] = (qualityMap[match[1]] || 0) + 1
-            }
-          })
-        })
-
-        const topQualities = Object.entries(qualityMap)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 2)
-          .map(([quality]) => quality)
-
-        if (topQualities.length > 0) {
-          relationshipInsights.push({
-            role: key.charAt(0).toUpperCase() + key.slice(1) + "s",
-            qualities: topQualities,
-          })
-        }
-      }
-    })
+    const patterns = traits.map((t) => `Known for being ${t.label.toLowerCase()}`)
 
     setSummary({
       synthesis,
       patterns: patterns.slice(0, 3),
-      relationshipInsights: relationshipInsights.length >= 2 ? relationshipInsights : undefined,
     })
 
     setIsLoading(false)
@@ -200,8 +84,8 @@ export function AiPatternSummary({ contributions, importedFeedback, topTraits }:
 
   if (!summary) {
     return (
-      <div className="text-center py-6">
-        <p className="text-sm text-neutral-500">Summary will appear once contributions are received.</p>
+      <div className="text-center py-12 text-neutral-500">
+        <p className="text-lg">Summary will appear once contributions are received.</p>
       </div>
     )
   }

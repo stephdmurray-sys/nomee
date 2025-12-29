@@ -7,8 +7,7 @@ import { VoiceCard } from "@/components/voice-card"
 import { AiPatternSummary } from "@/components/ai-pattern-summary"
 import { RelationshipFilter } from "@/components/relationship-filter"
 import { FloatingQuoteCards } from "@/components/floating-quote-cards" // Assuming FloatingQuoteCards is imported
-import { SnapshotRow } from "@/components/snapshot-row"
-import { filterByRelationship, type RelationshipFilterCategory } from "@/lib/relationship-filter"
+import type { RelationshipFilterCategory } from "@/lib/relationship-filter"
 import { categorizeTestimonials } from "@/lib/categorize-testimonials"
 import { extractRepeatedPhrases } from "@/lib/extract-repeated-phrases"
 import { dedupeContributions } from "@/lib/dedupe-contributions"
@@ -16,17 +15,39 @@ import { extractHighlightPatterns } from "@/lib/extract-highlight-patterns"
 import Link from "next/link"
 import type { Profile, Contribution, ImportedFeedback } from "@/lib/types"
 import { TRAIT_CATEGORIES } from "@/lib/trait-categories" // Assuming TRAIT_CATEGORIES is imported
+import { filterByRelationship } from "@/lib/filter-by-relationship" // Declare the variable before using it
 
 interface PremierProfileClientProps {
   profile: Profile
   contributions: Contribution[]
   importedFeedback: ImportedFeedback[]
+  traits: any // Assuming 'traits' is a new prop, adjust type as needed
+  totalContributions: number // Assuming 'totalContributions' is a new prop
+  uniqueCompanies: string[] // Assuming 'uniqueCompanies' is a new prop
+  interpretationSentence: string // Assuming 'interpretationSentence' is a new prop
+  vibeLabels: string[] // Assuming 'vibeLabels' is a new prop
+  anchorQuote: string // Assuming 'anchorQuote' is a new prop
+}
+
+// Helper function to determine if a trait label is a vibe
+const isVibeTrait = (label: string): boolean => {
+  return (
+    ["positive", "negative", "neutral"].includes(label.toLowerCase()) ||
+    ["energetic", "calm", "focused", "creative", "supportive", "ambitious"].includes(label.toLowerCase()) ||
+    ["enthusiastic", "passionate", "driven", "innovative", "collaborative", "reliable"].includes(label.toLowerCase())
+  )
 }
 
 export function PremierProfileClient({
   profile,
   contributions: rawContributions,
   importedFeedback: rawImportedFeedback,
+  traits, // Destructure new props
+  totalContributions, // Destructure new props
+  uniqueCompanies, // Destructure new props
+  interpretationSentence, // Destructure new props
+  vibeLabels, // Destructure new props
+  anchorQuote, // Destructure new props
 }: PremierProfileClientProps) {
   console.log("[v0] PremierProfileClient: Profile loaded:", profile.slug)
   console.log("[v0] PremierProfileClient: Total contributions received:", rawContributions.length)
@@ -75,6 +96,7 @@ export function PremierProfileClient({
   const [selectedVibe, setSelectedVibe] = useState<string | null>(null)
   const [snapshotVibeFilter, setSnapshotVibeFilter] = useState<string | null>(null)
   const [snapshotTraitFilter, setSnapshotTraitFilter] = useState<string | null>(null)
+  const [selectedRelationship, setSelectedRelationship] = useState<RelationshipFilterCategory | null>(null) // New state for relationship filter in VibeHighlightBar
 
   useEffect(() => {
     const timer = setTimeout(() => setHeroVisible(true), 100)
@@ -134,52 +156,44 @@ export function PremierProfileClient({
     setSnapshotTraitFilter(null)
     setSelectedVibe(null)
     setSelectedHeatmapTrait(null)
+    setSelectedRelationship(null) // Clear the new relationship filter state
   }
 
   const traitSignals = useMemo(() => {
     const traitCounts: Record<string, number> = {}
 
     rawContributions.forEach((contribution) => {
-      if (contribution.traits_json) {
-        let traitsData: any = {}
-        try {
-          traitsData =
-            typeof contribution.traits_json === "string"
-              ? JSON.parse(contribution.traits_json)
-              : contribution.traits_json
-        } catch (e) {
-          console.error("[v0] Error parsing traits_json:", e)
-        }
+      // Collect trait IDs from category1, category2, category3 (NOT category4 which is vibes)
+      const traitIds = [
+        ...(contribution.traits_category1 || []),
+        ...(contribution.traits_category2 || []),
+        ...(contribution.traits_category3 || []),
+      ]
 
-        // Get all traits except vibe/how_it_felt
-        Object.entries(traitsData).forEach(([category, traitIds]) => {
-          if (category !== "the_vibe" && category !== "how_it_felt" && Array.isArray(traitIds)) {
-            traitIds.forEach((traitId: string) => {
-              // Find trait label from any category
-              let traitLabel: string | undefined
+      traitIds.forEach((traitId: string) => {
+        // Find the trait label from TRAIT_CATEGORIES
+        for (const [categoryKey, category] of Object.entries(TRAIT_CATEGORIES)) {
+          // Skip the vibe category
+          if (categoryKey === "the_vibe") continue
 
-              Object.values(TRAIT_CATEGORIES).forEach((cat) => {
-                if (cat.title !== "The vibe") {
-                  const trait = cat.traits.find((t) => t.id === traitId)
-                  if (trait) traitLabel = trait.label
-                }
-              })
-
-              if (traitLabel) {
-                traitCounts[traitLabel] = (traitCounts[traitLabel] || 0) + 1
-              }
-            })
+          const trait = category.traits.find((t) => t.id === traitId)
+          if (trait) {
+            traitCounts[trait.label] = (traitCounts[trait.label] || 0) + 1
+            break
           }
-        })
-      }
+        }
+      })
     })
 
-    // Return sorted array of traits with counts, filtering out any undefined/empty labels
+    // Return sorted array of traits with counts
     return Object.entries(traitCounts)
       .filter(([label]) => label && label.trim().length > 0)
       .sort(([, a], [, b]) => b - a)
       .map(([label, count]) => ({ label, count }))
   }, [rawContributions])
+
+  console.log("[v0] traitSignals computed, length:", traitSignals.length)
+  console.log("[v0] traitSignals data:", traitSignals)
 
   const traitsWithExamples = traitSignals.map((trait) => ({
     label: trait.label,
@@ -256,45 +270,11 @@ export function PremierProfileClient({
     return filterByRelationship(voiceContributions, voiceRelationshipFilter)
   }, [voiceContributions, voiceRelationshipFilter])
 
-  const vibeData = useMemo(() => {
-    const vibeCounts: Record<string, number> = {}
-
-    rawContributions.forEach((contribution) => {
-      if (contribution.traits_json) {
-        let traitsData: any = {}
-        try {
-          traitsData =
-            typeof contribution.traits_json === "string"
-              ? JSON.parse(contribution.traits_json)
-              : contribution.traits_json
-        } catch (e) {
-          console.error("[v0] Error parsing traits_json:", e)
-        }
-
-        const vibeTraits = [...(traitsData.the_vibe || []), ...(traitsData.how_it_felt || [])]
-
-        vibeTraits.forEach((traitId: string) => {
-          const vibeTrait = TRAIT_CATEGORIES.the_vibe?.traits.find((t) => t.id === traitId)
-          if (vibeTrait) {
-            vibeCounts[vibeTrait.label] = (vibeCounts[vibeTrait.label] || 0) + 1
-          }
-        })
-      }
-    })
-
-    const sortedVibes = Object.entries(vibeCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 6)
-      .map(([label, count]) => ({ label, count }))
-
-    return sortedVibes
-  }, [rawContributions])
-
   const filteredContributionsByVibe = useMemo(() => {
     if (!selectedVibe) return filteredHowItFeels
 
     return filteredHowItFeels.filter((contribution) => {
-      if (!contribution.traits_json) return false
+      if (!contribution.traits_json) return false // Fallback if traits_json still exists
 
       let traitsData: any = {}
       try {
@@ -313,44 +293,39 @@ export function PremierProfileClient({
     })
   }, [filteredHowItFeels, selectedVibe])
 
-  const totalContributions = rawContributions.length
-
   const knownForTraits = useMemo(() => {
     const traitCounts: Record<string, number> = {}
 
     rawContributions.forEach((contribution) => {
-      if (contribution.traits_json) {
-        let traitsData: any = {}
-        try {
-          traitsData =
-            typeof contribution.traits_json === "string"
-              ? JSON.parse(contribution.traits_json)
-              : contribution.traits_json
-        } catch (e) {
-          console.error("[v0] Error parsing traits_json:", e)
-        }
+      // Collect all traits from the category columns
+      const allTraitIds = [
+        ...(contribution.traits_category1 || []),
+        ...(contribution.traits_category2 || []),
+        ...(contribution.traits_category3 || []),
+        // ...(contribution.traits_category4 || []),
+      ]
 
-        // Get all traits except vibe/how_it_felt
-        Object.entries(traitsData).forEach(([category, traitIds]) => {
-          if (category !== "the_vibe" && category !== "how_it_felt" && Array.isArray(traitIds)) {
-            traitIds.forEach((traitId: string) => {
-              // Find trait label from any category
-              let traitLabel: string | undefined
+      allTraitIds.forEach((traitId: string) => {
+        // Find trait label, excluding vibes
+        let traitLabel: string | undefined
+        let isVibe = false
 
-              Object.values(TRAIT_CATEGORIES).forEach((cat) => {
-                if (cat.title !== "The vibe") {
-                  const trait = cat.traits.find((t) => t.id === traitId)
-                  if (trait) traitLabel = trait.label
-                }
-              })
+        Object.entries(TRAIT_CATEGORIES).forEach(([categoryKey, category]) => {
+          if (categoryKey === "the_vibe") return
 
-              if (traitLabel) {
-                traitCounts[traitLabel] = (traitCounts[traitLabel] || 0) + 1
-              }
-            })
+          const trait = category.traits.find((t) => t.id === traitId)
+          if (trait) {
+            traitLabel = trait.label
+            if (categoryKey === "the_vibe" || isVibeTrait(trait.label)) {
+              isVibe = true
+            }
           }
         })
-      }
+
+        if (traitLabel && !isVibe) {
+          traitCounts[traitLabel] = (traitCounts[traitLabel] || 0) + 1
+        }
+      })
     })
 
     return Object.entries(traitCounts)
@@ -365,22 +340,19 @@ export function PremierProfileClient({
     // Apply vibe filter
     if (snapshotVibeFilter) {
       filtered = filtered.filter((contribution) => {
-        if (!contribution.traits_json) return false
+        // Collect all traits from the category columns
+        const allTraitIds = [
+          ...(contribution.traits_category1 || []),
+          ...(contribution.traits_category2 || []),
+          ...(contribution.traits_category3 || []),
+          // ...(contribution.traits_category4 || []),
+        ]
 
-        let traitsData: any = {}
-        try {
-          traitsData =
-            typeof contribution.traits_json === "string"
-              ? JSON.parse(contribution.traits_json)
-              : contribution.traits_json
-        } catch (e) {
-          return false
-        }
-
-        const vibeTraits = [...(traitsData.the_vibe || []), ...(traitsData.how_it_felt || [])]
-        return vibeTraits.some((traitId: string) => {
-          const vibeTrait = TRAIT_CATEGORIES.the_vibe?.traits.find((t) => t.id === traitId)
-          return vibeTrait?.label === snapshotVibeFilter
+        return allTraitIds.some((traitId: string) => {
+          const trait = Object.values(TRAIT_CATEGORIES)
+            .flatMap((cat) => cat.traits)
+            .find((t) => t.id === traitId)
+          return trait && isVibeTrait(trait.label) && trait.label === snapshotVibeFilter
         })
       })
     }
@@ -388,33 +360,29 @@ export function PremierProfileClient({
     // Apply trait filter
     if (snapshotTraitFilter) {
       filtered = filtered.filter((contribution) => {
-        if (!contribution.traits_json) return false
+        // Collect all traits from the category columns
+        const allTraitIds = [
+          ...(contribution.traits_category1 || []),
+          ...(contribution.traits_category2 || []),
+          ...(contribution.traits_category3 || []),
+          // ...(contribution.traits_category4 || []),
+        ]
 
-        let traitsData: any = {}
-        try {
-          traitsData =
-            typeof contribution.traits_json === "string"
-              ? JSON.parse(contribution.traits_json)
-              : contribution.traits_json
-        } catch (e) {
-          return false
-        }
+        return allTraitIds.some((traitId: string) => {
+          let traitLabel: string | undefined
+          let isVibe = false
+          Object.entries(TRAIT_CATEGORIES).forEach(([categoryKey, category]) => {
+            if (categoryKey === "the_vibe") return
 
-        // Check all non-vibe categories
-        return Object.entries(traitsData).some(([category, traitIds]) => {
-          if (category === "the_vibe" || category === "how_it_felt") return false
-          if (!Array.isArray(traitIds)) return false
-
-          return traitIds.some((traitId: string) => {
-            let traitLabel: string | undefined
-            Object.values(TRAIT_CATEGORIES).forEach((cat) => {
-              if (cat.title !== "The vibe") {
-                const trait = cat.traits.find((t) => t.id === traitId)
-                if (trait) traitLabel = trait.label
+            const trait = category.traits.find((t) => t.id === traitId)
+            if (trait) {
+              traitLabel = trait.label
+              if (categoryKey === "the_vibe" || isVibeTrait(trait.label)) {
+                isVibe = true
               }
-            })
-            return traitLabel === snapshotTraitFilter
+            }
           })
+          return traitLabel === snapshotTraitFilter && !isVibe
         })
       })
     }
@@ -457,10 +425,11 @@ export function PremierProfileClient({
 
   const confidenceLevel = getConfidenceLevel(totalContributions)
 
-  const hasActiveFilters = snapshotVibeFilter || snapshotTraitFilter || selectedVibe || selectedHeatmapTrait
+  const hasActiveFilters =
+    snapshotVibeFilter || snapshotTraitFilter || selectedVibe || selectedHeatmapTrait || selectedRelationship
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
+    <div className="min-h-screen bg-neutral-50">
       {/* Floating share cluster - Desktop only */}
       <div className="hidden sm:block fixed right-8 top-1/2 -translate-y-1/2 z-40">
         <div className="flex flex-col gap-3">
@@ -486,7 +455,7 @@ export function PremierProfileClient({
       </div>
 
       {/* Top padding to account for fixed header */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 md:pt-32 pb-8 sm:pb-12 md:pb-16">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 md:pt-32 pb-8 sm:pb-12 md:pb-16">
         {/* Owner anchor */}
         <div
           className={`mb-8 sm:mb-10 md:mb-12 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
@@ -532,128 +501,117 @@ export function PremierProfileClient({
             </button>
           </div>
         </div>
-
-        {/* Summary section */}
-        {totalContributions >= 3 && (
-          <div
-            className={`mb-8 sm:mb-10 md:mb-12 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
-            style={{ transitionDelay: "200ms" }}
-          >
-            <div className="relative max-w-full p-5 sm:p-8 md:p-10 rounded-xl border border-neutral-200 bg-gradient-to-br from-blue-50/30 to-transparent shadow-sm">
-              <div className="absolute left-0 top-8 bottom-8 w-1 bg-blue-500/40 rounded-r-full" />
-
-              <div className="space-y-4 sm:space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 pb-4 border-b border-neutral-100">
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight">
-                    Summary of working with {profile.full_name?.split(" ")[0] || "them"}
-                  </h2>
-                  <div className="text-left sm:text-right flex-shrink-0">
-                    <span className="text-xs text-neutral-400 uppercase tracking-widest block">
-                      Updated automatically
-                    </span>
-                    {totalContributions > 0 && (
-                      <span className="text-xs text-neutral-500 block mt-1">
-                        {totalContributions} {totalContributions === 1 ? "contribution" : "contributions"}
-                        {voiceNotesCount > 0 && (
-                          <>
-                            {" "}
-                            • {voiceNotesCount} {voiceNotesCount === 1 ? "voice note" : "voice notes"}
-                          </>
-                        )}
-                        {totalUploads > 0 && (
-                          <>
-                            {" "}
-                            • {totalUploads} {totalUploads === 1 ? "upload" : "uploads"}
-                          </>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <AiPatternSummary
-                  contributions={rawContributions}
-                  importedFeedback={rawImportedFeedback}
-                  topTraits={traitSignals.slice(0, 5)}
-                />
-
-                <p className="text-xs text-neutral-500 pt-4 border-t border-neutral-100">
-                  Generated from {totalContributions} {totalContributions === 1 ? "contribution" : "contributions"}
-                  {totalUploads > 0 && (
-                    <>
-                      {" "}
-                      and {totalUploads} {totalUploads === 1 ? "uploads" : "uploads"}
-                    </>
-                  )}{" "}
-                  • Updates as more people contribute
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </section>
 
-      {/* Reduce spacing between sections on mobile */}
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 md:space-y-10 py-2 sm:py-4">
-        {totalContributions >= 3 && (vibeData.length > 0 || knownForTraits.length > 0) && (
-          <SnapshotRow
-            firstName={profile.full_name?.split(" ")[0] || "them"}
-            vibes={vibeData}
-            traits={knownForTraits}
-            onVibeClick={handleSnapshotVibeClick}
-            onTraitClick={handleSnapshotTraitClick}
-            selectedVibe={snapshotVibeFilter}
-            selectedTrait={snapshotTraitFilter}
-          />
-        )}
+      {totalContributions >= 3 && (
+        <div className="mb-8 sm:mb-10 md:mb-12">
+          <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div className="p-6 sm:p-8 md:p-10">
+              <div className="mb-6 sm:mb-7 md:mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">
+                  Summary of working with {profile.full_name?.split(" ")[0] || "this person"}
+                </h3>
 
-        {/* Voice notes section */}
-        {voiceNotesCount > 0 && (
-          <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
-            <div className="space-y-2 sm:space-y-3 max-w-2xl mx-auto text-center">
-              <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">In Their Own Words</h3>
-              <p className="text-sm sm:text-base md:text-lg text-neutral-600 leading-relaxed max-w-[65ch] mx-auto">
-                Unedited voice notes from people who know {profile.full_name?.split(" ")[0]}
+                <div className="flex items-center gap-4 text-xs sm:text-sm text-neutral-500">
+                  <span className="uppercase tracking-wide font-medium text-neutral-400">Updated automatically</span>
+                  {(totalContributions > 0 || voiceNotesCount > 0 || totalUploads > 0) && (
+                    <div className="flex items-center gap-2 text-neutral-600">
+                      {totalContributions > 0 && (
+                        <span>
+                          {totalContributions} {totalContributions === 1 ? "contribution" : "contributions"}
+                        </span>
+                      )}
+                      {voiceNotesCount > 0 && (
+                        <>
+                          <span>•</span>
+                          <span>
+                            {voiceNotesCount} voice {voiceNotesCount === 1 ? "note" : "notes"}
+                          </span>
+                        </>
+                      )}
+                      {totalUploads > 0 && (
+                        <>
+                          <span>•</span>
+                          <span>
+                            {totalUploads} {totalUploads === 1 ? "upload" : "uploads"}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <AiPatternSummary
+                contributions={contributions}
+                importedFeedback={rawImportedFeedback}
+                topTraits={traitSignals.slice(0, 5)}
+                firstName={profile.full_name?.split(" ")[0] || "this person"}
+              />
+
+              <p className="text-xs text-neutral-500 pt-4 border-t border-neutral-100">
+                Generated from {totalContributions} {totalContributions === 1 ? "contribution" : "contributions"}
+                {totalUploads > 0 && (
+                  <>
+                    {" "}
+                    and {totalUploads} {totalUploads === 1 ? "upload" : "uploads"}
+                  </>
+                )}{" "}
+                • Updates as more people contribute
               </p>
             </div>
+          </div>
+        </div>
+      )}
 
-            <div className="flex justify-center">
-              <RelationshipFilter
-                contributions={voiceContributions}
-                selectedCategory={voiceRelationshipFilter}
-                onCategoryChange={setVoiceRelationshipFilter}
-              />
+      {/* Voice notes section */}
+      {voiceNotesCount > 0 && (
+        <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
+          <div className="space-y-2 sm:space-y-3 max-w-2xl mx-auto text-center">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">In Their Own Words</h3>
+            <p className="text-sm sm:text-base md:text-lg text-neutral-600 leading-relaxed max-w-[65ch] mx-auto">
+              Unedited voice notes from people who know {profile.full_name?.split(" ")[0]}
+            </p>
+          </div>
+
+          <div className="flex justify-center">
+            <RelationshipFilter
+              contributions={voiceContributions}
+              selectedCategory={voiceRelationshipFilter}
+              onCategoryChange={setVoiceRelationshipFilter}
+            />
+          </div>
+
+          {filteredVoiceContributions.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredVoiceContributions.slice(0, 3).map((contribution) => (
+                <VoiceCard
+                  key={contribution.id}
+                  contribution={contribution}
+                  profileName={profile.full_name}
+                  highlightPatterns={highlightPatterns}
+                />
+              ))}
             </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-neutral-600">No perspectives yet from {voiceRelationshipFilter.toLowerCase()}.</p>
+              <button
+                onClick={() => setVoiceRelationshipFilter("All")}
+                className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium min-h-[44px] px-4"
+              >
+                View all perspectives
+              </button>
+            </div>
+          )}
+        </section>
+      )}
 
-            {filteredVoiceContributions.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredVoiceContributions.slice(0, 3).map((contribution) => (
-                  <VoiceCard
-                    key={contribution.id}
-                    contribution={contribution}
-                    profileName={profile.full_name}
-                    highlightPatterns={highlightPatterns}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-neutral-600">No perspectives yet from {voiceRelationshipFilter.toLowerCase()}.</p>
-                <button
-                  onClick={() => setVoiceRelationshipFilter("All")}
-                  className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium min-h-[44px] px-4"
-                >
-                  View all perspectives
-                </button>
-              </div>
-            )}
-          </section>
-        )}
+      {voiceNotesCount > 0 && <div className="border-t border-neutral-100" />}
 
-        {voiceNotesCount > 0 && <div className="border-t border-neutral-100" />}
-
-        {traitSignals.length > 0 && (
-          <section className="space-y-4 sm:space-y-6 pt-2 sm:pt-4 md:pt-6">
+      {traitSignals.length > 0 && (
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16 bg-white">
+          <div className="space-y-4 sm:space-y-6 pt-2 sm:pt-4 md:pt-6">
             <div className="space-y-2 max-w-3xl mx-auto text-center">
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">Pattern Recognition</h3>
               <p className="text-sm text-neutral-500">Not hand-picked — patterns emerge as more people contribute.</p>
@@ -703,18 +661,36 @@ export function PremierProfileClient({
                   <div className="space-y-2">
                     {traitSignals.slice(0, 5).map((trait) => {
                       const isSelected = selectedHeatmapTrait === trait.label
-                      const styles = getFrequencyStyles(trait.count, isSelected)
+                      const maxCount = Math.max(...traitSignals.map((t) => t.count))
+                      const opacity = 0.3 + (trait.count / maxCount) * 0.7
 
                       return (
                         <button
                           key={trait.label}
-                          onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
-                          className={`w-full flex items-center justify-between px-4 py-3 min-h-[44px] rounded-lg border transition-all hover:shadow-sm active:scale-[0.98] ${
-                            styles.bg
-                          } ${styles.border}`}
+                          onClick={() => {
+                            if (selectedHeatmapTrait === trait.label) {
+                              setSelectedHeatmapTrait(null)
+                            } else {
+                              setSelectedHeatmapTrait(trait.label)
+                            }
+                          }}
+                          className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-all ${
+                            isSelected
+                              ? "border-blue-500 bg-blue-50 shadow-sm"
+                              : "border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-white"
+                          }`}
+                          style={{ opacity: isSelected ? 1 : opacity }}
                         >
-                          <span className={`font-semibold text-sm sm:text-base ${styles.text}`}>{trait.label}</span>
-                          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${styles.badge}`}>
+                          <span
+                            className={`font-semibold text-sm sm:text-base ${isSelected ? "text-blue-900" : "text-neutral-900"}`}
+                          >
+                            {trait.label}
+                          </span>
+                          <span
+                            className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                              isSelected ? "bg-blue-200 text-blue-800" : "bg-neutral-200 text-neutral-700"
+                            }`}
+                          >
                             ×{trait.count}
                           </span>
                         </button>
@@ -731,18 +707,27 @@ export function PremierProfileClient({
                   <div className="flex flex-wrap gap-2">
                     {traitSignals.slice(5, 15).map((trait) => {
                       const isSelected = selectedHeatmapTrait === trait.label
-                      const styles = getFrequencyStyles(trait.count, isSelected)
 
                       return (
                         <button
                           key={trait.label}
-                          onClick={() => handleTraitSelect(isSelected ? null : trait.label)}
-                          className={`inline-flex items-center gap-2 px-3 py-2 min-h-[36px] rounded-full border transition-all hover:shadow-sm active:scale-95 ${
-                            styles.bg
-                          } ${styles.border}`}
+                          onClick={() => {
+                            if (selectedHeatmapTrait === trait.label) {
+                              setSelectedHeatmapTrait(null)
+                            } else {
+                              setSelectedHeatmapTrait(trait.label)
+                            }
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                            isSelected
+                              ? "border-blue-500 bg-blue-50 text-blue-900"
+                              : "border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-300 hover:bg-white"
+                          }`}
                         >
-                          <span className={`text-xs sm:text-sm font-semibold ${styles.text}`}>{trait.label}</span>
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${styles.badge}`}>
+                          {trait.label}
+                          <span
+                            className={`text-xs font-semibold ${isSelected ? "text-blue-700" : "text-neutral-500"}`}
+                          >
                             ×{trait.count}
                           </span>
                         </button>
@@ -752,217 +737,139 @@ export function PremierProfileClient({
                 </div>
               </div>
             )}
-          </section>
-        )}
-
-        {/* The vibe around {Name} section */}
-        {totalContributions >= 3 && vibeData.length > 0 && (
-          <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
-            <div className="space-y-3 max-w-2xl mx-auto text-center">
-              <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">
-                {profile.full_name?.split(" ")[0]}'s vibe
-              </h3>
-              <p className="text-sm sm:text-base text-neutral-600">
-                The most common feelings people mentioned about their experience
-              </p>
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-2 max-w-3xl mx-auto">
-              {vibeData.map((vibe) => {
-                const isSelected = snapshotVibeFilter === vibe.label
-                return (
-                  <button
-                    key={vibe.label}
-                    onClick={() => handleSnapshotVibeClick(vibe.label)}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      isSelected
-                        ? "bg-neutral-900 text-white ring-2 ring-neutral-900 ring-offset-2"
-                        : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-                    }`}
-                  >
-                    {vibe.label}
-                  </button>
-                )
-              })}
-            </div>
-
-            {snapshotVibeFilter && (
-              <div className="text-center">
-                <button
-                  onClick={() => setSnapshotVibeFilter(null)}
-                  className="text-sm text-neutral-600 hover:text-neutral-900 underline"
-                >
-                  Clear filter
-                </button>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* How it feels section */}
-        {howItFeels.length > 0 && (
-          <>
-            <div className="border-t border-neutral-100" />
-            <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
-              <div className="space-y-2 sm:space-y-3 max-w-2xl mx-auto text-center">
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">How it feels</h3>
-                <p className="text-sm sm:text-base md:text-lg text-neutral-600 leading-relaxed">
-                  Day-to-day collaboration style and working patterns
-                </p>
-              </div>
-
-              <div className="flex justify-center">
-                <RelationshipFilter
-                  contributions={howItFeels}
-                  selectedCategory={howItFeelsRelationshipFilter}
-                  onCategoryChange={setHowItFeelsRelationshipFilter}
-                />
-              </div>
-
-              <FloatingQuoteCards
-                contributions={finalFilteredContributions}
-                highlightPatterns={highlightPatterns}
-                profileName={profile.full_name}
-              />
-            </section>
-          </>
-        )}
-
-        {/* Screenshots and highlights section */}
-        {importedFeedback.length > 0 && (
-          <>
-            <div className="border-t border-neutral-100" />
-            <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
-              <div className="space-y-2 sm:space-y-3 max-w-2xl mx-auto text-center">
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">
-                  Screenshots and highlights
-                </h3>
-                <p className="text-sm sm:text-base md:text-lg text-neutral-600 leading-relaxed">
-                  {profile.full_name?.split(" ")[0]} saved {importedFeedback.length}{" "}
-                  {importedFeedback.length === 1 ? "piece" : "pieces"} of feedback
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {importedFeedback.slice(0, 6).map((feedback, idx) => {
-                  const sourceType = feedback.source_type || "Upload"
-                  const getSourcePillStyle = (type: string) => {
-                    switch (type) {
-                      case "LinkedIn":
-                        return "bg-[#0077B5] text-white" // LinkedIn blue
-                      case "Email":
-                        return "bg-neutral-600 text-white" // Neutral grey
-                      case "DM":
-                        return "bg-neutral-800 text-white" // Dark grey
-                      case "Review":
-                        return "bg-blue-500 text-white" // Trust blue
-                      default:
-                        return "bg-neutral-400 text-white" // Light grey
-                    }
-                  }
-
-                  return (
-                    <div
-                      key={feedback.id}
-                      className="group p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white hover:shadow-xl hover:scale-[1.02] hover:border-neutral-300 transition-all duration-300 ease-out relative flex flex-col cursor-pointer"
-                    >
-                      {feedback.image_url && (
-                        <div className="mb-4 rounded-lg overflow-hidden border border-neutral-200">
-                          <img
-                            src={feedback.image_url || "/placeholder.svg"}
-                            alt={`Feedback screenshot ${idx + 1}`}
-                            className="w-full h-auto group-hover:brightness-105 transition-all duration-300"
-                          />
-                        </div>
-                      )}
-                      {feedback.ai_extracted_excerpt && (
-                        <p
-                          className="text-base leading-relaxed text-neutral-700 mb-4 flex-1"
-                          style={{ lineHeight: "1.65" }}
-                        >
-                          {feedback.ai_extracted_excerpt}
-                        </p>
-                      )}
-                      <div className="flex items-end justify-between gap-4 mt-auto pt-4 border-t border-neutral-100">
-                        <div className="text-xs text-neutral-500 flex-1">
-                          {feedback.giver_name && (
-                            <>
-                              <span className="font-medium">{feedback.giver_name}</span>
-                              {feedback.giver_role && <span> · {feedback.giver_role}</span>}
-                              {feedback.giver_company && <span> · {feedback.giver_company}</span>}
-                            </>
-                          )}
-                        </div>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getSourcePillStyle(sourceType)}`}
-                        >
-                          {sourceType}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          </>
-        )}
-
-        {/* Final CTA section */}
-        <div className="border-t border-neutral-100" />
-        <section className="py-12 sm:py-16 md:py-20">
-          <div className="max-w-3xl mx-auto text-center space-y-4 sm:space-y-6">
-            <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">
-              Build your own Nomee profile
-            </h3>
-            <p className="text-base sm:text-lg text-neutral-600 leading-relaxed max-w-[60ch] mx-auto">
-              Get feedback from people you've worked with. Create a profile that shows how you collaborate, solve
-              problems, and make an impact.
-            </p>
-            <div className="pt-2 sm:pt-4">
-              <Link
-                href="/auth/signup"
-                className="inline-flex items-center justify-center bg-neutral-900 hover:bg-neutral-800 active:bg-neutral-950 text-white px-8 py-3 min-h-[48px] text-base sm:text-lg rounded-xl transition-colors touch-manipulation"
-              >
-                Get started for free
-              </Link>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {hasActiveFilters && (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <span className="text-sm text-muted-text">Active filters:</span>
-            {snapshotVibeFilter && (
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vibe-tint border border-vibe-border-active text-sm font-medium">
-                {snapshotVibeFilter}
-              </span>
-            )}
-            {snapshotTraitFilter && (
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-trait-tint border border-trait-border-active text-sm font-medium">
-                {snapshotTraitFilter}
-              </span>
-            )}
-            {selectedVibe && (
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 border border-neutral-300 text-sm font-medium">
-                {selectedVibe}
-              </span>
-            )}
-            {selectedHeatmapTrait && (
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 border border-neutral-300 text-sm font-medium">
-                {selectedHeatmapTrait}
-              </span>
-            )}
-            <button
-              onClick={handleClearAllFilters}
-              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 underline underline-offset-2"
-            >
-              Clear filters
-            </button>
           </div>
         </section>
       )}
+
+      {/* How it feels section */}
+      {howItFeels.length > 0 && (
+        <>
+          <div className="border-t border-neutral-100" />
+          <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
+            <div className="space-y-2 sm:space-y-3 max-w-2xl mx-auto text-center">
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">How it feels</h3>
+              <p className="text-sm sm:text-base md:text-lg text-neutral-600 leading-relaxed">
+                Day-to-day collaboration style and working patterns
+              </p>
+            </div>
+
+            <div className="flex justify-center">
+              <RelationshipFilter
+                contributions={howItFeels}
+                selectedCategory={howItFeelsRelationshipFilter}
+                onCategoryChange={setHowItFeelsRelationshipFilter}
+              />
+            </div>
+
+            <FloatingQuoteCards
+              contributions={finalFilteredContributions}
+              highlightPatterns={highlightPatterns}
+              profileName={profile.full_name}
+            />
+          </section>
+        </>
+      )}
+
+      {/* Screenshots and highlights section */}
+      {importedFeedback.length > 0 && (
+        <>
+          <div className="border-t border-neutral-100" />
+          <section className="space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
+            <div className="space-y-2 sm:space-y-3 max-w-2xl mx-auto text-center">
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">
+                Screenshots and highlights
+              </h3>
+              <p className="text-sm sm:text-base md:text-lg text-neutral-600 leading-relaxed">
+                {profile.full_name?.split(" ")[0]} saved {importedFeedback.length}{" "}
+                {importedFeedback.length === 1 ? "piece" : "pieces"} of feedback
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {importedFeedback.slice(0, 6).map((feedback, idx) => {
+                const sourceType = feedback.source_type || "Upload"
+                const getSourcePillStyle = (type: string) => {
+                  switch (type) {
+                    case "LinkedIn":
+                      return "bg-[#0077B5] text-white" // LinkedIn blue
+                    case "Email":
+                      return "bg-neutral-600 text-white" // Neutral grey
+                    case "DM":
+                      return "bg-neutral-800 text-white" // Dark grey
+                    case "Review":
+                      return "bg-blue-500 text-white" // Trust blue
+                    default:
+                      return "bg-neutral-400 text-white" // Light grey
+                  }
+                }
+
+                return (
+                  <div
+                    key={feedback.id}
+                    className="group p-5 sm:p-6 rounded-xl border border-neutral-200 bg-white hover:shadow-xl hover:scale-[1.02] hover:border-neutral-300 transition-all duration-300 ease-out relative flex flex-col cursor-pointer"
+                  >
+                    {feedback.image_url && (
+                      <div className="mb-4 rounded-lg overflow-hidden border border-neutral-200">
+                        <img
+                          src={feedback.image_url || "/placeholder.svg"}
+                          alt={`Feedback screenshot ${idx + 1}`}
+                          className="w-full h-auto group-hover:brightness-105 transition-all duration-300"
+                        />
+                      </div>
+                    )}
+                    {feedback.ai_extracted_excerpt && (
+                      <p
+                        className="text-base leading-relaxed text-neutral-700 mb-4 flex-1"
+                        style={{ lineHeight: "1.65" }}
+                      >
+                        {feedback.ai_extracted_excerpt}
+                      </p>
+                    )}
+                    <div className="flex items-end justify-between gap-4 mt-auto pt-4 border-t border-neutral-100">
+                      <div className="text-xs text-neutral-500 flex-1">
+                        {feedback.giver_name && (
+                          <>
+                            <span className="font-medium">{feedback.giver_name}</span>
+                            {feedback.giver_role && <span> · {feedback.giver_role}</span>}
+                            {feedback.giver_company && <span> · {feedback.giver_company}</span>}
+                          </>
+                        )}
+                      </div>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getSourcePillStyle(sourceType)}`}
+                      >
+                        {sourceType}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* Final CTA section */}
+      <div className="border-t border-neutral-100" />
+      <section className="py-12 sm:py-16 md:py-20">
+        <div className="max-w-3xl mx-auto text-center space-y-4 sm:space-y-6">
+          <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-neutral-900">
+            Build your own Nomee profile
+          </h3>
+          <p className="text-base sm:text-lg text-neutral-600 leading-relaxed max-w-[60ch] mx-auto">
+            Get feedback from people you've worked with. Create a profile that shows how you collaborate, solve
+            problems, and make an impact.
+          </p>
+          <div className="pt-2 sm:pt-4">
+            <Link
+              href="/auth/signup"
+              className="inline-flex items-center justify-center bg-neutral-900 hover:bg-neutral-800 active:bg-neutral-950 text-white px-8 py-3 min-h-[48px] text-base sm:text-lg rounded-xl transition-colors touch-manipulation"
+            >
+              Get started for free
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
