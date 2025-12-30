@@ -86,6 +86,9 @@ export function PremierProfileClient({
   const { pinnedItems, pinQuote, pinVoice, pinTrait, unpin, isPinned } = usePinnedHighlights(profile.slug)
 
   const [selectedVibeFilters, setSelectedVibeFilters] = useState<string[]>([])
+  const [snapshotFilter, setSnapshotFilter] = useState<{ type: "trait" | "vibe" | "outcome"; value: string } | null>(
+    null,
+  )
 
   const topSignals = useMemo(() => {
     return profileAnalysis.traitSignals.slice(0, 6).map((s) => s.label)
@@ -117,6 +120,28 @@ export function PremierProfileClient({
 
     return [...nomeeCards, ...importedCards]
   }, [howItFeelsContributions, importedFeedback])
+
+  const getFilteredCards = (cards: typeof allCards) => {
+    if (!snapshotFilter) return cards
+
+    return cards.filter((card) => {
+      const text = (card.excerpt || "").toLowerCase()
+      const traits = card.traits || []
+
+      if (snapshotFilter.type === "trait") {
+        return traits.some((t) => t.toLowerCase().includes(snapshotFilter.value.toLowerCase()))
+      } else if (snapshotFilter.type === "vibe") {
+        // Check if vibe word appears in text or traits
+        return (
+          text.includes(snapshotFilter.value.toLowerCase()) ||
+          traits.some((t) => t.toLowerCase().includes(snapshotFilter.value.toLowerCase()))
+        )
+      } else if (snapshotFilter.type === "outcome") {
+        return text.includes(snapshotFilter.value.toLowerCase())
+      }
+      return true
+    })
+  }
 
   const filteredHowItFeels = useMemo(() => {
     let filtered = howItFeelsContributions
@@ -228,6 +253,29 @@ export function PremierProfileClient({
 
   const confidenceLevel = profileAnalysis.confidenceLevel
   const firstName = profile.full_name?.split(" ")[0] || "this person"
+
+  // Combine filtered 'how it feels' and 'imported' for snapshot filtering
+  const combinedFeedback = useMemo(() => {
+    const nomeeFeedback = vibeFilteredHowItFeels.map((c) => ({
+      id: c.id,
+      excerpt: c.written_note || "",
+      traits: [...(c.traits_category1 || []), ...(c.traits_category2 || []), ...(c.traits_category3 || [])],
+      type: "nomee" as const,
+    }))
+
+    const importedFeedbackMapped = vibeFilteredImported.map((f) => ({
+      id: f.id,
+      excerpt: f.ai_extracted_excerpt || "",
+      traits: f.traits || [],
+      type: "imported" as const,
+    }))
+
+    return [...nomeeFeedback, ...importedFeedbackMapped]
+  }, [vibeFilteredHowItFeels, vibeFilteredImported])
+
+  // In the "How it feels" section, use filtered cards
+  // Around line 650 where filteredRecognitions is used, add snapshot filtering
+  const displayCards = snapshotFilter ? getFilteredCards(combinedFeedback) : combinedFeedback
 
   return (
     <div className="min-h-screen bg-warm-sand">
@@ -449,7 +497,22 @@ export function PremierProfileClient({
               vibeSignals={profileAnalysis.vibeSignals}
               analysisText={profileAnalysis.analysisText}
               firstName={firstName}
+              onFilterChange={setSnapshotFilter}
             />
+
+            {snapshotFilter && (
+              <div className="mt-4 flex items-center justify-center gap-3">
+                <span className="text-sm text-neutral-600">
+                  Showing {getFilteredCards(combinedFeedback).length} matches for "{snapshotFilter.value}"
+                </span>
+                <button
+                  onClick={() => setSnapshotFilter(null)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear filter
+                </button>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -685,62 +748,65 @@ export function PremierProfileClient({
               </div>
 
               {/* Cards Grid - Direct submissions */}
-              {(sourceFilter === "all" || sourceFilter === "nomee") && vibeFilteredHowItFeels.length > 0 && (
-                <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
-                  {vibeFilteredHowItFeels.map((contribution) => {
-                    const allTraits = [
-                      ...(contribution.traits_category1 || []),
-                      ...(contribution.traits_category2 || []),
-                      ...(contribution.traits_category3 || []),
-                    ]
-                    const keywords = extractKeywordsFromText(contribution.written_note || "", allTraits)
-                    const highlightedText = highlightQuote(
-                      contribution.written_note || "",
-                      keywords,
-                      8, // max highlights
-                      true, // enableTwoTone
-                      true, // useMarkerStyle
-                      selectedVibeFilters, // selected vibes
-                      topSignals, // top signals
-                    )
+              {(sourceFilter === "all" || sourceFilter === "nomee") &&
+                displayCards.filter((card) => card.type === "nomee").length > 0 && (
+                  <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+                    {displayCards
+                      .filter((card) => card.type === "nomee")
+                      .map((contribution) => {
+                        const allTraits = [
+                          ...(contribution.traits_category1 || []),
+                          ...(contribution.traits_category2 || []),
+                          ...(contribution.traits_category3 || []),
+                        ]
+                        const keywords = extractKeywordsFromText(contribution.excerpt || "", allTraits)
+                        const highlightedText = highlightQuote(
+                          contribution.excerpt || "",
+                          keywords,
+                          8, // max highlights
+                          true, // enableTwoTone
+                          true, // useMarkerStyle
+                          selectedVibeFilters, // selected vibes
+                          topSignals, // top signals
+                        )
 
-                    return (
-                      <div
-                        key={contribution.id}
-                        className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative group"
-                      >
-                        {isOwner && (
-                          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <PinButton
-                              id={contribution.id}
-                              isPinned={isPinned(contribution.id)}
-                              onPin={() =>
-                                pinQuote(
-                                  contribution.id,
-                                  contribution.written_note || "",
-                                  contribution.contributor_name || "Anonymous",
-                                )
-                              }
-                              onUnpin={() => unpin(contribution.id)}
-                            />
-                          </div>
-                        )}
+                        return (
+                          <div
+                            key={contribution.id}
+                            className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative group"
+                          >
+                            {isOwner && (
+                              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <PinButton
+                                  id={contribution.id}
+                                  isPinned={isPinned(contribution.id)}
+                                  onPin={() =>
+                                    pinQuote(
+                                      contribution.id,
+                                      contribution.excerpt || "",
+                                      contribution.contributor_name || "Anonymous",
+                                    )
+                                  }
+                                  onUnpin={() => unpin(contribution.id)}
+                                />
+                              </div>
+                            )}
 
-                        <div className="absolute top-3 left-3">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-white text-neutral-600 border border-neutral-200">
-                            Direct
-                          </span>
-                        </div>
+                            <div className="absolute top-3 left-3">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-white text-neutral-600 border border-neutral-200">
+                                Direct
+                              </span>
+                            </div>
 
-                        <div className="pt-4">
-                          <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
+                            <div className="pt-4">
+                              <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
 
-                          {allTraits.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {allTraits.slice(0, 5).map((trait, idx) => (
-                                <span
-                                  key={idx}
-                                  className={`
+                              {allTraits.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                  {allTraits.slice(0, 5).map((trait, idx) => (
+                                    <span
+                                      key={idx}
+                                      className={`
                                     px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer
                                     ${
                                       selectedTraitFilters.includes(trait)
@@ -748,101 +814,102 @@ export function PremierProfileClient({
                                         : "bg-blue-50 text-blue-700 border-blue-100 hover:border-blue-200 hover:bg-blue-100"
                                     }
                                   `}
-                                  onClick={() => handleTraitFilterSelect(trait)}
-                                >
-                                  {trait}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                                      onClick={() => handleTraitFilterSelect(trait)}
+                                    >
+                                      {trait}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
 
-                          <div className="border-t border-neutral-100 pt-3">
-                            <div className="text-sm font-semibold text-neutral-900">
-                              {contribution.contributor_name}
-                            </div>
-                            {contribution.relationship && (
-                              <div className="text-xs text-neutral-600 capitalize mt-0.5">
-                                {contribution.relationship.replace(/_/g, " ")}
+                              <div className="border-t border-neutral-100 pt-3">
+                                <div className="text-sm font-semibold text-neutral-900">
+                                  {contribution.contributor_name}
+                                </div>
+                                {contribution.relationship && (
+                                  <div className="text-xs text-neutral-600 capitalize mt-0.5">
+                                    {contribution.relationship.replace(/_/g, " ")}
+                                  </div>
+                                )}
+                                {contribution.contributor_company ? (
+                                  <div className="text-xs text-neutral-500 mt-0.5">
+                                    {contribution.contributor_company}
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
+                                )}
                               </div>
-                            )}
-                            {contribution.contributor_company ? (
-                              <div className="text-xs text-neutral-500 mt-0.5">{contribution.contributor_company}</div>
-                            ) : (
-                              <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
-                            )}
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+                        )
+                      })}
+                  </div>
+                )}
 
               {/* Imported Feedback Grid */}
-              {(sourceFilter === "all" || sourceFilter === "imported") && vibeFilteredImported.length > 0 && (
-                <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
-                  {vibeFilteredImported.map((feedback) => {
-                    const keywords = extractKeywordsFromText(feedback.ai_extracted_excerpt || "", feedback.traits || [])
-                    const highlightedText = highlightQuote(
-                      feedback.ai_extracted_excerpt || "",
-                      keywords,
-                      8,
-                      true,
-                      true,
-                      selectedVibeFilters,
-                      topSignals,
-                    )
+              {(sourceFilter === "all" || sourceFilter === "imported") &&
+                displayCards.filter((card) => card.type === "imported").length > 0 && (
+                  <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+                    {displayCards
+                      .filter((card) => card.type === "imported")
+                      .map((feedback) => {
+                        const keywords = extractKeywordsFromText(feedback.excerpt || "", feedback.traits || [])
+                        const highlightedText = highlightQuote(
+                          feedback.excerpt || "",
+                          keywords,
+                          8,
+                          true,
+                          true,
+                          selectedVibeFilters,
+                          topSignals,
+                        )
 
-                    return (
-                      <div
-                        key={feedback.id}
-                        className="break-inside-avoid rounded-xl p-6 bg-gradient-to-br from-slate-50 to-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative group"
-                      >
-                        {isOwner && (
-                          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <PinButton
-                              id={feedback.id}
-                              isPinned={isPinned(feedback.id)}
-                              onPin={() =>
-                                pinQuote(
-                                  feedback.id,
-                                  feedback.ai_extracted_excerpt || "",
-                                  feedback.giver_name || "Unknown",
-                                )
-                              }
-                              onUnpin={() => unpin(feedback.id)}
-                            />
-                          </div>
-                        )}
+                        return (
+                          <div
+                            key={feedback.id}
+                            className="break-inside-avoid rounded-xl p-6 bg-gradient-to-br from-slate-50 to-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative group"
+                          >
+                            {isOwner && (
+                              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <PinButton
+                                  id={feedback.id}
+                                  isPinned={isPinned(feedback.id)}
+                                  onPin={() =>
+                                    pinQuote(feedback.id, feedback.excerpt || "", feedback.giver_name || "Unknown")
+                                  }
+                                  onUnpin={() => unpin(feedback.id)}
+                                />
+                              </div>
+                            )}
 
-                        <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-200">
-                            Imported
-                          </span>
-                          {feedback.source_type && (
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                                feedback.source_type === "LinkedIn"
-                                  ? "bg-blue-100 text-blue-700 border border-blue-200"
-                                  : feedback.source_type === "Email"
-                                    ? "bg-neutral-800 text-white border border-neutral-800"
-                                    : "bg-neutral-100 text-neutral-600 border border-neutral-200"
-                              }`}
-                            >
-                              {feedback.source_type}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="pt-6">
-                          <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
-
-                          {feedback.traits?.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {feedback.traits.slice(0, 4).map((trait, idx) => (
+                            <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-200">
+                                Imported
+                              </span>
+                              {feedback.source_type && (
                                 <span
-                                  key={idx}
-                                  className={`
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                    feedback.source_type === "LinkedIn"
+                                      ? "bg-blue-100 text-blue-700 border border-blue-200"
+                                      : feedback.source_type === "Email"
+                                        ? "bg-neutral-800 text-white border border-neutral-800"
+                                        : "bg-neutral-100 text-neutral-600 border border-neutral-200"
+                                  }`}
+                                >
+                                  {feedback.source_type}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="pt-6">
+                              <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
+
+                              {feedback.traits?.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                  {feedback.traits.slice(0, 4).map((trait, idx) => (
+                                    <span
+                                      key={idx}
+                                      className={`
                                     px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer
                                     ${
                                       selectedTraitFilters.includes(trait)
@@ -850,44 +917,45 @@ export function PremierProfileClient({
                                         : "bg-amber-50 text-amber-700 border-amber-100 hover:border-amber-200 hover:bg-amber-100"
                                     }
                                   `}
-                                  onClick={() => handleTraitFilterSelect(trait)}
-                                >
-                                  {trait}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                                      onClick={() => handleTraitFilterSelect(trait)}
+                                    >
+                                      {trait}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
 
-                          <div className="border-t border-neutral-100 pt-3">
-                            <div className="text-sm font-semibold text-neutral-900">{feedback.giver_name}</div>
-                            {feedback.giver_title && (
-                              <div className="text-xs text-neutral-600 mt-0.5">{feedback.giver_title}</div>
-                            )}
-                            {feedback.giver_company ? (
-                              <div className="text-xs text-neutral-500 mt-0.5">{feedback.giver_company}</div>
-                            ) : (
-                              <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
-                            )}
-                            <div className="text-[10px] text-neutral-400 mt-2 flex items-center gap-1">
-                              <span className="inline-block w-1 h-1 bg-neutral-300 rounded-full"></span>
-                              Extracted from screenshot
+                              <div className="border-t border-neutral-100 pt-3">
+                                <div className="text-sm font-semibold text-neutral-900">{feedback.giver_name}</div>
+                                {feedback.giver_title && (
+                                  <div className="text-xs text-neutral-600 mt-0.5">{feedback.giver_title}</div>
+                                )}
+                                {feedback.giver_company ? (
+                                  <div className="text-xs text-neutral-500 mt-0.5">{feedback.giver_company}</div>
+                                ) : (
+                                  <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
+                                )}
+                                <div className="text-[10px] text-neutral-400 mt-2 flex items-center gap-1">
+                                  <span className="inline-block w-1 h-1 bg-neutral-300 rounded-full"></span>
+                                  Extracted from screenshot
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+                        )
+                      })}
+                  </div>
+                )}
 
               {/* Empty state */}
-              {vibeFilteredHowItFeels.length === 0 && vibeFilteredImported.length === 0 && (
+              {displayCards.length === 0 && (
                 <div className="text-center py-8">
                   <p className="text-neutral-600">No perspectives match the selected filters.</p>
                   <button
                     onClick={() => {
                       handleClearFilters()
                       handleClearVibes()
+                      setSnapshotFilter(null)
                     }}
                     className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >

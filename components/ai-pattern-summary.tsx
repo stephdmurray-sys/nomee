@@ -12,7 +12,7 @@ interface AiPatternSummaryProps {
   vibeSignals: VibeSignal[]
   firstName?: string
   contributionsCount: number
-  uploadsCount?: number // Add uploads count
+  uploadsCount?: number
 }
 
 export function AiPatternSummary({
@@ -40,11 +40,7 @@ export function AiPatternSummary({
     const hasVibes = vibeSignals.length > 0
     const hasText = analysisText.length >= 40
 
-    // If we have ANY data (contributions OR uploads), generate a summary
-    if (totalDataCount === 0 && !hasTraits && !hasVibes && !hasText) {
-      setSummary(null)
-      return
-    }
+    // Always generate SOMETHING when data exists
 
     const patterns: Array<{ label: string; type: "trait" | "vibe" }> = []
 
@@ -99,9 +95,19 @@ export function AiPatternSummary({
       } else {
         synthesis = `Working with ${firstName} feels ${topTwoVibes[0].label.toLowerCase()}.`
       }
-    } else if (totalDataCount > 0) {
-      // Extract impact statement from the analysis text
-      const impactWords = ["helped", "delivered", "created", "improved", "drove", "led", "built", "transformed"]
+    } else if (hasText && totalDataCount > 0) {
+      const impactWords = [
+        "helped",
+        "delivered",
+        "created",
+        "improved",
+        "drove",
+        "led",
+        "built",
+        "transformed",
+        "exceeded",
+        "achieved",
+      ]
       let impactStatement = ""
 
       for (const word of impactWords) {
@@ -118,12 +124,17 @@ export function AiPatternSummary({
       } else {
         synthesis = `${firstName} is building a professional reputation through ${contributionsCount > 0 ? `${contributionsCount} direct contribution${contributionsCount > 1 ? "s" : ""}` : ""}${contributionsCount > 0 && uploadsCount > 0 ? " and " : ""}${uploadsCount > 0 ? `${uploadsCount} imported testimonial${uploadsCount > 1 ? "s" : ""}` : ""}.`
       }
-    } else {
-      synthesis = `${firstName} is gathering feedback to build their professional reputation.`
+    } else if (totalDataCount > 0) {
+      synthesis = `${firstName} has ${contributionsCount > 0 ? `${contributionsCount} contribution${contributionsCount > 1 ? "s" : ""}` : ""}${contributionsCount > 0 && uploadsCount > 0 ? " and " : ""}${uploadsCount > 0 ? `${uploadsCount} saved testimonial${uploadsCount > 1 ? "s" : ""}` : ""} building their professional story.`
+    }
+
+    if (totalDataCount === 0 && !hasTraits && !hasVibes && !hasText) {
+      setSummary(null)
+      return
     }
 
     setSummary({
-      synthesis,
+      synthesis: synthesis || `${firstName} is gathering feedback to build their professional reputation.`,
       patterns,
     })
   }
@@ -136,7 +147,6 @@ export function AiPatternSummary({
     )
   }
 
-  // If summary failed but we have data, show a minimal summary
   if (!summary && totalDataCount > 0) {
     return (
       <div className="space-y-4">

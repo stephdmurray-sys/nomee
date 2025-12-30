@@ -13,6 +13,7 @@ interface PremierSignalBarProps {
   }>
   traitSignals: Array<{ label: string; count: number }>
   totalContributions: number
+  firstName?: string
 }
 
 // Curated impact dictionary (~50 words/phrases)
@@ -68,7 +69,12 @@ const IMPACT_DICTIONARY = [
   "expanded",
 ]
 
-export function PremierSignalBar({ allCards, traitSignals, totalContributions }: PremierSignalBarProps) {
+export function PremierSignalBar({
+  allCards,
+  traitSignals,
+  totalContributions,
+  firstName = "them",
+}: PremierSignalBarProps) {
   // Compute signals from cards
   const signals = useMemo(() => {
     // Top Signals: most frequently mentioned traits (3-6)
@@ -108,12 +114,12 @@ export function PremierSignalBar({ allCards, traitSignals, totalContributions }:
       })
     })
 
-    const impactSignals = Object.entries(impactCounts)
+    const outcomeSignals = Object.entries(impactCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 4)
       .map(([word, count]) => ({ label: word, count }))
 
-    return { topSignals, consistentSignals, impactSignals }
+    return { topSignals, consistentSignals, outcomeSignals }
   }, [allCards, traitSignals])
 
   // Fallback if not enough data
@@ -170,15 +176,15 @@ export function PremierSignalBar({ allCards, traitSignals, totalContributions }:
           )}
         </div>
 
-        {/* Impact Signals */}
+        {/* Outcome Signals */}
         <div className="p-5">
           <div className="flex items-center gap-2 mb-3">
             <Zap className="w-4 h-4 text-amber-500" />
-            <h4 className="text-sm font-semibold text-neutral-900">Impact Signals</h4>
+            <h4 className="text-sm font-semibold text-neutral-900">Proof of impact</h4>
           </div>
-          {signals.impactSignals.length > 0 ? (
+          {signals.outcomeSignals.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {signals.impactSignals.map((signal) => (
+              {signals.outcomeSignals.map((signal) => (
                 <span
                   key={signal.label}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100"
@@ -189,7 +195,7 @@ export function PremierSignalBar({ allCards, traitSignals, totalContributions }:
               ))}
             </div>
           ) : (
-            <p className="text-xs text-neutral-500">No impact verbs detected</p>
+            <p className="text-xs text-neutral-500">No outcome verbs detected</p>
           )}
         </div>
       </div>
