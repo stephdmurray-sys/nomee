@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useState } from "react"
-import { Copy, Check, Star, ExternalLink, Upload, FileSearch, ImageIcon } from "lucide-react"
+import { Copy, Check, Star, ExternalLink, Upload, FileSearch, ImageIcon, Mic, MessageSquare } from "lucide-react"
 import { IntimateAudioPlayer } from "@/components/intimate-audio-player"
 import { extractSubmissionPhrases, calculatePhraseFrequencies, getTopPhrases } from "@/lib/extract-submission-phrases"
 import { highlightQuote } from "@/lib/highlight-quote"
@@ -102,7 +102,7 @@ export default function DashboardClient({
     }
   }
 
-  const latestImportedItems = importedFeedback.filter((f) => f.extraction_status === "completed").slice(0, 3)
+  const latestImportedItems = importedFeedback.filter((f) => f.extraction_status === "completed").slice(0, 6)
 
   return (
     <>
@@ -317,27 +317,45 @@ export default function DashboardClient({
 
         <section>
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-neutral-900">Nomee Contributions</h2>
+            <h2 className="text-xl font-semibold text-neutral-900">Nomee Contributions</h2>
             <p className="text-sm text-neutral-600 mt-1">
               Voice and direct submissions collected through your Nomee link
             </p>
           </div>
 
           {contributions.length > 0 ? (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {contributions.map((contribution) => {
                 const isFeatured = contribution.is_featured
-                const submissionPhrases = extractSubmissionPhrases(contribution)
+                const submissionPhrases = extractSubmissionPhrases(contribution).slice(0, 3)
+                const allTraits = [
+                  ...(contribution.traits_category1 || []),
+                  ...(contribution.traits_category2 || []),
+                  ...(contribution.traits_category3 || []),
+                  ...(contribution.traits_category4 || []),
+                ]
+                const keywords = extractKeywordsFromText(contribution.written_note, allTraits)
+                const highlightedText = highlightQuote(contribution.written_note, keywords, 4)
 
                 return (
                   <Card
                     key={contribution.id}
-                    className={`p-6 ${isFeatured ? "border-2 border-blue-300 bg-blue-50/40" : ""}`}
+                    className={`p-5 flex flex-col h-full ${isFeatured ? "border-2 border-blue-300 bg-blue-50/40" : ""}`}
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
+                    {/* Top row: type icon + feature button */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        {contribution.voice_url ? (
+                          <div className="p-1.5 rounded-md bg-purple-100">
+                            <Mic className="h-4 w-4 text-purple-600" />
+                          </div>
+                        ) : (
+                          <div className="p-1.5 rounded-md bg-neutral-100">
+                            <MessageSquare className="h-4 w-4 text-neutral-600" />
+                          </div>
+                        )}
                         {isFeatured && (
-                          <Badge variant="default" className="bg-blue-600">
+                          <Badge variant="default" className="bg-blue-600 text-xs">
                             <Star className="mr-1 h-3 w-3 fill-current" />
                             Featured
                           </Badge>
@@ -346,101 +364,62 @@ export default function DashboardClient({
 
                       <Button
                         size="sm"
-                        variant={isFeatured ? "outline" : "default"}
+                        variant="ghost"
+                        className="h-8 px-2"
                         onClick={() => handleToggleFeatured(contribution.id, isFeatured)}
                         disabled={togglingId === contribution.id || (!isFeatured && !canAddMoreFeatured)}
                       >
                         {togglingId === contribution.id ? (
                           "..."
-                        ) : isFeatured ? (
-                          <>
-                            <Star className="mr-1 h-3 w-3 fill-current" />
-                            Unfeature
-                          </>
                         ) : (
-                          <>
-                            <Star className="mr-1 h-3 w-3" />
-                            Feature
-                          </>
+                          <Star
+                            className={`h-4 w-4 ${isFeatured ? "fill-blue-600 text-blue-600" : "text-neutral-400"}`}
+                          />
                         )}
                       </Button>
                     </div>
 
+                    {/* Voice player (compact) */}
                     {contribution.voice_url && (
-                      <div className="mb-4 pb-4 border-b border-neutral-200">
+                      <div className="mb-3 pb-3 border-b border-neutral-200">
                         <IntimateAudioPlayer audioUrl={contribution.voice_url} />
                       </div>
                     )}
 
-                    {(() => {
-                      const allTraits = [
-                        ...(contribution.traits_category1 || []),
-                        ...(contribution.traits_category2 || []),
-                        ...(contribution.traits_category3 || []),
-                        ...(contribution.traits_category4 || []),
-                      ]
-                      const keywords = extractKeywordsFromText(contribution.written_note, allTraits)
-                      const highlightedText = highlightQuote(contribution.written_note, keywords, 4)
-
-                      return <p className="mb-4 text-base leading-relaxed text-neutral-900">{highlightedText}</p>
-                    })()}
-
-                    {submissionPhrases.length > 0 && (
-                      <div className="mb-4 flex flex-wrap gap-2">
-                        {submissionPhrases.map((phrase, idx) => {
-                          const frequency = phraseFrequencies.get(phrase) || 1
-                          return (
-                            <div
-                              key={idx}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-100 text-neutral-700 rounded-md text-sm"
-                            >
-                              <span className="font-medium">{phrase}</span>
-                              {frequency > 1 && <span className="text-xs text-neutral-500">x{frequency}</span>}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    <div className="border-t pt-4 text-sm text-neutral-600">
-                      <div className="font-medium text-neutral-900">{contribution.contributor_name}</div>
-                      <div>
-                        {contribution.relationship}
-                        {contribution.relationship_context && (
-                          <span className="text-neutral-700"> · {contribution.relationship_context}</span>
-                        )}
-                        {!contribution.relationship_context && !contribution.contributor_company && (
-                          <>
-                            {" · "}
-                            <span className="text-neutral-500">Not provided</span>
-                            <Badge
-                              variant="outline"
-                              className="ml-2 text-xs border-amber-300 text-amber-700 bg-amber-50"
-                            >
-                              Missing context
-                            </Badge>
-                          </>
-                        )}
-                        {contribution.contributor_company && contribution.contributor_company !== "Unknown" && (
-                          <span className="text-neutral-700"> · {contribution.contributor_company}</span>
-                        )}
-                      </div>
-                      {contribution.contributor_email && (
-                        <div className="text-xs text-neutral-500 mt-1">{contribution.contributor_email}</div>
-                      )}
+                    {/* Excerpt (clamped) */}
+                    <div className="flex-1 mb-3">
+                      <p className="text-sm leading-relaxed text-neutral-800 line-clamp-4">{highlightedText}</p>
                     </div>
 
-                    {!isFeatured && !canAddMoreFeatured && (
-                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-sm text-blue-900">
-                          You've reached your {featuredLimit} featured perspective limit.{" "}
-                          <Link href="/pricing" className="font-medium underline">
-                            Upgrade to {plan === "free" ? "Starter" : "Premier"}
-                          </Link>{" "}
-                          to feature more.
-                        </p>
+                    {/* Traits pills */}
+                    {submissionPhrases.length > 0 && (
+                      <div className="mb-3 flex flex-wrap gap-1.5">
+                        {submissionPhrases.map((phrase, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded text-xs font-medium"
+                          >
+                            {phrase}
+                          </span>
+                        ))}
+                        {extractSubmissionPhrases(contribution).length > 3 && (
+                          <span className="px-2 py-0.5 bg-neutral-50 text-neutral-500 rounded text-xs">
+                            +{extractSubmissionPhrases(contribution).length - 3}
+                          </span>
+                        )}
                       </div>
                     )}
+
+                    {/* Bottom: contributor info */}
+                    <div className="pt-3 border-t border-neutral-100 text-xs text-neutral-600">
+                      <div className="font-medium text-neutral-900 truncate">{contribution.contributor_name}</div>
+                      <div className="truncate">
+                        {contribution.relationship}
+                        {contribution.contributor_company && contribution.contributor_company !== "Unknown" && (
+                          <span> · {contribution.contributor_company}</span>
+                        )}
+                      </div>
+                    </div>
                   </Card>
                 )
               })}
@@ -459,108 +438,136 @@ export default function DashboardClient({
               )}
             </Card>
           )}
+
+          {/* Upsell notice */}
+          {!canAddMoreFeatured && contributions.length > 0 && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
+              <p className="text-sm text-blue-900">
+                You've reached your {featuredLimit} featured perspective limit.{" "}
+                <Link href="/pricing" className="font-medium underline">
+                  Upgrade to {plan === "free" ? "Starter" : "Premier"}
+                </Link>{" "}
+                to feature more.
+              </p>
+            </div>
+          )}
         </section>
 
-        <section>
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-neutral-900">Imported Feedback</h2>
-            <p className="text-sm text-neutral-600 mt-1">LinkedIn screenshots and past feedback you uploaded</p>
+        <section className="pt-6 border-t-2 border-neutral-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-semibold text-neutral-900">Imported Feedback</h2>
+              <p className="text-sm text-neutral-600 mt-1">Uploaded screenshots from LinkedIn or other sources</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild>
+                <Link href="/dashboard/imported-feedback/upload">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Screenshots
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/imported-feedback/review">
+                  <FileSearch className="mr-2 h-4 w-4" />
+                  Review Imports
+                </Link>
+              </Button>
+            </div>
           </div>
 
-          {/* Action buttons and status summary */}
-          <Card className="p-6 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <Link href="/dashboard/imported-feedback/upload">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload Screenshots
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link href="/dashboard/imported-feedback/review">
-                    <FileSearch className="mr-2 h-4 w-4" />
-                    Review Imports
-                  </Link>
-                </Button>
-              </div>
-
-              {/* Status chips */}
-              <div className="flex flex-wrap gap-2">
-                {importedStats.pending > 0 && (
-                  <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50">
-                    {importedStats.pending} Pending Review
-                  </Badge>
-                )}
-                {importedStats.approved > 0 && (
-                  <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50">
-                    {importedStats.approved} Approved
-                  </Badge>
-                )}
-                {importedStats.failed > 0 && (
-                  <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
-                    {importedStats.failed} Failed
-                  </Badge>
-                )}
-                {importedStats.processing > 0 && (
-                  <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50">
-                    {importedStats.processing} Processing
-                  </Badge>
-                )}
-              </div>
+          {/* Status chips */}
+          {(importedStats.pending > 0 ||
+            importedStats.approved > 0 ||
+            importedStats.failed > 0 ||
+            importedStats.processing > 0) && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              {importedStats.pending > 0 && (
+                <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50">
+                  {importedStats.pending} Pending Review
+                </Badge>
+              )}
+              {importedStats.approved > 0 && (
+                <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50">
+                  {importedStats.approved} Approved
+                </Badge>
+              )}
+              {importedStats.failed > 0 && (
+                <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
+                  {importedStats.failed} Failed
+                </Badge>
+              )}
+              {importedStats.processing > 0 && (
+                <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50">
+                  {importedStats.processing} Processing
+                </Badge>
+              )}
             </div>
-          </Card>
+          )}
 
-          {/* Latest imported items preview */}
+          {/* Imported items grid */}
           {latestImportedItems.length > 0 ? (
-            <div className="space-y-3">
-              {latestImportedItems.map((item) => (
-                <Card key={item.id} className="p-4">
-                  <div className="flex items-start gap-4">
-                    {/* Thumbnail placeholder */}
-                    <div className="flex-shrink-0 w-16 h-16 bg-neutral-100 rounded-lg flex items-center justify-center overflow-hidden">
-                      {item.raw_image_url ? (
-                        <img
-                          src={item.raw_image_url || "/placeholder.svg"}
-                          alt="Screenshot"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <ImageIcon className="h-6 w-6 text-neutral-400" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-neutral-900 truncate">{item.giver_name || "Unknown"}</span>
-                        {item.approved_by_owner ? (
-                          <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50 text-xs">
-                            Approved
-                          </Badge>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {latestImportedItems.map((item) => (
+                  <Card key={item.id} className="p-4 flex flex-col h-full">
+                    <div className="flex items-start gap-3 mb-3">
+                      {/* Thumbnail */}
+                      <div className="flex-shrink-0 w-14 h-14 bg-neutral-100 rounded-lg overflow-hidden">
+                        {item.raw_image_url ? (
+                          <img
+                            src={item.raw_image_url || "/placeholder.svg"}
+                            alt="Screenshot"
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
-                          <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50 text-xs">
-                            Pending
-                          </Badge>
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-5 w-5 text-neutral-400" />
+                          </div>
                         )}
                       </div>
-                      <div className="text-sm text-neutral-600 truncate">
-                        {item.giver_role && <span>{item.giver_role}</span>}
-                        {item.giver_role && item.giver_company && <span> · </span>}
-                        {item.giver_company && <span>{item.giver_company}</span>}
-                        {!item.giver_role && !item.giver_company && (
-                          <span className="text-neutral-400">No details extracted</span>
-                        )}
-                      </div>
-                      {item.ai_extracted_excerpt && (
-                        <p className="text-sm text-neutral-500 mt-1 line-clamp-1">"{item.ai_extracted_excerpt}"</p>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
 
-              {importedFeedback.length > 3 && (
-                <div className="text-center pt-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-medium text-sm text-neutral-900 truncate">
+                            {item.giver_name || "Unknown"}
+                          </span>
+                          {item.approved_by_owner ? (
+                            <Badge
+                              variant="outline"
+                              className="border-green-300 text-green-700 bg-green-50 text-xs px-1.5 py-0"
+                            >
+                              Approved
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="border-amber-300 text-amber-700 bg-amber-50 text-xs px-1.5 py-0"
+                            >
+                              Pending
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-neutral-600 truncate">
+                          {item.giver_company || item.giver_role || "No details"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Excerpt */}
+                    {item.ai_extracted_excerpt && (
+                      <p className="text-xs text-neutral-600 line-clamp-2 flex-1 mb-3">"{item.ai_extracted_excerpt}"</p>
+                    )}
+
+                    {/* Review button */}
+                    <Button variant="outline" size="sm" className="w-full mt-auto bg-transparent" asChild>
+                      <Link href="/dashboard/imported-feedback/review">Review</Link>
+                    </Button>
+                  </Card>
+                ))}
+              </div>
+
+              {importedFeedback.length > 6 && (
+                <div className="text-center pt-4">
                   <Button variant="link" asChild className="text-neutral-600">
                     <Link href="/dashboard/imported-feedback/review">
                       View all {importedFeedback.length} imported items
@@ -568,7 +575,7 @@ export default function DashboardClient({
                   </Button>
                 </div>
               )}
-            </div>
+            </>
           ) : (
             <Card className="p-8 text-center border-2 border-dashed border-neutral-300 bg-neutral-50/50">
               <div className="rounded-full bg-blue-100 p-3 w-fit mx-auto mb-4">
