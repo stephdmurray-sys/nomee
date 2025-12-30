@@ -313,7 +313,6 @@ export async function POST(request: NextRequest) {
       confidence_details: extracted.confidence as any,
       ocr_text: transcription_text,
       ocr_confidence: transcription_confidence,
-      included_in_analysis: extracted.confidence.overall >= 0.5,
     }
 
     const { error: updateError } = await supabase.from("imported_feedback").update(updateData).eq("id", recordId)
