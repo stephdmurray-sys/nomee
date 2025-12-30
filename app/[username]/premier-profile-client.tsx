@@ -14,6 +14,9 @@ import { highlightQuote } from "@/lib/highlight-quote"
 import { extractKeywordsFromText } from "@/lib/extract-keywords-from-text"
 import { PremierTraitBar } from "@/components/premier-trait-bar"
 import { ProofSnapshot } from "@/components/proof-snapshot"
+import { PremierSignalBar } from "@/components/premier-signal-bar"
+import { usePinnedHighlights, PinnedHighlightsDisplay, PinButton } from "@/components/pinned-highlights"
+import { SmartVibePills } from "@/components/smart-vibe-pills"
 
 interface PremierProfileClientProps {
   profile: Profile
@@ -24,6 +27,7 @@ interface PremierProfileClientProps {
   interpretationSentence: string
   anchorQuote: string
   profileAnalysis: ProfileAnalysis
+  isOwner: boolean
 }
 
 export function PremierProfileClient({
@@ -35,6 +39,7 @@ export function PremierProfileClient({
   interpretationSentence,
   anchorQuote,
   profileAnalysis,
+  isOwner,
 }: PremierProfileClientProps) {
   const contributions = dedupeContributions(rawContributions)
   const voiceContributions = contributions.filter((c) => c.voice_url)
@@ -77,6 +82,14 @@ export function PremierProfileClient({
   const [showCopied, setShowCopied] = useState(false)
   const [howItFeelsRelationshipFilter, setHowItFeelsRelationshipFilter] = useState<RelationshipFilterCategory>("All")
   const [voiceRelationshipFilter, setVoiceRelationshipFilter] = useState<RelationshipFilterCategory>("All")
+
+  const { pinnedItems, pinQuote, pinVoice, pinTrait, unpin, isPinned } = usePinnedHighlights(profile.slug)
+
+  const [selectedVibeFilters, setSelectedVibeFilters] = useState<string[]>([])
+
+  const topSignals = useMemo(() => {
+    return profileAnalysis.traitSignals.slice(0, 6).map((s) => s.label)
+  }, [profileAnalysis.traitSignals])
 
   const filteredVoiceContributions = useMemo(() => {
     if (voiceRelationshipFilter === "All") return voiceContributions
@@ -139,9 +152,54 @@ export function PremierProfileClient({
     })
   }
 
+  const handleVibeSelect = (vibe: string) => {
+    setSelectedVibeFilters((prev) => {
+      if (prev.includes(vibe)) {
+        return prev.filter((v) => v !== vibe)
+      }
+      return [...prev, vibe]
+    })
+  }
+
   const handleClearFilters = () => {
     setSelectedTraitFilters([])
   }
+
+  // Clear vibe filters
+  const handleClearVibes = () => {
+    setSelectedVibeFilters([])
+  }
+
+  const vibeFilteredHowItFeels = useMemo(() => {
+    if (selectedVibeFilters.length === 0) return filteredHowItFeels
+
+    return filteredHowItFeels.filter((c) => {
+      const allTraits = [
+        ...(c.traits_category1 || []),
+        ...(c.traits_category2 || []),
+        ...(c.traits_category3 || []),
+        ...(c.traits_category4 || []),
+      ]
+      const textLower = (c.written_note || "").toLowerCase()
+
+      return selectedVibeFilters.some((vibe) => {
+        if (allTraits.some((t) => t.toLowerCase() === vibe.toLowerCase())) return true
+        return textLower.includes(vibe.toLowerCase())
+      })
+    })
+  }, [filteredHowItFeels, selectedVibeFilters])
+
+  const vibeFilteredImported = useMemo(() => {
+    if (selectedVibeFilters.length === 0) return filteredImportedFeedback
+
+    return filteredImportedFeedback.filter((f) => {
+      const textLower = (f.ai_extracted_excerpt || "").toLowerCase()
+      return selectedVibeFilters.some((vibe) => {
+        if (f.traits?.some((t) => t.toLowerCase() === vibe.toLowerCase())) return true
+        return textLower.includes(vibe.toLowerCase())
+      })
+    })
+  }, [filteredImportedFeedback, selectedVibeFilters])
 
   useEffect(() => {
     const timer = setTimeout(() => setHeroVisible(true), 100)
@@ -172,7 +230,7 @@ export function PremierProfileClient({
   const firstName = profile.full_name?.split(" ")[0] || "this person"
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
+    <div className="min-h-screen bg-warm-sand">
       {/* Floating share cluster - Desktop only */}
       <div className="hidden sm:block fixed right-8 top-1/2 -translate-y-1/2 z-40">
         <div className="flex flex-col gap-3">
@@ -262,6 +320,26 @@ export function PremierProfileClient({
           </div>
         </div>
       </section>
+
+      {profileAnalysis.counts.contributions + profileAnalysis.counts.uploads >= 3 && (
+        <section className="w-full border-b border-neutral-100">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <PremierSignalBar
+              allCards={allCards}
+              traitSignals={profileAnalysis.traitSignals}
+              totalContributions={profileAnalysis.counts.contributions + profileAnalysis.counts.uploads}
+            />
+          </div>
+        </section>
+      )}
+
+      {pinnedItems.length > 0 && (
+        <section className="w-full bg-amber-50/30 border-b border-amber-100">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <PinnedHighlightsDisplay pinnedItems={pinnedItems} onUnpin={unpin} isOwner={isOwner} />
+          </div>
+        </section>
+      )}
 
       {/* Hero section with Summary + Vibe side-by-side */}
       <section className="w-full bg-white border-y border-neutral-100">
@@ -561,8 +639,19 @@ export function PremierProfileClient({
                 <p className="text-sm text-neutral-500 leading-relaxed">
                   Day-to-day collaboration style and working patterns
                 </p>
+                <div className="w-16 h-0.5 bg-neutral-200 mx-auto mt-4"></div>
               </div>
 
+              <SmartVibePills
+                vibeSignals={profileAnalysis.vibeSignals}
+                traitSignals={profileAnalysis.traitSignals}
+                allCards={allCards}
+                selectedVibes={selectedVibeFilters}
+                onVibeSelect={handleVibeSelect}
+                onClearVibes={handleClearVibes}
+              />
+
+              {/* Existing trait bar - kept exactly as-is */}
               <PremierTraitBar
                 allCards={allCards}
                 selectedTraits={selectedTraitFilters}
@@ -573,6 +662,7 @@ export function PremierProfileClient({
                 totalUploads={profileAnalysis.counts.uploads}
               />
 
+              {/* Existing source filter toggles - KEPT EXACTLY AS-IS */}
               <div className="flex justify-center gap-2">
                 {(["all", "nomee", "imported"] as const).map((filter) => (
                   <button
@@ -595,22 +685,47 @@ export function PremierProfileClient({
               </div>
 
               {/* Cards Grid - Direct submissions */}
-              {(sourceFilter === "all" || sourceFilter === "nomee") && filteredHowItFeels.length > 0 && (
+              {(sourceFilter === "all" || sourceFilter === "nomee") && vibeFilteredHowItFeels.length > 0 && (
                 <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
-                  {filteredHowItFeels.map((contribution) => {
+                  {vibeFilteredHowItFeels.map((contribution) => {
                     const allTraits = [
                       ...(contribution.traits_category1 || []),
                       ...(contribution.traits_category2 || []),
                       ...(contribution.traits_category3 || []),
                     ]
                     const keywords = extractKeywordsFromText(contribution.written_note || "", allTraits)
-                    const highlightedText = highlightQuote(contribution.written_note || "", keywords, 5, true, true)
+                    const highlightedText = highlightQuote(
+                      contribution.written_note || "",
+                      keywords,
+                      8, // max highlights
+                      true, // enableTwoTone
+                      true, // useMarkerStyle
+                      selectedVibeFilters, // selected vibes
+                      topSignals, // top signals
+                    )
 
                     return (
                       <div
                         key={contribution.id}
-                        className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative"
+                        className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative group"
                       >
+                        {isOwner && (
+                          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <PinButton
+                              id={contribution.id}
+                              isPinned={isPinned(contribution.id)}
+                              onPin={() =>
+                                pinQuote(
+                                  contribution.id,
+                                  contribution.written_note || "",
+                                  contribution.contributor_name || "Anonymous",
+                                )
+                              }
+                              onUnpin={() => unpin(contribution.id)}
+                            />
+                          </div>
+                        )}
+
                         <div className="absolute top-3 left-3">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-white text-neutral-600 border border-neutral-200">
                             Direct
@@ -663,18 +778,43 @@ export function PremierProfileClient({
                 </div>
               )}
 
-              {(sourceFilter === "all" || sourceFilter === "imported") && filteredImportedFeedback.length > 0 && (
+              {/* Imported Feedback Grid */}
+              {(sourceFilter === "all" || sourceFilter === "imported") && vibeFilteredImported.length > 0 && (
                 <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
-                  {filteredImportedFeedback.map((feedback) => {
-                    const feedbackTraits = feedback.traits || []
-                    const keywords = extractKeywordsFromText(feedback.ai_extracted_excerpt || "", feedbackTraits)
-                    const highlightedText = highlightQuote(feedback.ai_extracted_excerpt || "", keywords, 5, true, true)
+                  {vibeFilteredImported.map((feedback) => {
+                    const keywords = extractKeywordsFromText(feedback.ai_extracted_excerpt || "", feedback.traits || [])
+                    const highlightedText = highlightQuote(
+                      feedback.ai_extracted_excerpt || "",
+                      keywords,
+                      8,
+                      true,
+                      true,
+                      selectedVibeFilters,
+                      topSignals,
+                    )
 
                     return (
                       <div
                         key={feedback.id}
-                        className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative"
+                        className="break-inside-avoid rounded-xl p-6 bg-gradient-to-br from-slate-50 to-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative group"
                       >
+                        {isOwner && (
+                          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <PinButton
+                              id={feedback.id}
+                              isPinned={isPinned(feedback.id)}
+                              onPin={() =>
+                                pinQuote(
+                                  feedback.id,
+                                  feedback.ai_extracted_excerpt || "",
+                                  feedback.giver_name || "Unknown",
+                                )
+                              }
+                              onUnpin={() => unpin(feedback.id)}
+                            />
+                          </div>
+                        )}
+
                         <div className="absolute top-3 left-3 flex items-center gap-1.5">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-200">
                             Imported
@@ -697,9 +837,9 @@ export function PremierProfileClient({
                         <div className="pt-6">
                           <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
 
-                          {feedbackTraits.length > 0 && (
+                          {feedback.traits?.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-4">
-                              {feedbackTraits.slice(0, 4).map((trait, idx) => (
+                              {feedback.traits.slice(0, 4).map((trait, idx) => (
                                 <span
                                   key={idx}
                                   className={`
@@ -741,11 +881,14 @@ export function PremierProfileClient({
               )}
 
               {/* Empty state */}
-              {filteredHowItFeels.length === 0 && filteredImportedFeedback.length === 0 && (
+              {vibeFilteredHowItFeels.length === 0 && vibeFilteredImported.length === 0 && (
                 <div className="text-center py-8">
                   <p className="text-neutral-600">No perspectives match the selected filters.</p>
                   <button
-                    onClick={handleClearFilters}
+                    onClick={() => {
+                      handleClearFilters()
+                      handleClearVibes()
+                    }}
                     className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
                     Clear filters

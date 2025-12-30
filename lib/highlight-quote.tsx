@@ -34,24 +34,127 @@ const IMPACT_PHRASES = [
   "surpassed",
 ]
 
+// Curated impact dictionary for Layer A
+const CURATED_IMPACT_DICTIONARY = [
+  "incredible",
+  "amazing",
+  "exceptional",
+  "outstanding",
+  "remarkable",
+  "excellent",
+  "brilliant",
+  "fantastic",
+  "wonderful",
+  "superb",
+  "stellar",
+  "phenomenal",
+  "extraordinary",
+  "invaluable",
+  "indispensable",
+  "irreplaceable",
+  "game-changer",
+  "visionary",
+  "innovative",
+  "creative",
+  "strategic",
+  "thoughtful",
+  "reliable",
+  "trustworthy",
+  "dedicated",
+  "passionate",
+  "driven",
+  "proactive",
+  "collaborative",
+  "supportive",
+  "inspiring",
+  "empowering",
+  "transformative",
+  "impactful",
+  "effective",
+  "efficient",
+  "organized",
+  "detail-oriented",
+  "results-driven",
+  "solution-oriented",
+  "professional",
+  "genuine",
+  "authentic",
+  "calm",
+  "composed",
+  "resilient",
+  "adaptable",
+  "flexible",
+  "resourceful",
+  "knowledgeable",
+  "experienced",
+  "skilled",
+]
+
+// Stopwords and generic filler to NEVER highlight
+const NEVER_HIGHLIGHT = new Set([
+  "good",
+  "nice",
+  "great",
+  "very",
+  "really",
+  "just",
+  "like",
+  "also",
+  "even",
+  "much",
+  "many",
+  "some",
+  "any",
+  "all",
+  "most",
+  "more",
+  "less",
+  "few",
+  "such",
+  "quite",
+  "rather",
+  "pretty",
+  "somewhat",
+  "kind",
+  "sort",
+  "thing",
+  "stuff",
+  "lot",
+  "lots",
+  "bit",
+  "way",
+  "ways",
+  "time",
+  "times",
+  "day",
+  "days",
+  "work",
+  "working",
+  "worked",
+  "person",
+  "people",
+  "team",
+  "teams",
+])
+
 export function highlightQuote(
   text: string,
   patterns: HighlightPattern[],
   maxHighlights = 8,
   enableTwoTone = true,
-  useMarkerStyle = true, // New: use premium marker style
+  useMarkerStyle = true,
+  selectedVibes: string[] = [], // New: currently selected vibe pills
+  topSignals: string[] = [], // New: top signals computed on page load
 ): React.ReactNode {
-  if (!text || patterns.length === 0) return text
+  if (!text || text.trim().length === 0) return text
 
-  const validPatterns = patterns.filter((p) => p && typeof p.phrase === "string" && p.phrase.trim().length > 0)
-
-  if (validPatterns.length === 0) return text
-
-  // Build all matches including trait patterns (yellow marker) and impact patterns (yellow highlight)
+  // ===== LAYER A: Deterministic matching (no AI) =====
   const matches: { phrase: string; index: number; length: number; tier: string; color: "marker" | "impact" }[] = []
 
-  // Find trait matches (yellow marker highlights)
+  // 1. Match extracted traits from the record
+  const validPatterns = patterns.filter((p) => p && typeof p.phrase === "string" && p.phrase.trim().length > 0)
   validPatterns.forEach((pattern) => {
+    if (NEVER_HIGHLIGHT.has(pattern.phrase.toLowerCase())) return
     const regex = new RegExp(`\\b${pattern.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi")
     let match
     while ((match = regex.exec(text)) !== null) {
@@ -65,7 +168,54 @@ export function highlightQuote(
     }
   })
 
-  // Find impact phrase matches (subtle impact highlights) if two-tone enabled
+  // 2. Match currently selected vibe pills
+  selectedVibes.forEach((vibe) => {
+    if (NEVER_HIGHLIGHT.has(vibe.toLowerCase())) return
+    const regex = new RegExp(`\\b${vibe.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi")
+    let match
+    while ((match = regex.exec(text)) !== null) {
+      matches.push({
+        phrase: match[0],
+        index: match.index,
+        length: match[0].length,
+        tier: "vibe",
+        color: "marker",
+      })
+    }
+  })
+
+  // 3. Match top signals computed on page load
+  topSignals.forEach((signal) => {
+    if (NEVER_HIGHLIGHT.has(signal.toLowerCase())) return
+    const regex = new RegExp(`\\b${signal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi")
+    let match
+    while ((match = regex.exec(text)) !== null) {
+      matches.push({
+        phrase: match[0],
+        index: match.index,
+        length: match[0].length,
+        tier: "signal",
+        color: "marker",
+      })
+    }
+  })
+
+  // 4. Match curated impact dictionary
+  CURATED_IMPACT_DICTIONARY.forEach((word) => {
+    const regex = new RegExp(`\\b${word}\\b`, "gi")
+    let match
+    while ((match = regex.exec(text)) !== null) {
+      matches.push({
+        phrase: match[0],
+        index: match.index,
+        length: match[0].length,
+        tier: "curated",
+        color: "marker",
+      })
+    }
+  })
+
+  // 5. Match impact phrases (verbs/outcomes) if two-tone enabled
   if (enableTwoTone) {
     // Match numbers/percentages
     const numberRegex = /\b(\d+%|\$[\d,]+|\d+x|\d+\s*(weeks?|months?|days?|years?|hours?))\b/gi
@@ -96,17 +246,20 @@ export function highlightQuote(
     })
   }
 
+  // ===== LAYER B: AI Fallback (only if Layer A finds zero) =====
+  // This is handled by extractKeywordsFromText which has its own fallback logic
+  // If we still have zero matches here, the text renders without highlights (acceptable)
+
   if (matches.length === 0) return text
 
   // Sort by tier priority (marker > impact) and then by position
   matches.sort((a, b) => {
-    // Marker (traits) take priority over impact
     if (a.color !== b.color) {
       return a.color === "marker" ? -1 : 1
     }
-    const tierOrder = { theme: 0, "working-style": 1, contextual: 2, impact: 3 }
+    const tierOrder = { theme: 0, vibe: 1, signal: 2, "working-style": 3, curated: 4, contextual: 5, impact: 6 }
     if (a.tier !== b.tier) {
-      return tierOrder[a.tier as keyof typeof tierOrder] - tierOrder[b.tier as keyof typeof tierOrder]
+      return (tierOrder[a.tier as keyof typeof tierOrder] ?? 99) - (tierOrder[b.tier as keyof typeof tierOrder] ?? 99)
     }
     return a.index - b.index
   })
@@ -116,8 +269,8 @@ export function highlightQuote(
   let lastEnd = 0
   let markerCount = 0
   let impactCount = 0
-  const maxMarker = Math.min(maxHighlights, 5) // 3-5 marker highlights
-  const maxImpact = 3 // Cap impact highlights at 3
+  const maxMarker = Math.min(maxHighlights, 5)
+  const maxImpact = 3
 
   for (const match of matches) {
     if (match.index >= lastEnd) {
