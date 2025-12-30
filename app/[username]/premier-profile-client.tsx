@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { MessageSquare } from "lucide-react"
+import { MessageSquare, ChevronDown } from "lucide-react"
 import { VoiceCard } from "@/components/voice-card"
 import { AiPatternSummary } from "@/components/ai-pattern-summary"
 import { RelationshipFilter } from "@/components/relationship-filter"
@@ -11,7 +11,8 @@ import { dedupeContributions } from "@/lib/dedupe-contributions"
 import { highlightQuote } from "@/lib/highlight-quote"
 import { extractKeywordsFromText } from "@/lib/extract-keywords-from-text"
 import { usePinnedHighlights, PinButton } from "@/components/pinned-highlights"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { HeatPill, getStrengthTier } from "@/components/heat-pill"
 import Link from "next/link"
 
 function safeArray<T>(value: T[] | null | undefined): T[] {
@@ -275,6 +276,9 @@ export function PremierProfileClient({
     )
   }
 
+  // Calculate max count for heat shading
+  const maxTraitCount = Math.max(...safeTraits.map((t) => t?.count || 0), 1)
+
   return (
     <TooltipProvider>
       <main className="min-h-screen bg-[#FAF9F7]">
@@ -284,28 +288,47 @@ export function PremierProfileClient({
         <section
           className={`pt-12 pb-8 px-4 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
         >
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-5xl font-serif text-neutral-900 mb-3">
               {safeString(profile.full_name, "Anonymous")}
             </h1>
-            {!isEmptyOrZero(profile.title) && <p className="text-lg text-neutral-600 mb-6">{profile.title}</p>}
+            {!isEmptyOrZero(profile.title) && <p className="text-lg text-neutral-600 mb-4">{profile.title}</p>}
 
-            {/* Stats row */}
-            <div className="flex items-center justify-center gap-2 text-sm text-neutral-500 mb-4 flex-wrap">
-              <span className="font-medium text-neutral-700">NOMEE PROFILE</span>
+            {/* Stats row - smaller, muted */}
+            <div className="flex items-center gap-2 text-sm text-neutral-500 mb-3 flex-wrap">
+              <span className="font-medium text-neutral-600 uppercase tracking-wide text-xs">NOMEE PROFILE</span>
               <span className="text-neutral-300">·</span>
-              <span>BASED ON FEEDBACK FROM {safeNumber(totalContributions, 0)} PEOPLE</span>
+              <span className="uppercase tracking-wide text-xs">
+                BASED ON FEEDBACK FROM {safeNumber(totalContributions, 0)} PEOPLE
+              </span>
               {totalUploads > 0 && (
                 <>
                   <span className="text-neutral-300">·</span>
-                  <span>{totalUploads} UPLOADS</span>
+                  <span className="uppercase tracking-wide text-xs">{totalUploads} UPLOADS</span>
                 </>
               )}
             </div>
 
-            {/* Confidence Badge */}
-            <div className="flex justify-center mb-4">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium border ${confidenceColor}`}>
+            {/* Confidence Badge - green pill with dot */}
+            <div className="flex items-center gap-3 mb-2">
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
+                  confidenceLevel === "High"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : confidenceLevel === "Medium"
+                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                      : "bg-slate-50 text-slate-600 border-slate-200"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    confidenceLevel === "High"
+                      ? "bg-emerald-500"
+                      : confidenceLevel === "Medium"
+                        ? "bg-amber-500"
+                        : "bg-slate-400"
+                  }`}
+                />
                 {confidenceLevel} confidence
               </span>
             </div>
@@ -315,10 +338,10 @@ export function PremierProfileClient({
         </section>
 
         {/* ============================================ */}
-        {/* SECTION 2: SUMMARY + VIBE */}
+        {/* SECTION 2: SUMMARY - with teal left border */}
         {/* ============================================ */}
         {(safeProfileAnalysis.totalDataCount >= 1 || safeTraits.length > 0) && (
-          <section className="pb-12 px-4">
+          <section className="pb-8 px-4">
             <div className="max-w-4xl mx-auto">
               <AiPatternSummary
                 traits={safeTraits}
@@ -327,22 +350,25 @@ export function PremierProfileClient({
                 interpretationSentence={safeString(interpretationSentence)}
                 vibeLabels={safeVibeLabels}
                 uploadsCount={totalUploads}
+                voiceNotesCount={voiceNotesCount}
+                firstName={firstName}
               />
             </div>
           </section>
         )}
 
         {/* ============================================ */}
-        {/* SECTION 3: IN THEIR OWN VOICE */}
+        {/* SECTION 3: IN THEIR OWN WORDS (Voice Notes) */}
         {/* ============================================ */}
         {voiceContributions.length > 0 && (
           <section className="py-12 px-4">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-serif text-neutral-900 mb-2">In Their Own Words</h2>
+                <h2 className="text-2xl md:text-3xl font-serif text-neutral-900 mb-2">In Their Own Words</h2>
                 <p className="text-neutral-500">Unedited voice notes from people who know {firstName}</p>
               </div>
 
+              {/* Filter tabs */}
               <div className="flex justify-center mb-6">
                 <RelationshipFilter
                   selectedCategory={voiceRelationshipFilter}
@@ -351,6 +377,7 @@ export function PremierProfileClient({
                 />
               </div>
 
+              {/* Voice cards grid */}
               <div className="grid md:grid-cols-3 gap-4">
                 {filteredVoiceContributions.map((contribution) => {
                   if (!contribution?.id) return null
@@ -362,16 +389,62 @@ export function PremierProfileClient({
                     ...safeArray(contribution.traits_category2),
                   ].slice(0, 5)
 
+                  // Get keywords for highlighting
+                  const keywords = extractKeywordsFromText(safeString(contribution.written_note), allTraits, topSignals)
+
                   return (
                     <div key={contribution.id} className="relative group">
-                      <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm">
-                        <VoiceCard
-                          audioUrl={audioUrl}
-                          contributorName={safeString(contribution.contributor_name, "Anonymous")}
-                          relationship={safeString(contribution.relationship)}
-                          traits={allTraits}
-                        />
+                      <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                        {/* Blue play button with waveform */}
+                        <div className="mb-4">
+                          <VoiceCard audioUrl={audioUrl} contributorName="" relationship="" traits={[]} compact />
+                        </div>
+
+                        {/* Written note with highlights */}
+                        {safeString(contribution.written_note).trim() && (
+                          <p className="text-neutral-700 text-sm leading-relaxed mb-4">
+                            {highlightQuote(safeString(contribution.written_note), keywords)}
+                          </p>
+                        )}
+
+                        {/* Trait pills */}
+                        {allTraits.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-4">
+                            {allTraits.slice(0, 5).map((trait, idx) => {
+                              const traitData = safeTraits.find((t) => t?.label?.toLowerCase() === trait.toLowerCase())
+                              const count = traitData?.count || 1
+                              const tier = getStrengthTier(count, maxTraitCount)
+
+                              return (
+                                <span
+                                  key={`${trait}-${idx}`}
+                                  className={`px-2 py-0.5 text-xs rounded-full border ${
+                                    tier === "Core"
+                                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : tier === "Strong"
+                                        ? "bg-blue-50/50 text-blue-600 border-blue-100"
+                                        : "bg-neutral-50 text-neutral-600 border-neutral-200"
+                                  }`}
+                                >
+                                  {trait}
+                                </span>
+                              )
+                            })}
+                          </div>
+                        )}
+
+                        {/* Contributor info */}
+                        <div className="pt-3 border-t border-neutral-100">
+                          <p className="font-medium text-neutral-900 text-sm">
+                            {safeString(contribution.contributor_name, "Anonymous")}
+                          </p>
+                          {!isEmptyOrZero(contribution.relationship) && (
+                            <p className="text-xs text-neutral-500">{contribution.relationship}</p>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Pin button for owners */}
                       {isOwner && (
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           <PinButton
@@ -390,101 +463,115 @@ export function PremierProfileClient({
         )}
 
         {/* ============================================ */}
-        {/* SECTION 4: PATTERN RECOGNITION (TRAITS) */}
+        {/* SECTION 4: PATTERN RECOGNITION */}
         {/* ============================================ */}
         {safeTraits.length > 0 && (
           <section className="py-12 px-4">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-serif text-neutral-900 mb-2">Pattern Recognition</h2>
+                <h2 className="text-2xl md:text-3xl font-serif text-neutral-900 mb-2">Pattern Recognition</h2>
                 <p className="text-neutral-500">Not hand-picked — patterns emerge as more people contribute.</p>
 
                 {/* Confidence badge */}
                 <div className="flex justify-center mt-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${confidenceColor}`}>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
+                      confidenceLevel === "High"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : confidenceLevel === "Medium"
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : "bg-slate-50 text-slate-600 border-slate-200"
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        confidenceLevel === "High"
+                          ? "bg-emerald-500"
+                          : confidenceLevel === "Medium"
+                            ? "bg-amber-500"
+                            : "bg-slate-400"
+                      }`}
+                    />
                     {confidenceLevel} confidence
                   </span>
                 </div>
-                <p className="text-xs text-neutral-400 mt-2">
+                <p className="text-xs text-neutral-400 mt-3">
                   Patterns are consistent across contributors.
                   <br />
-                  Darker = mentioned more often.
+                  <span className="italic">Darker = mentioned more often</span>
                 </p>
               </div>
 
-              {/* Two-column layout: Top Signals + Emerging Signals */}
-              <div className="bg-white border border-neutral-200 rounded-2xl p-8">
+              {/* Two-column layout */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 md:p-8">
                 <div className="grid md:grid-cols-2 gap-8">
-                  {/* Top Signals */}
+                  {/* TOP SIGNALS */}
                   <div>
-                    <h3 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide mb-4">TOP SIGNALS</h3>
+                    <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4">
+                      TOP SIGNALS
+                    </h3>
                     <div className="space-y-2">
                       {topTraits.map((trait) => {
                         if (!trait?.label) return null
+                        const tier = getStrengthTier(trait.count, maxTraitCount)
+
                         return (
-                          <Tooltip key={trait.label}>
-                            <TooltipTrigger asChild>
-                              <button
-                                onClick={() => handleTraitFilterSelect(trait.label)}
-                                className={`flex items-center justify-between w-full px-4 py-3 rounded-lg border transition-all ${
-                                  selectedTraitFilters.includes(trait.label)
-                                    ? "bg-blue-50 border-blue-300 text-blue-800"
-                                    : "bg-neutral-50 border-neutral-200 hover:bg-neutral-100 text-neutral-700"
-                                }`}
-                              >
-                                <span className="font-medium">{trait.label}</span>
-                                <span className="text-sm text-blue-600 font-medium">×{trait.count}</span>
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Mentioned by {trait.count} people</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <button
+                            key={trait.label}
+                            onClick={() => handleTraitFilterSelect(trait.label)}
+                            className={`flex items-center justify-between w-full px-4 py-3 rounded-lg border transition-all ${
+                              selectedTraitFilters.includes(trait.label)
+                                ? "bg-blue-50 border-blue-300 text-blue-800"
+                                : tier === "Core"
+                                  ? "bg-neutral-100 border-neutral-300 text-neutral-900"
+                                  : tier === "Strong"
+                                    ? "bg-neutral-50 border-neutral-200 text-neutral-800"
+                                    : "bg-white border-neutral-200 text-neutral-700"
+                            }`}
+                          >
+                            <span className={tier === "Core" ? "font-medium" : ""}>{trait.label}</span>
+                            <span className="text-sm text-blue-600 font-medium">×{trait.count}</span>
+                          </button>
                         )
                       })}
                     </div>
                   </div>
 
-                  {/* Emerging Signals */}
+                  {/* EMERGING SIGNALS */}
                   <div>
-                    <h3 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide mb-4">
+                    <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4">
                       EMERGING SIGNALS
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {emergingTraits.map((trait) => {
                         if (!trait?.label) return null
+                        const tier = getStrengthTier(trait.count, maxTraitCount)
+
                         return (
-                          <Tooltip key={trait.label}>
-                            <TooltipTrigger asChild>
-                              <button
-                                onClick={() => handleTraitFilterSelect(trait.label)}
-                                className={`px-3 py-1.5 rounded-lg border text-sm transition-all ${
-                                  selectedTraitFilters.includes(trait.label)
-                                    ? "bg-blue-50 border-blue-300 text-blue-800"
-                                    : "bg-white border-neutral-200 hover:bg-neutral-50 text-neutral-600"
-                                }`}
-                              >
-                                {trait.label} <span className="text-neutral-400 ml-1">×{trait.count}</span>
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Mentioned by {trait.count} people</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <HeatPill
+                            key={trait.label}
+                            label={trait.label}
+                            count={trait.count}
+                            tier={tier}
+                            isSelected={selectedTraitFilters.includes(trait.label)}
+                            onClick={() => handleTraitFilterSelect(trait.label)}
+                            size="md"
+                          />
                         )
                       })}
                     </div>
                   </div>
                 </div>
 
-                {/* View all traits link */}
+                {/* View all traits */}
                 {safeTraits.length > topTraits.length + emergingTraits.length && (
                   <div className="text-center mt-6 pt-6 border-t border-neutral-100">
                     <button
                       onClick={() => setShowAllTraits(!showAllTraits)}
-                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
                     >
                       {showAllTraits ? "Show less" : `View all ${safeTraits.length} traits`}
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showAllTraits ? "rotate-180" : ""}`} />
                     </button>
                   </div>
                 )}
@@ -495,18 +582,18 @@ export function PremierProfileClient({
                     <div className="flex flex-wrap gap-2">
                       {safeTraits.slice(topTraits.length + emergingTraits.length).map((trait) => {
                         if (!trait?.label) return null
+                        const tier = getStrengthTier(trait.count, maxTraitCount)
+
                         return (
-                          <button
+                          <HeatPill
                             key={trait.label}
+                            label={trait.label}
+                            count={trait.count}
+                            tier={tier}
+                            isSelected={selectedTraitFilters.includes(trait.label)}
                             onClick={() => handleTraitFilterSelect(trait.label)}
-                            className={`px-3 py-1.5 rounded-lg border text-sm transition-all ${
-                              selectedTraitFilters.includes(trait.label)
-                                ? "bg-blue-50 border-blue-300 text-blue-800"
-                                : "bg-white border-neutral-200 hover:bg-neutral-50 text-neutral-600"
-                            }`}
-                          >
-                            {trait.label} <span className="text-neutral-400 ml-1">×{trait.count}</span>
-                          </button>
+                            size="sm"
+                          />
                         )
                       })}
                     </div>
@@ -530,13 +617,13 @@ export function PremierProfileClient({
         )}
 
         {/* ============================================ */}
-        {/* SECTION 5: HOW IT FEELS (Direct/Nomee cards ONLY) */}
+        {/* SECTION 5: HOW IT FEELS (Direct submissions only) */}
         {/* ============================================ */}
         {writtenContributions.length > 0 && (
           <section className="py-12 px-4">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-serif text-neutral-900 mb-2">How it feels</h2>
+                <h2 className="text-2xl md:text-3xl font-serif text-neutral-900 mb-2">How it feels</h2>
                 <p className="text-neutral-500">Day-to-day collaboration style and working patterns</p>
                 <div className="w-16 h-px bg-neutral-300 mx-auto mt-4" />
               </div>
@@ -550,7 +637,7 @@ export function PremierProfileClient({
                 />
               </div>
 
-              {/* Masonry Grid of DIRECT cards only */}
+              {/* Masonry grid of cards */}
               <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
                 {filteredWrittenContributions.map((contribution) => {
                   if (!contribution?.id) return null
@@ -562,8 +649,6 @@ export function PremierProfileClient({
                     ...safeArray(contribution.traits_category4),
                   ]
                   const keywords = extractKeywordsFromText(safeString(contribution.written_note), allTraits, topSignals)
-
-                  // Check if this is a voice contribution (show voice player instead)
                   const hasVoice = contribution.voice_url || contribution.audio_url
                   const audioUrl = safeString(contribution.voice_url) || safeString(contribution.audio_url)
 
@@ -573,7 +658,7 @@ export function PremierProfileClient({
                       className="break-inside-avoid mb-4 bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative group"
                     >
                       {/* Source Badge */}
-                      <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-full">
+                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-full w-fit mb-4">
                         <MessageSquare className="w-3 h-3 text-blue-600" />
                         <span className="text-[10px] font-medium text-blue-700">Nomee Submission</span>
                       </div>
@@ -589,58 +674,60 @@ export function PremierProfileClient({
                         </div>
                       )}
 
-                      <div className="pt-8">
-                        {/* Voice player if applicable */}
-                        {hasVoice && audioUrl && (
-                          <div className="mb-4">
-                            <VoiceCard audioUrl={audioUrl} contributorName="" relationship="" traits={[]} />
-                          </div>
-                        )}
-
-                        {/* Written note */}
-                        {safeString(contribution.written_note).trim() && (
-                          <p className="text-neutral-700 text-sm leading-relaxed mb-4">
-                            {highlightQuote(safeString(contribution.written_note), keywords)}
-                          </p>
-                        )}
-
-                        {/* Trait Pills */}
-                        {allTraits.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-4">
-                            {allTraits.slice(0, 5).map((trait, idx) => (
-                              <Tooltip key={`${trait}-${idx}`}>
-                                <TooltipTrigger asChild>
-                                  <span
-                                    onClick={() => handleTraitFilterSelect(trait)}
-                                    className={`px-2 py-0.5 text-xs rounded-full border cursor-pointer transition-all ${
-                                      selectedTraitFilters.includes(trait)
-                                        ? "bg-blue-100 text-blue-800 border-blue-300"
-                                        : "bg-neutral-50 text-neutral-600 border-neutral-200 hover:bg-neutral-100"
-                                    }`}
-                                  >
-                                    {trait}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Click to filter by this trait</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Contributor Info */}
-                        <div className="pt-3 border-t border-neutral-100">
-                          <p className="font-medium text-neutral-900 text-sm">
-                            {safeString(contribution.contributor_name, "Anonymous")}
-                          </p>
-                          {!isEmptyOrZero(contribution.relationship) && (
-                            <p className="text-xs text-neutral-500">{contribution.relationship}</p>
-                          )}
-                          {!isEmptyOrZero(contribution.contributor_company) && (
-                            <p className="text-xs text-neutral-400">{contribution.contributor_company}</p>
-                          )}
+                      {/* Voice player if applicable */}
+                      {hasVoice && audioUrl && (
+                        <div className="mb-4">
+                          <VoiceCard audioUrl={audioUrl} contributorName="" relationship="" traits={[]} compact />
                         </div>
+                      )}
+
+                      {/* Written note */}
+                      {safeString(contribution.written_note).trim() && (
+                        <p className="text-neutral-700 text-sm leading-relaxed mb-4">
+                          {highlightQuote(safeString(contribution.written_note), keywords)}
+                        </p>
+                      )}
+
+                      {/* Trait Pills */}
+                      {allTraits.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                          {allTraits.slice(0, 5).map((trait, idx) => {
+                            const traitData = safeTraits.find((t) => t?.label?.toLowerCase() === trait.toLowerCase())
+                            const count = traitData?.count || 1
+                            const tier = getStrengthTier(count, maxTraitCount)
+
+                            return (
+                              <span
+                                key={`${trait}-${idx}`}
+                                onClick={() => handleTraitFilterSelect(trait)}
+                                className={`px-2 py-0.5 text-xs rounded-full border cursor-pointer transition-all ${
+                                  selectedTraitFilters.includes(trait)
+                                    ? "bg-blue-100 text-blue-800 border-blue-300"
+                                    : tier === "Core"
+                                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : tier === "Strong"
+                                        ? "bg-blue-50/50 text-blue-600 border-blue-100"
+                                        : "bg-neutral-50 text-neutral-600 border-neutral-200"
+                                }`}
+                              >
+                                {trait}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {/* Contributor Info */}
+                      <div className="pt-3 border-t border-neutral-100">
+                        <p className="font-medium text-neutral-900 text-sm">
+                          {safeString(contribution.contributor_name, "Anonymous")}
+                        </p>
+                        {!isEmptyOrZero(contribution.relationship) && (
+                          <p className="text-xs text-neutral-500">{contribution.relationship}</p>
+                        )}
+                        {!isEmptyOrZero(contribution.contributor_company) && (
+                          <p className="text-xs text-neutral-400">{contribution.contributor_company}</p>
+                        )}
                       </div>
                     </div>
                   )
@@ -666,19 +753,19 @@ export function PremierProfileClient({
         )}
 
         {/* ============================================ */}
-        {/* SECTION 6: SCREENSHOTS AND HIGHLIGHTS (Imported ONLY) */}
+        {/* SECTION 6: SCREENSHOTS AND HIGHLIGHTS (Imported only) */}
         {/* ============================================ */}
         {importedFeedback.length > 0 && (
-          <section className="py-12 px-4 bg-white">
+          <section className="py-12 px-4 bg-white border-t border-neutral-100">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-serif text-neutral-900 mb-2">Screenshots and highlights</h2>
+                <h2 className="text-2xl md:text-3xl font-serif text-neutral-900 mb-2">Screenshots and highlights</h2>
                 <p className="text-neutral-500">
                   {firstName} saved {importedFeedback.length} pieces of feedback
                 </p>
               </div>
 
-              {/* Grid of Imported cards */}
+              {/* Grid of imported cards */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredImportedFeedback.map((feedback) => {
                   if (!feedback?.id) return null
@@ -689,8 +776,6 @@ export function PremierProfileClient({
                     feedbackTraits,
                     topSignals,
                   )
-                  const confidenceValue = safeNumber(feedback.confidence_score, 0)
-                  const confidencePercent = confidenceValue > 1 ? confidenceValue : Math.round(confidenceValue * 100)
 
                   // Determine source badge
                   const sourceType = safeString(feedback.source_type, "").toLowerCase()
@@ -702,11 +787,12 @@ export function PremierProfileClient({
                       key={feedback.id}
                       className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow"
                     >
+                      {/* Quote text */}
                       <p className="text-neutral-700 text-sm leading-relaxed mb-4">
                         {highlightQuote(safeString(feedback.ai_extracted_excerpt), keywords)}
                       </p>
 
-                      {/* Contributor Info */}
+                      {/* Contributor Info with source badge */}
                       <div className="pt-3 border-t border-neutral-100 flex items-center justify-between">
                         <div>
                           <p className="font-medium text-neutral-900 text-sm">
@@ -733,7 +819,7 @@ export function PremierProfileClient({
                 })}
               </div>
 
-              {/* Empty State for filtered */}
+              {/* Empty state for filtered */}
               {filteredImportedFeedback.length === 0 && selectedTraitFilters.length > 0 && (
                 <div className="text-center py-12 text-neutral-500">
                   <p>No imported feedback matches the selected traits.</p>
@@ -754,12 +840,12 @@ export function PremierProfileClient({
         {/* ============================================ */}
         <section className="py-16 px-4 bg-neutral-900">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-serif text-white mb-4">Build your own Nomee profile</h2>
-            <p className="text-neutral-400 mb-8">
+            <h2 className="text-3xl md:text-4xl font-serif text-white mb-4">Build your own Nomee profile</h2>
+            <p className="text-neutral-400 mb-8 leading-relaxed">
               Get feedback from people you've worked with. Create a profile that shows how you collaborate, solve
               problems, and make an impact.
             </p>
-            <Button asChild size="lg" className="bg-white text-neutral-900 hover:bg-neutral-100">
+            <Button asChild size="lg" className="bg-white text-neutral-900 hover:bg-neutral-100 px-8">
               <Link href="/auth/signup">Get started for free</Link>
             </Button>
           </div>
