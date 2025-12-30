@@ -38,6 +38,7 @@ interface VoiceCardProps {
   } | null
   isMobile?: boolean
   profileName?: string
+  compact?: boolean // Added compact prop to hide contributor info when shown elsewhere
 }
 
 export function VoiceCard({
@@ -50,6 +51,7 @@ export function VoiceCard({
   contribution,
   isMobile = false,
   profileName,
+  compact = false, // Added compact prop to hide contributor info when shown elsewhere
 }: VoiceCardProps) {
   const [showFullTranscript, setShowFullTranscript] = useState(false)
 
@@ -112,11 +114,13 @@ export function VoiceCard({
           </div>
         )}
 
-        <div className="border-t border-gray-100 pt-3 mt-4">
-          <div className="text-sm font-medium text-gray-900">{contributorName || "Anonymous"}</div>
-          {relationship && <div className="text-xs text-gray-500 capitalize">{relationship.replace(/_/g, " ")}</div>}
-          {contributorCompany && <div className="text-xs text-gray-500">{contributorCompany}</div>}
-        </div>
+        {!compact && (
+          <div className="border-t border-gray-100 pt-3 mt-4">
+            <div className="text-sm font-medium text-gray-900">{contributorName || "Anonymous"}</div>
+            {relationship && <div className="text-xs text-gray-500 capitalize">{relationship.replace(/_/g, " ")}</div>}
+            {contributorCompany && <div className="text-xs text-gray-500">{contributorCompany}</div>}
+          </div>
+        )}
       </div>
     </div>
   )

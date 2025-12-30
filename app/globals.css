@@ -90,6 +90,46 @@
   --trait-tint: #f4f0ff;
   --trait-border-active: #b9a7ff;
   --trait-ring: #9d86ff;
+
+  /* Consolidated Nomee Design System - Minimal Color Palette */
+  /* Base System: Cream background + Near-black text */
+  --nomee-cream: #faf9f7;
+  --nomee-near-black: #1a1a1a;
+  --nomee-neutral-border: #e5e5e5;
+
+  /* Brand Accent: Nomee Blue (used for links, badges, highlights, Direct submissions) */
+  --nomee-blue: #3b82f6;
+  --nomee-blue-light: #dbeafe;
+  --nomee-blue-dark: #1e40af;
+
+  /* Semantic Accents ONLY */
+  --nomee-amber: #f59e0b; /* Imported/Past Praise */
+  --nomee-amber-light: #fef3c7;
+  --nomee-green: #10b981; /* Confidence badge */
+  --nomee-green-light: #d1fae5;
+
+  /* Typography Scale */
+  --text-hero: 4rem; /* Increased for emphasis on whose profile this is */
+  --text-section: 2rem; /* 32px */
+  --text-subhead: 1.375rem; /* Increased from 1.25rem (20px) to 1.375rem (22px) for more visible professional title */
+  --text-body: 1rem; /* 16px */
+  --text-small: 0.875rem; /* 14px */
+  --text-micro: 0.75rem; /* 12px */
+
+  /* Spacing System */
+  --space-section: 4rem;
+  --space-card: 1.5rem;
+
+  /* Card System */
+  --card-radius: 1rem;
+  --card-border: 1px solid var(--nomee-neutral-border);
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+
+  /* Pill System */
+  --pill-radius: 9999px;
+  --pill-border: 1px solid;
+  --pill-padding: 0.375rem 0.75rem;
+  --pill-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
 }
 
 .dark {

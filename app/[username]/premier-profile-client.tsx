@@ -15,6 +15,11 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { HeatPill, getStrengthTier } from "@/components/heat-pill"
 import Link from "next/link"
 
+// Design system components
+import { SectionHeading } from "@/components/design-system/section-heading"
+import { CardShell } from "@/components/design-system/card-shell"
+import { Pill } from "@/components/design-system/pill"
+
 function safeArray<T>(value: T[] | null | undefined): T[] {
   if (!value) return []
   if (!Array.isArray(value)) return []
@@ -82,6 +87,7 @@ interface ImportedFeedback {
   ocr_text?: string | null
   approved_by_owner?: boolean | null
   visibility?: string | null
+  giver_relationship?: string | null // Added for consistency with updates
 }
 
 interface TraitWithCount {
@@ -313,49 +319,97 @@ export function PremierProfileClient({
     return "Low"
   }, [writtenContributions.length, importedFeedback.length])
 
-  const confidenceColor =
-    confidenceLevel === "High"
-      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-      : confidenceLevel === "Medium"
-        ? "bg-amber-50 text-amber-700 border-amber-200"
-        : "bg-slate-50 text-slate-600 border-slate-200"
+  // Calculate max count for heat shading
+  const maxTraitCount = Math.max(...safeTraits.map((t) => t?.count || 0), 1)
 
-  const topTraits = safeTraits.filter((t) => t && t.count >= 2).slice(0, 6)
-  const emergingTraits = safeTraits.filter((t) => (t && t.count < 2) || !topTraits.includes(t)).slice(0, 8)
+  const topTraits = safeTraits
+    .filter((t) => t && t.count >= 2)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6)
+  const emergingTraits = safeTraits
+    .filter((t) => (t && t.count < 2) || !topTraits.includes(t))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
 
   // Early return if no profile
   if (!profile || !profile.id || !profile.slug) {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-serif text-neutral-900 mb-2">Profile not found</h1>
-          <p className="text-neutral-600 mb-4">This profile may have been moved or deleted.</p>
-          <Button asChild>
-            <Link href="/">Go home</Link>
-          </Button>
+          <h1 className="text-2xl font-serif text-neutral-900 mb-2 leading-tight">
+            {safeString(profile.full_name, "Anonymous")}
+          </h1>
+          {!isEmptyOrZero(profile.headline) && (
+            <p className="text-[var(--text-subhead)] text-neutral-600 mb-4">{profile.headline}</p>
+          )}
+
+          {/* Stats row - smaller, muted */}
+          <div className="flex items-center gap-2 text-sm text-neutral-500 mb-3 flex-wrap">
+            <span className="font-medium text-neutral-600 uppercase tracking-wide text-xs">NOMEE PROFILE</span>
+            <span className="text-neutral-300">·</span>
+            <span className="uppercase tracking-wide text-xs">
+              BASED ON FEEDBACK FROM {safeNumber(totalContributions, 0)} PEOPLE
+            </span>
+            {totalUploads > 0 && (
+              <>
+                <span className="text-neutral-300">·</span>
+                <span className="uppercase tracking-wide text-xs">{totalUploads} UPLOADS</span>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 mb-2">
+            <Pill variant="direct">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  confidenceLevel === "High"
+                    ? "bg-[var(--nomee-green)]"
+                    : confidenceLevel === "Medium"
+                      ? "bg-[var(--nomee-amber)]"
+                      : "bg-neutral-400"
+                }`}
+              />
+              {confidenceLevel} confidence
+            </Pill>
+          </div>
+
+          <p className="text-xs text-neutral-400">Each contributor can submit once.</p>
         </div>
       </div>
     )
   }
 
-  // Calculate max count for heat shading
-  const maxTraitCount = Math.max(...safeTraits.map((t) => t?.count || 0), 1)
+  // Filtered contributions for "How it feels" section
+  const howItFeelsContributions = writtenContributions.filter(
+    (c) =>
+      (howItFeelsRelationshipFilter === "All" || c?.relationship_category === howItFeelsRelationshipFilter) &&
+      (selectedTraitFilters.length === 0 ||
+        selectedTraitFilters.some((t) =>
+          [
+            ...safeArray(c?.traits_category1),
+            ...safeArray(c?.traits_category2),
+            ...safeArray(c?.traits_category3),
+            ...safeArray(c?.traits_category4),
+          ].includes(t),
+        )),
+  )
 
   return (
     <TooltipProvider>
-      <main className="min-h-screen bg-[#FAF9F7]">
+      <main className="min-h-screen bg-[var(--nomee-cream)]">
         {/* ============================================ */}
         {/* SECTION 1: HERO / HEADER */}
         {/* ============================================ */}
         <section
-          className={`pt-12 pb-8 px-4 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+          className={`pt-12 pb-[var(--space-section)] px-4 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
         >
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-serif text-neutral-900 mb-3">
+            <h1 className="text-7xl font-serif text-[var(--nomee-near-black)] mb-3 leading-tight">
               {safeString(profile.full_name, "Anonymous")}
             </h1>
-            {!isEmptyOrZero(profile.headline) && <p className="text-lg text-neutral-600 mb-4">{profile.headline}</p>}
-            {!isEmptyOrZero(profile.title) && <p className="text-lg text-neutral-600 mb-4">{profile.title}</p>}
+            {!isEmptyOrZero(profile.headline) && (
+              <p className="text-[var(--text-subhead)] text-neutral-600 mb-4">{profile.headline}</p>
+            )}
 
             {/* Stats row - smaller, muted */}
             <div className="flex items-center gap-2 text-sm text-neutral-500 mb-3 flex-wrap">
@@ -372,28 +426,19 @@ export function PremierProfileClient({
               )}
             </div>
 
-            {/* Confidence Badge - green pill with dot */}
             <div className="flex items-center gap-3 mb-2">
-              <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
-                  confidenceLevel === "High"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : confidenceLevel === "Medium"
-                      ? "bg-amber-50 text-amber-700 border-amber-200"
-                      : "bg-slate-50 text-slate-600 border-slate-200"
-                }`}
-              >
+              <Pill variant="direct">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     confidenceLevel === "High"
-                      ? "bg-emerald-500"
+                      ? "bg-[var(--nomee-green)]"
                       : confidenceLevel === "Medium"
-                        ? "bg-amber-500"
-                        : "bg-slate-400"
+                        ? "bg-[var(--nomee-amber)]"
+                        : "bg-neutral-400"
                   }`}
                 />
                 {confidenceLevel} confidence
-              </span>
+              </Pill>
             </div>
 
             <p className="text-xs text-neutral-400">Each contributor can submit once.</p>
@@ -404,45 +449,49 @@ export function PremierProfileClient({
         {/* SECTION 2: SUMMARY - with teal left border */}
         {/* ============================================ */}
         {(safeProfileAnalysis.totalDataCount >= 1 || safeTraits.length > 0) && (
-          <section className="pb-8 px-4">
+          <section className="pb-[var(--space-section)] px-4">
             <div className="max-w-4xl mx-auto">
-              <AiPatternSummary
-                traits={safeTraits}
-                totalContributions={safeNumber(totalContributions, 0)}
-                uniqueCompanies={safeNumber(uniqueCompanies, 0)}
-                interpretationSentence={safeString(interpretationSentence)}
-                vibeLabels={safeVibeLabels}
-                uploadsCount={totalUploads}
-                voiceNotesCount={voiceNotesCount}
-                firstName={firstName}
-              />
+              <CardShell>
+                <AiPatternSummary
+                  traits={safeTraits}
+                  totalContributions={safeNumber(totalContributions, 0)}
+                  uniqueCompanies={safeNumber(uniqueCompanies, 0)}
+                  interpretationSentence={safeString(interpretationSentence)}
+                  vibeLabels={safeVibeLabels}
+                  uploadsCount={totalUploads}
+                  voiceNotesCount={voiceNotesCount}
+                  firstName={firstName}
+                />
+              </CardShell>
 
               {computedVibes.length > 0 && (
-                <div className="mt-6 p-6 bg-white border border-neutral-200 rounded-2xl shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-neutral-900">Vibe</h3>
-                    <span className="text-xs text-neutral-400">How it feels to work together</span>
+                <CardShell className="mt-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/30 border-2 border-blue-100">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-[1.75rem] font-serif font-semibold text-[var(--nomee-near-black)]">Vibe</h3>
+                    <p className="text-sm text-neutral-500">How it feels to work together</p>
                   </div>
 
-                  <div className="flex flex-wrap gap-3 mb-3">
+                  <div className="flex flex-wrap gap-4 mb-6">
                     {computedVibes.map((vibe) => (
                       <div
                         key={vibe.label}
-                        className="group relative inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-blue-50/80 to-purple-50/80 border border-blue-100/50 shadow-sm hover:shadow-md transition-all duration-200"
+                        className="group px-6 py-4 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                       >
-                        <span className="text-base font-medium text-neutral-800">{vibe.label}</span>
-                        <span className="text-neutral-400">·</span>
-                        <span className="text-sm font-medium text-blue-600">{vibe.count}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg font-semibold">{vibe.label}</span>
+                          <span className="text-sm opacity-90">·</span>
+                          <span className="text-lg font-bold">{vibe.count}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
 
-                  <p className="text-xs text-neutral-400">
+                  <p className="text-[var(--text-micro)] text-neutral-500 pt-4 border-t border-blue-100">
                     Based on patterns across {totalContributions}{" "}
                     {totalContributions === 1 ? "perspective" : "perspectives"}
                     {totalUploads > 0 && ` + ${totalUploads} upload${totalUploads === 1 ? "" : "s"}`}
                   </p>
-                </div>
+                </CardShell>
               )}
             </div>
           </section>
@@ -452,12 +501,12 @@ export function PremierProfileClient({
         {/* SECTION 3: IN THEIR OWN WORDS (Voice Notes) */}
         {/* ============================================ */}
         {voiceContributions.length > 0 && (
-          <section className="py-12 px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl md:text-3xl font-serif text-neutral-900 mb-2">In Their Own Words</h2>
-                <p className="text-neutral-500">Unedited voice notes from people who know {firstName}</p>
-              </div>
+          <section className="py-[var(--space-section)] px-4 w-full">
+            <div className="mx-auto w-full max-w-6xl px-6">
+              <SectionHeading
+                title="In Their Own Words"
+                subtitle={`Unedited voice notes from people who know ${firstName}`}
+              />
 
               {/* Filter tabs */}
               <div className="flex justify-center mb-6">
@@ -468,8 +517,7 @@ export function PremierProfileClient({
                 />
               </div>
 
-              {/* Voice cards grid */}
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="mt-10 flex flex-wrap justify-center gap-8">
                 {filteredVoiceContributions.map((contribution) => {
                   if (!contribution?.id) return null
                   const audioUrl = safeString(contribution.voice_url) || safeString(contribution.audio_url)
@@ -480,20 +528,24 @@ export function PremierProfileClient({
                     ...safeArray(contribution.traits_category2),
                   ].slice(0, 5)
 
-                  // Get keywords for highlighting
                   const keywords = extractKeywordsFromText(safeString(contribution.written_note), allTraits, topSignals)
 
                   return (
-                    <div key={contribution.id} className="relative group">
-                      <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                        {/* Blue play button with waveform */}
+                    <div key={contribution.id} className="relative group flex-none w-[340px]">
+                      <CardShell variant="direct" className="w-full">
                         <div className="mb-4">
-                          <VoiceCard audioUrl={audioUrl} contributorName="" relationship="" traits={[]} compact />
+                          <VoiceCard
+                            audioUrl={audioUrl}
+                            contributorName={safeString(contribution.contributor_name, "Anonymous")}
+                            relationship={safeString(contribution.relationship, "Colleague")}
+                            traits={[]}
+                            compact
+                          />
                         </div>
 
                         {/* Written note with highlights */}
                         {safeString(contribution.written_note).trim() && (
-                          <p className="text-neutral-700 text-sm leading-relaxed mb-4">
+                          <p className="text-neutral-700 text-[var(--text-small)] leading-relaxed mb-4">
                             {highlightQuote(safeString(contribution.written_note), keywords)}
                           </p>
                         )}
@@ -507,35 +559,29 @@ export function PremierProfileClient({
                               const tier = getStrengthTier(count, maxTraitCount)
 
                               return (
-                                <span
-                                  key={`${trait}-${idx}`}
-                                  className={`px-2 py-0.5 text-xs rounded-full border ${
-                                    tier === "Core"
-                                      ? "bg-blue-50 text-blue-700 border-blue-200"
-                                      : tier === "Strong"
-                                        ? "bg-blue-50/50 text-blue-600 border-blue-100"
-                                        : "bg-neutral-50 text-neutral-600 border-neutral-200"
-                                  }`}
-                                >
+                                <Pill key={`${trait}-${idx}`} variant="trait" tier={tier}>
                                   {trait}
-                                </span>
+                                </Pill>
                               )
                             })}
                           </div>
                         )}
 
-                        {/* Contributor info */}
                         <div className="pt-3 border-t border-neutral-100">
-                          <p className="font-medium text-neutral-900 text-sm">
+                          <p className="font-medium text-[var(--nomee-near-black)] text-[var(--text-small)]">
                             {safeString(contribution.contributor_name, "Anonymous")}
                           </p>
-                          {!isEmptyOrZero(contribution.relationship) && (
-                            <p className="text-xs text-neutral-500">{contribution.relationship}</p>
+                          <p className="text-[var(--text-micro)] text-neutral-500 capitalize">
+                            {safeString(contribution.relationship, "Colleague").replace(/_/g, " ")}
+                          </p>
+                          {!isEmptyOrZero(contribution.contributor_company) && (
+                            <p className="text-[var(--text-micro)] text-neutral-400">
+                              {contribution.contributor_company}
+                            </p>
                           )}
                         </div>
-                      </div>
+                      </CardShell>
 
-                      {/* Pin button for owners */}
                       {isOwner && (
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           <PinButton
@@ -557,72 +603,58 @@ export function PremierProfileClient({
         {/* SECTION 4: PATTERN RECOGNITION */}
         {/* ============================================ */}
         {safeTraits.length > 0 && (
-          <section className="py-12 px-4">
+          <section className="py-[var(--space-section)] px-4">
             <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl md:text-3xl font-serif text-neutral-900 mb-2">Pattern Recognition</h2>
-                <p className="text-neutral-500">Not hand-picked — patterns emerge as more people contribute.</p>
+              <SectionHeading
+                title="Pattern Recognition"
+                subtitle="Not hand-picked — patterns emerge as more people contribute."
+              />
 
-                {/* Confidence badge */}
-                <div className="flex justify-center mt-4">
+              <div className="flex justify-center mt-4 mb-8">
+                <Pill variant="direct">
                   <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
+                    className={`w-1.5 h-1.5 rounded-full ${
                       confidenceLevel === "High"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        ? "bg-[var(--nomee-green)]"
                         : confidenceLevel === "Medium"
-                          ? "bg-amber-50 text-amber-700 border-amber-200"
-                          : "bg-slate-50 text-slate-600 border-slate-200"
+                          ? "bg-[var(--nomee-amber)]"
+                          : "bg-neutral-400"
                     }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        confidenceLevel === "High"
-                          ? "bg-emerald-500"
-                          : confidenceLevel === "Medium"
-                            ? "bg-amber-500"
-                            : "bg-slate-400"
-                      }`}
-                    />
-                    {confidenceLevel} confidence
-                  </span>
-                </div>
-                <p className="text-xs text-neutral-400 mt-3">
-                  Patterns are consistent across contributors.
-                  <br />
-                  <span className="italic">Darker = mentioned more often</span>
-                </p>
+                  />
+                  {confidenceLevel} confidence
+                </Pill>
               </div>
 
-              {/* Two-column layout */}
-              <div className="bg-white border border-neutral-200 rounded-2xl p-6 md:p-8">
+              <CardShell>
                 <div className="grid md:grid-cols-2 gap-8">
-                  {/* TOP SIGNALS */}
                   <div>
-                    <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4">
+                    <h3 className="text-[var(--text-micro)] font-semibold text-neutral-500 uppercase tracking-wider mb-4">
                       TOP SIGNALS
                     </h3>
                     <div className="space-y-2">
                       {topTraits.map((trait) => {
                         if (!trait?.label) return null
                         const tier = getStrengthTier(trait.count, maxTraitCount)
+                        const bgOpacity = 0.05 + (trait.count / maxTraitCount) * 0.15
+                        const borderOpacity = 0.1 + (trait.count / maxTraitCount) * 0.3
+                        const pillSize = trait.count >= 5 ? "lg" : trait.count >= 4 ? "md" : "sm"
 
                         return (
-                          <button
+                          <Pill
                             key={trait.label}
+                            variant="topSignal"
+                            tier={tier}
+                            count={trait.count}
+                            size={pillSize}
                             onClick={() => handleTraitFilterSelect(trait.label)}
-                            className={`flex items-center justify-between w-full px-4 py-3 rounded-lg border transition-all ${
-                              selectedTraitFilters.includes(trait.label)
-                                ? "bg-blue-50 border-blue-300 text-blue-800"
-                                : tier === "Core"
-                                  ? "bg-neutral-100 border-neutral-300 text-neutral-900"
-                                  : tier === "Strong"
-                                    ? "bg-neutral-50 border-neutral-200 text-neutral-800"
-                                    : "bg-white border-neutral-200 text-neutral-700"
-                            }`}
+                            isSelected={selectedTraitFilters.includes(trait.label)}
+                            style={{
+                              backgroundColor: `rgba(59, 130, 246, ${bgOpacity})`,
+                              borderColor: `rgba(59, 130, 246, ${borderOpacity})`,
+                            }}
                           >
-                            <span className={tier === "Core" ? "font-medium" : ""}>{trait.label}</span>
-                            <span className="text-sm text-blue-600 font-medium">×{trait.count}</span>
-                          </button>
+                            {trait.label}
+                          </Pill>
                         )
                       })}
                     </div>
@@ -630,7 +662,7 @@ export function PremierProfileClient({
 
                   {/* EMERGING SIGNALS */}
                   <div>
-                    <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4">
+                    <h3 className="text-[var(--text-micro)] font-semibold text-neutral-500 uppercase tracking-wider mb-4">
                       EMERGING SIGNALS
                     </h3>
                     <div className="flex flex-wrap gap-2">
@@ -639,68 +671,57 @@ export function PremierProfileClient({
                         const tier = getStrengthTier(trait.count, maxTraitCount)
 
                         return (
-                          <HeatPill
+                          <Pill
                             key={trait.label}
-                            label={trait.label}
-                            count={trait.count}
+                            variant="trait"
                             tier={tier}
-                            isSelected={selectedTraitFilters.includes(trait.label)}
+                            count={trait.count}
                             onClick={() => handleTraitFilterSelect(trait.label)}
-                            size="md"
-                          />
+                            isSelected={selectedTraitFilters.includes(trait.label)}
+                          >
+                            {trait.label}
+                          </Pill>
                         )
                       })}
                     </div>
                   </div>
                 </div>
+              </CardShell>
 
-                {/* View all traits */}
-                {safeTraits.length > topTraits.length + emergingTraits.length && (
-                  <div className="text-center mt-6 pt-6 border-t border-neutral-100">
-                    <button
-                      onClick={() => setShowAllTraits(!showAllTraits)}
-                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      {showAllTraits ? "Show less" : `View all ${safeTraits.length} traits`}
-                      <ChevronDown className={`w-4 h-4 transition-transform ${showAllTraits ? "rotate-180" : ""}`} />
-                    </button>
-                  </div>
-                )}
-
-                {/* Expanded traits */}
-                {showAllTraits && (
-                  <div className="mt-6 pt-6 border-t border-neutral-100">
-                    <div className="flex flex-wrap gap-2">
-                      {safeTraits.slice(topTraits.length + emergingTraits.length).map((trait) => {
-                        if (!trait?.label) return null
-                        const tier = getStrengthTier(trait.count, maxTraitCount)
-
-                        return (
-                          <HeatPill
-                            key={trait.label}
-                            label={trait.label}
-                            count={trait.count}
-                            tier={tier}
-                            isSelected={selectedTraitFilters.includes(trait.label)}
-                            onClick={() => handleTraitFilterSelect(trait.label)}
-                            size="sm"
-                          />
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Clear filters */}
-              {selectedTraitFilters.length > 0 && (
-                <div className="text-center mt-4">
+              {/* View all traits */}
+              {safeTraits.length > topTraits.length + emergingTraits.length && (
+                <div className="text-center mt-6 pt-6 border-t border-neutral-100">
                   <button
-                    onClick={() => setSelectedTraitFilters([])}
-                    className="text-sm text-neutral-500 hover:text-neutral-700 underline"
+                    onClick={() => setShowAllTraits(!showAllTraits)}
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
                   >
-                    Clear filters ({selectedTraitFilters.length} selected)
+                    {showAllTraits ? "Show less" : `View all ${safeTraits.length} traits`}
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showAllTraits ? "rotate-180" : ""}`} />
                   </button>
+                </div>
+              )}
+
+              {/* Expanded traits */}
+              {showAllTraits && (
+                <div className="mt-6 pt-6 border-t border-neutral-100">
+                  <div className="flex flex-wrap gap-2">
+                    {safeTraits.slice(topTraits.length + emergingTraits.length).map((trait) => {
+                      if (!trait?.label) return null
+                      const tier = getStrengthTier(trait.count, maxTraitCount)
+
+                      return (
+                        <HeatPill
+                          key={trait.label}
+                          label={trait.label}
+                          count={trait.count}
+                          tier={tier}
+                          isSelected={selectedTraitFilters.includes(trait.label)}
+                          onClick={() => handleTraitFilterSelect(trait.label)}
+                          size="sm"
+                        />
+                      )
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -708,16 +729,12 @@ export function PremierProfileClient({
         )}
 
         {/* ============================================ */}
-        {/* SECTION 5: HOW IT FEELS (Direct submissions only) */}
+        {/* SECTION 5: HOW IT FEELS (Direct text submissions only - NO voice) */}
         {/* ============================================ */}
         {writtenContributions.length > 0 && (
-          <section className="py-12 px-4">
+          <section className="py-[var(--space-section)] px-4 bg-white border-t border-[var(--nomee-neutral-border)]">
             <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl md:text-3xl font-serif text-neutral-900 mb-2">How it feels</h2>
-                <p className="text-neutral-500">Day-to-day collaboration style and working patterns</p>
-                <div className="w-16 h-px bg-neutral-300 mx-auto mt-4" />
-              </div>
+              <SectionHeading title="How it feels" subtitle="Day-to-day collaboration style and working patterns" />
 
               {/* Relationship Filter */}
               <div className="flex justify-center mb-6">
@@ -728,105 +745,98 @@ export function PremierProfileClient({
                 />
               </div>
 
-              {/* Masonry grid of cards */}
-              <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
-                {filteredWrittenContributions.map((contribution) => {
-                  if (!contribution?.id) return null
+              <div className="mx-auto max-w-6xl flex flex-wrap justify-center gap-8">
+                {filteredWrittenContributions
+                  .filter((c) => !c.voice_url && !c.audio_url)
+                  .map((contribution) => {
+                    if (!contribution?.id) return null
 
-                  const allTraits = [
-                    ...safeArray(contribution.traits_category1),
-                    ...safeArray(contribution.traits_category2),
-                    ...safeArray(contribution.traits_category3),
-                    ...safeArray(contribution.traits_category4),
-                  ]
-                  const keywords = extractKeywordsFromText(safeString(contribution.written_note), allTraits, topSignals)
-                  const hasVoice = contribution.voice_url || contribution.audio_url
-                  const audioUrl = safeString(contribution.voice_url) || safeString(contribution.audio_url)
+                    const allTraits = [
+                      ...safeArray(contribution.traits_category1),
+                      ...safeArray(contribution.traits_category2),
+                      ...safeArray(contribution.traits_category3),
+                      ...safeArray(contribution.traits_category4),
+                    ]
+                    const keywords = extractKeywordsFromText(
+                      safeString(contribution.written_note),
+                      allTraits,
+                      topSignals,
+                    )
 
-                  return (
-                    <div
-                      key={contribution.id}
-                      className="break-inside-avoid mb-4 bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative group"
-                    >
-                      {/* Source Badge */}
-                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-full w-fit mb-4">
-                        <MessageSquare className="w-3 h-3 text-blue-600" />
-                        <span className="text-[10px] font-medium text-blue-700">Nomee Submission</span>
+                    return (
+                      <div key={contribution.id} className="relative group flex-[0_1_360px] w-full max-w-[360px]">
+                        <CardShell variant="direct" className="w-full">
+                          <div className="mb-6">
+                            <Pill variant="direct" className="text-xs px-2 py-1">
+                              <MessageSquare className="w-2.5 h-2.5" />
+                              Nomee Submission
+                            </Pill>
+                          </div>
+
+                          {isOwner && (
+                            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <PinButton
+                                isPinned={isPinned("quote", contribution.id)}
+                                onPin={() => pinQuote(contribution.id, safeString(contribution.written_note))}
+                                onUnpin={() => unpin("quote", contribution.id)}
+                              />
+                            </div>
+                          )}
+
+                          {/* Written note */}
+                          {safeString(contribution.written_note).trim() && (
+                            <p className="text-neutral-700 text-[var(--text-small)] leading-relaxed mb-4">
+                              {highlightQuote(safeString(contribution.written_note), keywords)}
+                            </p>
+                          )}
+
+                          {/* Trait Pills */}
+                          {allTraits.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-4">
+                              {allTraits.slice(0, 5).map((trait, idx) => {
+                                const traitData = safeTraits.find(
+                                  (t) => t?.label?.toLowerCase() === trait.toLowerCase(),
+                                )
+                                const count = traitData?.count || 1
+                                const tier = getStrengthTier(count, maxTraitCount)
+
+                                return (
+                                  <Pill
+                                    key={`${trait}-${idx}`}
+                                    variant="trait"
+                                    tier={tier}
+                                    onClick={() => handleTraitFilterSelect(trait)}
+                                    isSelected={selectedTraitFilters.includes(trait)}
+                                  >
+                                    {trait}
+                                  </Pill>
+                                )
+                              })}
+                            </div>
+                          )}
+
+                          {/* Contributor Info */}
+                          <div className="pt-3 border-t border-neutral-100">
+                            <p className="font-medium text-[var(--nomee-near-black)] text-[var(--text-small)]">
+                              {safeString(contribution.contributor_name, "Anonymous")}
+                            </p>
+                            <p className="text-[var(--text-micro)] text-neutral-500 capitalize">
+                              {safeString(contribution.relationship, "Colleague").replace(/_/g, " ")}
+                            </p>
+                            {!isEmptyOrZero(contribution.contributor_company) && (
+                              <p className="text-[var(--text-micro)] text-neutral-400">
+                                {contribution.contributor_company}
+                              </p>
+                            )}
+                          </div>
+                        </CardShell>
                       </div>
-
-                      {/* Pin Button */}
-                      {isOwner && (
-                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <PinButton
-                            isPinned={isPinned("quote", contribution.id)}
-                            onPin={() => pinQuote(contribution.id, safeString(contribution.written_note))}
-                            onUnpin={() => unpin("quote", contribution.id)}
-                          />
-                        </div>
-                      )}
-
-                      {/* Voice player if applicable */}
-                      {hasVoice && audioUrl && (
-                        <div className="mb-4">
-                          <VoiceCard audioUrl={audioUrl} contributorName="" relationship="" traits={[]} compact />
-                        </div>
-                      )}
-
-                      {/* Written note */}
-                      {safeString(contribution.written_note).trim() && (
-                        <p className="text-neutral-700 text-sm leading-relaxed mb-4">
-                          {highlightQuote(safeString(contribution.written_note), keywords)}
-                        </p>
-                      )}
-
-                      {/* Trait Pills */}
-                      {allTraits.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-4">
-                          {allTraits.slice(0, 5).map((trait, idx) => {
-                            const traitData = safeTraits.find((t) => t?.label?.toLowerCase() === trait.toLowerCase())
-                            const count = traitData?.count || 1
-                            const tier = getStrengthTier(count, maxTraitCount)
-
-                            return (
-                              <span
-                                key={`${trait}-${idx}`}
-                                onClick={() => handleTraitFilterSelect(trait)}
-                                className={`px-2 py-0.5 text-xs rounded-full border cursor-pointer transition-all ${
-                                  selectedTraitFilters.includes(trait)
-                                    ? "bg-blue-100 text-blue-800 border-blue-300"
-                                    : tier === "Core"
-                                      ? "bg-blue-50 text-blue-700 border-blue-200"
-                                      : tier === "Strong"
-                                        ? "bg-blue-50/50 text-blue-600 border-blue-100"
-                                        : "bg-neutral-50 text-neutral-600 border-neutral-200"
-                                }`}
-                              >
-                                {trait}
-                              </span>
-                            )
-                          })}
-                        </div>
-                      )}
-
-                      {/* Contributor Info */}
-                      <div className="pt-3 border-t border-neutral-100">
-                        <p className="font-medium text-neutral-900 text-sm">
-                          {safeString(contribution.contributor_name, "Anonymous")}
-                        </p>
-                        {!isEmptyOrZero(contribution.relationship) && (
-                          <p className="text-xs text-neutral-500">{contribution.relationship}</p>
-                        )}
-                        {!isEmptyOrZero(contribution.contributor_company) && (
-                          <p className="text-xs text-neutral-400">{contribution.contributor_company}</p>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
               </div>
 
               {/* Empty State */}
-              {filteredWrittenContributions.length === 0 && (
+              {filteredWrittenContributions.filter((c) => !c.voice_url && !c.audio_url).length === 0 && (
                 <div className="text-center py-12 text-neutral-500">
                   <p>No feedback matches the current filters.</p>
                   {selectedTraitFilters.length > 0 && (
@@ -847,16 +857,13 @@ export function PremierProfileClient({
         {/* SECTION 6: SCREENSHOTS AND HIGHLIGHTS (Imported only) */}
         {/* ============================================ */}
         {importedFeedback.length > 0 && (
-          <section className="py-12 px-4 bg-white border-t border-neutral-100">
+          <section className="py-[var(--space-section)] px-4 bg-white border-t border-[var(--nomee-neutral-border)]">
             <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl md:text-3xl font-serif text-neutral-900 mb-2">Screenshots and highlights</h2>
-                <p className="text-neutral-500">
-                  {firstName} saved {importedFeedback.length} pieces of feedback
-                </p>
-              </div>
+              <SectionHeading
+                title="Screenshots and highlights"
+                subtitle={`${firstName} saved ${importedFeedback.length} pieces of feedback`}
+              />
 
-              {/* Grid of imported cards */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredImportedFeedback.map((feedback) => {
                   if (!feedback?.id) return null
@@ -868,44 +875,39 @@ export function PremierProfileClient({
                     topSignals,
                   )
 
-                  // Determine source badge
-                  const sourceType = safeString(feedback.source_type, "").toLowerCase()
+                  const sourceType = safeString(feedback.source_type, "upload").toLowerCase()
                   const isLinkedIn = sourceType.includes("linkedin")
                   const isEmail = sourceType.includes("email")
+                  const sourceLabel = isLinkedIn ? "LinkedIn" : isEmail ? "Email" : "Upload"
 
                   return (
-                    <div
-                      key={feedback.id}
-                      className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow"
-                    >
+                    <CardShell key={feedback.id} variant="imported">
+                      {/* Source pill at top - EVERY card has one */}
+                      <div className="mb-4">
+                        <Pill variant="imported" className="text-xs">
+                          {sourceLabel}
+                        </Pill>
+                      </div>
+
                       {/* Quote text */}
-                      <p className="text-neutral-700 text-sm leading-relaxed mb-4">
+                      <p className="text-neutral-700 text-[var(--text-small)] leading-relaxed mb-4">
                         {highlightQuote(safeString(feedback.ai_extracted_excerpt), keywords)}
                       </p>
 
-                      {/* Contributor Info with source badge */}
-                      <div className="pt-3 border-t border-neutral-100 flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-neutral-900 text-sm">
-                            {safeString(feedback.giver_name, "Anonymous")}
+                      <div className="pt-3 border-t border-neutral-100">
+                        <p className="font-medium text-[var(--nomee-near-black)] text-[var(--text-small)]">
+                          {safeString(feedback.giver_name, "Anonymous")}
+                        </p>
+                        {!isEmptyOrZero(feedback.giver_relationship) && (
+                          <p className="text-[var(--text-micro)] text-neutral-500 capitalize">
+                            {safeString(feedback.giver_relationship, "Colleague").replace(/_/g, " ")}
                           </p>
-                          {!isEmptyOrZero(feedback.giver_company) && (
-                            <p className="text-xs text-neutral-400">{feedback.giver_company}</p>
-                          )}
-                        </div>
-
-                        {/* Source Badge */}
-                        {(isLinkedIn || isEmail) && (
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded ${
-                              isLinkedIn ? "bg-blue-600 text-white" : "bg-neutral-200 text-neutral-700"
-                            }`}
-                          >
-                            {isLinkedIn ? "LinkedIn" : "Email"}
-                          </span>
+                        )}
+                        {!isEmptyOrZero(feedback.giver_company) && (
+                          <p className="text-[var(--text-micro)] text-neutral-400">{feedback.giver_company}</p>
                         )}
                       </div>
-                    </div>
+                    </CardShell>
                   )
                 })}
               </div>
@@ -929,14 +931,16 @@ export function PremierProfileClient({
         {/* ============================================ */}
         {/* SECTION 7: BUILD YOUR OWN NOMEE CTA (BLACK BG) */}
         {/* ============================================ */}
-        <section className="py-16 px-4 bg-neutral-900">
+        <section className="py-16 px-4 bg-[var(--nomee-near-black)]">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-serif text-white mb-4">Build your own Nomee profile</h2>
-            <p className="text-neutral-400 mb-8 leading-relaxed">
+            <h2 className="text-[var(--text-section)] md:text-[2.5rem] font-serif text-white mb-4">
+              Build your own Nomee profile
+            </h2>
+            <p className="text-neutral-400 text-[var(--text-body)] mb-8 leading-relaxed">
               Get feedback from people you've worked with. Create a profile that shows how you collaborate, solve
               problems, and make an impact.
             </p>
-            <Button asChild size="lg" className="bg-white text-neutral-900 hover:bg-neutral-100 px-8">
+            <Button asChild size="lg" className="bg-white text-[var(--nomee-near-black)] hover:bg-neutral-100 px-8">
               <Link href="/auth/signup">Get started for free</Link>
             </Button>
           </div>
