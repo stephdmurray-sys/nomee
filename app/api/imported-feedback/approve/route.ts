@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
     const updateData: any = {
       approved_by_owner: true,
       approved_at: new Date().toISOString(),
+      visibility: updates?.visibility || "public",
     }
 
     if (updates) {
@@ -63,7 +64,6 @@ export async function POST(request: NextRequest) {
       if (updates.sourceType !== undefined) updateData.source_type = updates.sourceType
       if (updates.approxDate !== undefined) updateData.approx_date = updates.approxDate
       if (updates.traits) updateData.traits = updates.traits
-      if (updates.visibility) updateData.visibility = updates.visibility
     }
 
     const { error: updateError } = await supabase.from("imported_feedback").update(updateData).eq("id", feedbackId)
