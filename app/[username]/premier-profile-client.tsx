@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Share2, Copy } from "lucide-react"
+import { Share2, Copy, MessageSquare, Upload, Info } from "lucide-react"
 import { VoiceCard } from "@/components/voice-card"
 import { AiPatternSummary } from "@/components/ai-pattern-summary"
 import { RelationshipFilter } from "@/components/relationship-filter"
@@ -17,6 +17,7 @@ import { ProofSnapshot } from "@/components/proof-snapshot"
 import { PremierSignalBar } from "@/components/premier-signal-bar"
 import { usePinnedHighlights, PinnedHighlightsDisplay, PinButton } from "@/components/pinned-highlights"
 import { SmartVibePills } from "@/components/smart-vibe-pills"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface PremierProfileClientProps {
   profile: Profile
@@ -369,17 +370,7 @@ export function PremierProfileClient({
         </div>
       </section>
 
-      {profileAnalysis.counts.contributions + profileAnalysis.counts.uploads >= 3 && (
-        <section className="w-full border-b border-neutral-100">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <PremierSignalBar
-              allCards={allCards}
-              traitSignals={profileAnalysis.traitSignals}
-              totalContributions={profileAnalysis.counts.contributions + profileAnalysis.counts.uploads}
-            />
-          </div>
-        </section>
-      )}
+      {/* The section that was here (lines ~370-383) has been removed */}
 
       {pinnedItems.length > 0 && (
         <section className="w-full bg-amber-50/30 border-b border-amber-100">
@@ -763,17 +754,17 @@ export function PremierProfileClient({
                         const highlightedText = highlightQuote(
                           contribution.excerpt || "",
                           keywords,
-                          8, // max highlights
-                          true, // enableTwoTone
-                          true, // useMarkerStyle
-                          selectedVibeFilters, // selected vibes
-                          topSignals, // top signals
+                          8,
+                          true,
+                          true,
+                          selectedVibeFilters,
+                          topSignals,
                         )
 
                         return (
                           <div
                             key={contribution.id}
-                            className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative group"
+                            className="break-inside-avoid rounded-xl p-6 bg-gradient-to-br from-sky-50/50 to-white border border-sky-100 hover:border-sky-200 hover:shadow-sm transition-all relative group"
                           >
                             {isOwner && (
                               <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -793,51 +784,69 @@ export function PremierProfileClient({
                             )}
 
                             <div className="absolute top-3 left-3">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-white text-neutral-600 border border-neutral-200">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-sky-100 text-sky-700 border border-sky-200">
+                                <MessageSquare className="w-2.5 h-2.5" />
                                 Direct
                               </span>
                             </div>
 
-                            <div className="pt-4">
+                            <div className="pt-6">
                               <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
 
                               {allTraits.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mb-4">
-                                  {allTraits.slice(0, 5).map((trait, idx) => (
-                                    <span
-                                      key={idx}
-                                      className={`
-                                    px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer
-                                    ${
-                                      selectedTraitFilters.includes(trait)
-                                        ? "bg-blue-100 text-blue-800 border-blue-300"
-                                        : "bg-blue-50 text-blue-700 border-blue-100 hover:border-blue-200 hover:bg-blue-100"
-                                    }
-                                  `}
-                                      onClick={() => handleTraitFilterSelect(trait)}
-                                    >
-                                      {trait}
-                                    </span>
-                                  ))}
+                                  {allTraits.slice(0, 5).map((trait, idx) => {
+                                    const traitCount =
+                                      profileAnalysis.traitSignals.find(
+                                        (s) => s.label.toLowerCase() === trait.toLowerCase(),
+                                      )?.count || 1
+                                    return (
+                                      <TooltipProvider key={idx} delayDuration={200}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <span
+                                              className={`
+                                                px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer
+                                                shadow-sm hover:shadow
+                                                ${
+                                                  selectedTraitFilters.includes(trait)
+                                                    ? "bg-blue-100 text-blue-800 border-blue-300 shadow-blue-100"
+                                                    : "bg-blue-50 text-blue-700 border-blue-100 hover:border-blue-200 hover:bg-blue-100"
+                                                }
+                                              `}
+                                              onClick={() => handleTraitFilterSelect(trait)}
+                                            >
+                                              {trait}
+                                            </span>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="top" className="max-w-xs p-2">
+                                            <p className="text-xs">
+                                              Appears in {traitCount} contribution{traitCount !== 1 ? "s" : ""}
+                                            </p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    )
+                                  })}
                                 </div>
                               )}
 
                               <div className="border-t border-neutral-100 pt-3">
                                 <div className="text-sm font-semibold text-neutral-900">
-                                  {contribution.contributor_name}
+                                  {contribution.contributor_name || "Anonymous"}
                                 </div>
-                                {contribution.relationship && (
+                                {contribution.relationship && contribution.relationship !== "0" && (
                                   <div className="text-xs text-neutral-600 capitalize mt-0.5">
                                     {contribution.relationship.replace(/_/g, " ")}
                                   </div>
                                 )}
-                                {contribution.contributor_company ? (
+                                {contribution.contributor_company &&
+                                contribution.contributor_company !== "0" &&
+                                contribution.contributor_company.trim() !== "" ? (
                                   <div className="text-xs text-neutral-500 mt-0.5">
                                     {contribution.contributor_company}
                                   </div>
-                                ) : (
-                                  <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
-                                )}
+                                ) : null}
                               </div>
                             </div>
                           </div>
@@ -867,7 +876,7 @@ export function PremierProfileClient({
                         return (
                           <div
                             key={feedback.id}
-                            className="break-inside-avoid rounded-xl p-6 bg-gradient-to-br from-slate-50 to-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative group"
+                            className="break-inside-avoid rounded-xl p-6 bg-gradient-to-br from-amber-50/50 to-white border border-amber-100 hover:border-amber-200 hover:shadow-sm transition-all relative group"
                           >
                             {isOwner && (
                               <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -883,10 +892,11 @@ export function PremierProfileClient({
                             )}
 
                             <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-200">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                                <Upload className="w-2.5 h-2.5" />
                                 Imported
                               </span>
-                              {feedback.source_type && (
+                              {feedback.source_type && feedback.source_type !== "0" && (
                                 <span
                                   className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
                                     feedback.source_type === "LinkedIn"
@@ -901,44 +911,82 @@ export function PremierProfileClient({
                               )}
                             </div>
 
-                            <div className="pt-6">
+                            <div className="pt-8">
                               <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
 
-                              {feedback.traits?.length > 0 && (
+                              {feedback.traits && feedback.traits.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mb-4">
-                                  {feedback.traits.slice(0, 4).map((trait, idx) => (
-                                    <span
-                                      key={idx}
-                                      className={`
-                                    px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer
-                                    ${
-                                      selectedTraitFilters.includes(trait)
-                                        ? "bg-amber-100 text-amber-800 border-amber-300"
-                                        : "bg-amber-50 text-amber-700 border-amber-100 hover:border-amber-200 hover:bg-amber-100"
-                                    }
-                                  `}
-                                      onClick={() => handleTraitFilterSelect(trait)}
-                                    >
-                                      {trait}
-                                    </span>
-                                  ))}
+                                  {feedback.traits.slice(0, 4).map((trait, idx) => {
+                                    const traitCount =
+                                      profileAnalysis.traitSignals.find(
+                                        (s) => s.label.toLowerCase() === trait.toLowerCase(),
+                                      )?.count || 1
+                                    return (
+                                      <TooltipProvider key={idx} delayDuration={200}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <span
+                                              className={`
+                                                px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer
+                                                shadow-sm hover:shadow
+                                                ${
+                                                  selectedTraitFilters.includes(trait)
+                                                    ? "bg-amber-100 text-amber-800 border-amber-300 shadow-amber-100"
+                                                    : "bg-amber-50 text-amber-700 border-amber-100 hover:border-amber-200 hover:bg-amber-100"
+                                                }
+                                              `}
+                                              onClick={() => handleTraitFilterSelect(trait)}
+                                            >
+                                              {trait}
+                                            </span>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="top" className="max-w-xs p-2">
+                                            <p className="text-xs">
+                                              Appears in {traitCount} contribution{traitCount !== 1 ? "s" : ""}
+                                            </p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    )
+                                  })}
                                 </div>
                               )}
 
                               <div className="border-t border-neutral-100 pt-3">
-                                <div className="text-sm font-semibold text-neutral-900">{feedback.giver_name}</div>
-                                {feedback.giver_title && (
-                                  <div className="text-xs text-neutral-600 mt-0.5">{feedback.giver_title}</div>
+                                {feedback.giver_name && feedback.giver_name !== "0" && (
+                                  <div className="text-sm font-semibold text-neutral-900">{feedback.giver_name}</div>
                                 )}
-                                {feedback.giver_company ? (
+                                {feedback.giver_title &&
+                                  feedback.giver_title !== "0" &&
+                                  feedback.giver_title.trim() !== "" && (
+                                    <div className="text-xs text-neutral-600 mt-0.5">{feedback.giver_title}</div>
+                                  )}
+                                {feedback.giver_company &&
+                                feedback.giver_company !== "0" &&
+                                feedback.giver_company.trim() !== "" ? (
                                   <div className="text-xs text-neutral-500 mt-0.5">{feedback.giver_company}</div>
-                                ) : (
-                                  <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
+                                ) : null}
+                                {feedback.extraction_confidence && feedback.extraction_confidence > 0 && (
+                                  <div className="text-[10px] text-neutral-400 mt-2 flex items-center gap-1.5">
+                                    <TooltipProvider delayDuration={200}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className="inline-flex items-center gap-1 cursor-help">
+                                            <span className="inline-block w-1 h-1 bg-amber-400 rounded-full"></span>
+                                            Extraction confidence: {Math.round(feedback.extraction_confidence * 100)}%
+                                            <Info className="w-3 h-3 text-neutral-400" />
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-xs p-2">
+                                          <p className="text-xs">
+                                            How confident we are that the screenshot text was read correctly (OCR +
+                                            parsing).
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
                                 )}
-                                <div className="text-[10px] text-neutral-400 mt-2 flex items-center gap-1">
-                                  <span className="inline-block w-1 h-1 bg-neutral-300 rounded-full"></span>
-                                  Extracted from screenshot
-                                </div>
                               </div>
                             </div>
                           </div>
