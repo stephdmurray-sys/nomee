@@ -12,6 +12,7 @@ import type { Profile, Contribution, ImportedFeedback } from "@/lib/types"
 import type { ProfileAnalysis } from "@/lib/build-profile-analysis"
 import { highlightQuote } from "@/lib/highlight-quote"
 import { extractKeywordsFromText } from "@/lib/extract-keywords-from-text"
+import { PremierTraitBar } from "@/components/premier-trait-bar"
 
 interface PremierProfileClientProps {
   profile: Profile
@@ -66,6 +67,8 @@ export function PremierProfileClient({
     return !mentionsDifferentName
   })
 
+  const [selectedTraitFilters, setSelectedTraitFilters] = useState<string[]>([])
+  const [sourceFilter, setSourceFilter] = useState<"all" | "nomee" | "imported">("all")
   const [selectedTraits, setSelectedTraits] = useState<string[]>([])
   const [hoveredTrait, setHoveredTrait] = useState<string | null>(null)
   const [selectedHeatmapTrait, setSelectedHeatmapTrait] = useState<string | null>(null)
@@ -83,10 +86,61 @@ export function PremierProfileClient({
     return contributions.filter((c) => c.written_note?.trim())
   }, [contributions])
 
+  const allCards = useMemo(() => {
+    const nomeeCards = howItFeelsContributions.map((c) => ({
+      id: c.id,
+      excerpt: c.written_note || "",
+      traits: [...(c.traits_category1 || []), ...(c.traits_category2 || []), ...(c.traits_category3 || [])],
+      type: "nomee" as const,
+    }))
+
+    const importedCards = importedFeedback.map((f) => ({
+      id: f.id,
+      excerpt: f.ai_extracted_excerpt || "",
+      traits: f.traits || [],
+      type: "imported" as const,
+    }))
+
+    return [...nomeeCards, ...importedCards]
+  }, [howItFeelsContributions, importedFeedback])
+
   const filteredHowItFeels = useMemo(() => {
-    if (howItFeelsRelationshipFilter === "All") return howItFeelsContributions
-    return howItFeelsContributions.filter((c) => c.relationship_category === howItFeelsRelationshipFilter)
-  }, [howItFeelsContributions, howItFeelsRelationshipFilter])
+    let filtered = howItFeelsContributions
+
+    if (howItFeelsRelationshipFilter !== "All") {
+      filtered = filtered.filter((c) => c.relationship_category === howItFeelsRelationshipFilter)
+    }
+
+    if (selectedTraitFilters.length > 0) {
+      filtered = filtered.filter((c) => {
+        const allTraits = [...(c.traits_category1 || []), ...(c.traits_category2 || []), ...(c.traits_category3 || [])]
+        return selectedTraitFilters.some((t) => allTraits.includes(t))
+      })
+    }
+
+    return filtered
+  }, [howItFeelsContributions, howItFeelsRelationshipFilter, selectedTraitFilters])
+
+  const filteredImportedFeedback = useMemo(() => {
+    if (selectedTraitFilters.length === 0) return importedFeedback
+    return importedFeedback.filter((f) => {
+      return selectedTraitFilters.some((t) => f.traits?.includes(t))
+    })
+  }, [importedFeedback, selectedTraitFilters])
+
+  const handleTraitFilterSelect = (trait: string) => {
+    setSelectedTraitFilters((prev) => {
+      if (prev.includes(trait)) {
+        return prev.filter((t) => t !== trait)
+      }
+      if (prev.length >= 2) return prev // Block 3rd selection
+      return [...prev, trait]
+    })
+  }
+
+  const handleClearFilters = () => {
+    setSelectedTraitFilters([])
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => setHeroVisible(true), 100)
@@ -483,10 +537,10 @@ export function PremierProfileClient({
       )}
 
       {/* How it feels Section */}
-      {howItFeelsContributions.length > 0 && (
+      {(howItFeelsContributions.length > 0 || importedFeedback.length > 0) && (
         <section className="w-full bg-neutral-50">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="space-y-3 max-w-2xl mx-auto text-center">
                 <h3 className="text-2xl sm:text-3xl font-semibold text-neutral-900">How it feels</h3>
                 <p className="text-sm text-neutral-500 leading-relaxed">
@@ -494,15 +548,37 @@ export function PremierProfileClient({
                 </p>
               </div>
 
-              <div className="flex justify-center">
-                <RelationshipFilter
-                  contributions={howItFeelsContributions}
-                  selectedCategory={howItFeelsRelationshipFilter}
-                  onCategoryChange={setHowItFeelsRelationshipFilter}
-                />
+              <PremierTraitBar
+                allCards={allCards}
+                selectedTraits={selectedTraitFilters}
+                onTraitSelect={handleTraitFilterSelect}
+                onClearFilters={handleClearFilters}
+                sourceFilter={sourceFilter}
+              />
+
+              <div className="flex justify-center gap-2">
+                {(["all", "nomee", "imported"] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setSourceFilter(filter)}
+                    className={`
+                      px-4 py-2 text-sm font-medium rounded-full border transition-all
+                      ${
+                        sourceFilter === filter
+                          ? "bg-neutral-900 text-white border-neutral-900"
+                          : "bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300"
+                      }
+                    `}
+                  >
+                    {filter === "all" && `All (${allCards.length})`}
+                    {filter === "nomee" && `Direct (${howItFeelsContributions.length})`}
+                    {filter === "imported" && `Imported (${importedFeedback.length})`}
+                  </button>
+                ))}
               </div>
 
-              {filteredHowItFeels.length > 0 ? (
+              {/* Cards Grid */}
+              {(sourceFilter === "all" || sourceFilter === "nomee") && filteredHowItFeels.length > 0 && (
                 <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
                   {filteredHowItFeels.map((contribution) => {
                     const allTraits = [
@@ -511,57 +587,136 @@ export function PremierProfileClient({
                       ...(contribution.traits_category3 || []),
                     ]
                     const keywords = extractKeywordsFromText(contribution.written_note || "", allTraits)
-                    const highlightedText = highlightQuote(contribution.written_note || "", keywords, 4)
+                    const highlightedText = highlightQuote(contribution.written_note || "", keywords, 4, true)
 
                     return (
                       <div
                         key={contribution.id}
-                        className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all"
+                        className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative"
                       >
-                        <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
+                        <div className="absolute top-3 left-3">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-white text-neutral-600 border border-neutral-200">
+                            Direct
+                          </span>
+                        </div>
 
-                        {(contribution.traits_category1?.length ||
-                          contribution.traits_category2?.length ||
-                          contribution.traits_category3?.length) && (
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {allTraits.slice(0, 5).map((trait, idx) => (
-                              <span
-                                key={idx}
-                                className="px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100 hover:border-blue-200 hover:bg-blue-100 transition-colors"
-                              >
-                                {trait}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                        <div className="pt-4">
+                          <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
 
-                        <div className="border-t border-neutral-100 pt-3">
-                          <div className="text-sm font-semibold text-neutral-900">{contribution.contributor_name}</div>
-                          {contribution.relationship && (
-                            <div className="text-xs text-neutral-600 capitalize mt-0.5">
-                              {contribution.relationship.replace(/_/g, " ")}
+                          {allTraits.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {allTraits.slice(0, 5).map((trait, idx) => (
+                                <span
+                                  key={idx}
+                                  className={`
+                                    px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer
+                                    ${
+                                      selectedTraitFilters.includes(trait)
+                                        ? "bg-blue-100 text-blue-800 border-blue-300"
+                                        : "bg-blue-50 text-blue-700 border-blue-100 hover:border-blue-200 hover:bg-blue-100"
+                                    }
+                                  `}
+                                  onClick={() => handleTraitFilterSelect(trait)}
+                                >
+                                  {trait}
+                                </span>
+                              ))}
                             </div>
                           )}
-                          {contribution.contributor_company ? (
-                            <div className="text-xs text-neutral-500 mt-0.5">{contribution.contributor_company}</div>
-                          ) : (
-                            <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
-                          )}
+
+                          <div className="border-t border-neutral-100 pt-3">
+                            <div className="text-sm font-semibold text-neutral-900">
+                              {contribution.contributor_name}
+                            </div>
+                            {contribution.relationship && (
+                              <div className="text-xs text-neutral-600 capitalize mt-0.5">
+                                {contribution.relationship.replace(/_/g, " ")}
+                              </div>
+                            )}
+                            {contribution.contributor_company ? (
+                              <div className="text-xs text-neutral-500 mt-0.5">{contribution.contributor_company}</div>
+                            ) : (
+                              <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )
                   })}
                 </div>
-              ) : (
+              )}
+
+              {/* Imported Cards Grid */}
+              {(sourceFilter === "all" || sourceFilter === "imported") && filteredImportedFeedback.length > 0 && (
+                <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+                  {filteredImportedFeedback.map((feedback) => {
+                    const feedbackTraits = feedback.traits || []
+                    const keywords = extractKeywordsFromText(feedback.ai_extracted_excerpt || "", feedbackTraits)
+                    const highlightedText = highlightQuote(feedback.ai_extracted_excerpt || "", keywords, 4, true)
+
+                    return (
+                      <div
+                        key={feedback.id}
+                        className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative"
+                      >
+                        <div className="absolute top-3 left-3">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-200">
+                            Imported
+                          </span>
+                        </div>
+
+                        <div className="pt-4">
+                          <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
+
+                          {feedbackTraits.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {feedbackTraits.slice(0, 4).map((trait, idx) => (
+                                <span
+                                  key={idx}
+                                  className={`
+                                    px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer
+                                    ${
+                                      selectedTraitFilters.includes(trait)
+                                        ? "bg-blue-100 text-blue-800 border-blue-300"
+                                        : "bg-blue-50 text-blue-700 border-blue-100 hover:border-blue-200 hover:bg-blue-100"
+                                    }
+                                  `}
+                                  onClick={() => handleTraitFilterSelect(trait)}
+                                >
+                                  {trait}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="border-t border-neutral-100 pt-3">
+                            <div className="text-sm font-semibold text-neutral-900">{feedback.giver_name}</div>
+                            {feedback.giver_title && (
+                              <div className="text-xs text-neutral-600 mt-0.5">{feedback.giver_title}</div>
+                            )}
+                            {feedback.giver_company ? (
+                              <div className="text-xs text-neutral-500 mt-0.5">{feedback.giver_company}</div>
+                            ) : (
+                              <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
+                            )}
+                            <div className="text-[10px] text-neutral-400 mt-2">Extracted from screenshot</div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Empty state */}
+              {filteredHowItFeels.length === 0 && filteredImportedFeedback.length === 0 && (
                 <div className="text-center py-8">
-                  <p className="text-neutral-600">
-                    No written perspectives yet from {howItFeelsRelationshipFilter.toLowerCase()}.
-                  </p>
+                  <p className="text-neutral-600">No perspectives match the selected filters.</p>
                   <button
-                    onClick={() => setHowItFeelsRelationshipFilter("All")}
-                    className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium min-h-[44px] px-4"
+                    onClick={handleClearFilters}
+                    className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
-                    View all perspectives
+                    Clear filters
                   </button>
                 </div>
               )}

@@ -504,6 +504,21 @@
   background: linear-gradient(135deg, rgba(191, 219, 254, 0.9), rgba(147, 197, 253, 0.7));
 }
 
+/* Add yellow/amber highlight for impact phrases (two-tone system) */
+.nomee-highlight-impact {
+  background: linear-gradient(135deg, rgba(254, 249, 195, 0.8), rgba(253, 224, 71, 0.4));
+  color: inherit;
+  padding: 0 4px;
+  border-radius: 6px;
+  font-weight: 500;
+  animation: highlight-fade-in 200ms ease-out;
+  transition: background 150ms ease;
+}
+
+.nomee-highlight-impact:hover {
+  background: linear-gradient(135deg, rgba(253, 224, 71, 0.6), rgba(250, 204, 21, 0.5));
+}
+
 @keyframes highlight-fade-in {
   from {
     opacity: 0;
@@ -511,7 +526,6 @@
   }
   to {
     opacity: 1;
-    background: linear-gradient(135deg, rgba(219, 234, 254, 0.8), rgba(191, 219, 254, 0.6));
   }
 }
 
