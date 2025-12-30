@@ -6,10 +6,17 @@ import type { HighlightPattern } from "./extract-highlight-patterns"
  * GUARANTEE: Always returns at least 1 keyword that EXISTS in the text
  * Priority: Selected traits > Impactful descriptors > Impact verbs > Fallback from text
  */
-export function extractKeywordsFromText(text: string, traits: string[] = []): HighlightPattern[] {
-  if (!text || text.trim().length === 0) {
+export function extractKeywordsFromText(
+  text: string,
+  traits: string[] = [],
+  topSignals: string[] = [],
+): HighlightPattern[] {
+  if (!text || typeof text !== "string" || text.trim().length === 0) {
     return []
   }
+
+  const safeTraits = Array.isArray(traits) ? traits : []
+  const safeTopSignals = Array.isArray(topSignals) ? topSignals : []
 
   const keywords: HighlightPattern[] = []
   const textLower = text.toLowerCase()
@@ -175,8 +182,9 @@ export function extractKeywordsFromText(text: string, traits: string[] = []): Hi
   }
 
   // TIER 1: Selected Traits (up to 2, must be 1-2 words AND exist in text)
-  if (traits.length > 0) {
-    traits.slice(0, 3).forEach((trait) => {
+  if (safeTraits.length > 0) {
+    safeTraits.slice(0, 3).forEach((trait) => {
+      if (!trait || typeof trait !== "string") return // Null check
       const traitLower = trait.toLowerCase()
       const traitWords = traitLower.split(/\s+/)
 
@@ -187,6 +195,25 @@ export function extractKeywordsFromText(text: string, traits: string[] = []): Hi
           tier: "theme",
           frequency: 1,
         })
+      }
+    })
+  }
+
+  // TIER 1.5: Top Signals from page analysis
+  if (safeTopSignals.length > 0 && keywords.length < 4) {
+    safeTopSignals.slice(0, 3).forEach((signal) => {
+      if (!signal || typeof signal !== "string") return
+      if (keywords.length >= 4) return
+      const signalLower = signal.toLowerCase()
+      if (phraseExistsInText(signalLower) && isValidKeyword(signalLower)) {
+        // Check if already added
+        if (!keywords.some((k) => k.phrase === signalLower)) {
+          keywords.push({
+            phrase: signalLower,
+            tier: "signal",
+            frequency: 1,
+          })
+        }
       }
     })
   }

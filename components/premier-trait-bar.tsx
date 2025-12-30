@@ -3,28 +3,35 @@
 import { useState, useMemo } from "react"
 import { ChevronDown, X, Sparkles } from "lucide-react"
 
-interface TraitCount {
-  trait: string
+interface Contribution {
+  id: string
+  written_note?: string | null
+  traits_category1?: string[] | null
+  traits_category2?: string[] | null
+  traits_category3?: string[] | null
+  traits_category4?: string[] | null
+}
+
+interface ImportedFeedback {
+  id: string
+  ai_extracted_excerpt?: string | null
+  traits?: string[] | null
+}
+
+interface TraitWithCount {
+  label: string
   count: number
-  confidence: "High" | "Med" | "Low"
-  type: "Top signal" | "Emerging"
-  cards: Array<{ id: string; excerpt: string }>
+  weightedCount: number
+  category: string
+  examples: string[]
 }
 
 interface PremierTraitBarProps {
-  allCards: Array<{
-    id: string
-    excerpt: string
-    traits: string[]
-    type: "nomee" | "imported"
-  }>
+  traits: TraitWithCount[]
   selectedTraits: string[]
   onTraitSelect: (trait: string) => void
-  onClearFilters: () => void
-  maxTraits?: number
-  sourceFilter: "all" | "nomee" | "imported"
-  totalPeople?: number
-  totalUploads?: number
+  contributions: Contribution[]
+  importedFeedback: ImportedFeedback[]
 }
 
 function safeArray<T>(arr: T[] | null | undefined): T[] {
@@ -40,69 +47,34 @@ function safeNumber(num: number | null | undefined, fallback = 0): number {
 }
 
 export function PremierTraitBar({
-  allCards,
+  traits,
   selectedTraits,
   onTraitSelect,
-  onClearFilters,
-  maxTraits = 6,
-  sourceFilter,
-  totalPeople = 0,
-  totalUploads = 0,
+  contributions,
+  importedFeedback,
 }: PremierTraitBarProps) {
   const [showAllTraits, setShowAllTraits] = useState(false)
 
-  const safeAllCards = safeArray(allCards)
+  const safeTraits = safeArray(traits)
   const safeSelectedTraits = safeArray(selectedTraits)
+  const safeContributions = safeArray(contributions)
+  const safeImportedFeedback = safeArray(importedFeedback)
 
-  // Compute trait counts from visible cards based on sourceFilter
+  const totalPeople = safeContributions.length
+  const totalUploads = safeImportedFeedback.length
+
+  // Use traits directly - they come pre-computed from page.tsx
   const traitCounts = useMemo(() => {
-    const filteredCards =
-      sourceFilter === "all" ? safeAllCards : safeAllCards.filter((card) => card?.type === sourceFilter)
+    return safeTraits.map((trait, idx) => ({
+      trait: trait?.label || "",
+      count: trait?.count || 0,
+      confidence:
+        (trait?.count || 0) >= 3 ? "High" : (trait?.count || 0) >= 2 ? "Med" : ("Low" as "High" | "Med" | "Low"),
+      type: (idx < 6 ? "Top signal" : "Emerging") as "Top signal" | "Emerging",
+    }))
+  }, [safeTraits])
 
-    const counts: Record<string, { count: number; cards: Array<{ id: string; excerpt: string }> }> = {}
-
-    filteredCards.forEach((card) => {
-      if (!card) return
-      const cardTraits = safeArray(card.traits)
-      cardTraits.forEach((trait) => {
-        const safeTrait = safeString(trait)
-        if (!safeTrait) return
-        if (!counts[safeTrait]) {
-          counts[safeTrait] = { count: 0, cards: [] }
-        }
-        counts[safeTrait].count++
-        counts[safeTrait].cards.push({ id: safeString(card.id), excerpt: safeString(card.excerpt) })
-      })
-    })
-
-    const totalCards = filteredCards.length
-
-    // Compute confidence based on heuristic
-    const getConfidence = (count: number): "High" | "Med" | "Low" => {
-      if (totalCards < 6) {
-        const percentage = (count / Math.max(totalCards, 1)) * 100
-        if (percentage >= 40) return "High"
-        if (percentage >= 20) return "Med"
-        return "Low"
-      }
-      if (count >= 6) return "High"
-      if (count >= 3) return "Med"
-      return "Low"
-    }
-
-    const sorted = Object.entries(counts)
-      .map(([trait, data], idx) => ({
-        trait,
-        count: data.count,
-        confidence: getConfidence(data.count),
-        type: (idx < 6 ? "Top signal" : "Emerging") as "Top signal" | "Emerging",
-        cards: data.cards,
-      }))
-      .sort((a, b) => b.count - a.count)
-
-    return sorted
-  }, [safeAllCards, sourceFilter])
-
+  const maxTraits = 6
   const visibleTraits = showAllTraits ? traitCounts : traitCounts.slice(0, maxTraits)
   const hiddenCount = Math.max(0, traitCounts.length - maxTraits)
 
@@ -110,17 +82,41 @@ export function PremierTraitBar({
   const matchCount = useMemo(() => {
     if (safeSelectedTraits.length === 0) return 0
 
-    const filteredCards =
-      sourceFilter === "all" ? safeAllCards : safeAllCards.filter((card) => card?.type === sourceFilter)
+    let count = 0
 
-    return filteredCards.filter((card) => {
-      if (!card) return false
-      const cardTraits = safeArray(card.traits)
-      return safeSelectedTraits.some((selected) =>
-        cardTraits.some((t) => safeString(t).toLowerCase() === safeString(selected).toLowerCase()),
-      )
-    }).length
-  }, [safeAllCards, safeSelectedTraits, sourceFilter])
+    // Count contributions
+    safeContributions.forEach((c) => {
+      if (!c) return
+      const allTraits = [
+        ...safeArray(c.traits_category1),
+        ...safeArray(c.traits_category2),
+        ...safeArray(c.traits_category3),
+        ...safeArray(c.traits_category4),
+      ]
+      if (
+        safeSelectedTraits.some((selected) =>
+          allTraits.some((t) => safeString(t).toLowerCase() === selected.toLowerCase()),
+        )
+      ) {
+        count++
+      }
+    })
+
+    // Count imported feedback
+    safeImportedFeedback.forEach((f) => {
+      if (!f) return
+      const feedbackTraits = safeArray(f.traits)
+      if (
+        safeSelectedTraits.some((selected) =>
+          feedbackTraits.some((t) => safeString(t).toLowerCase() === selected.toLowerCase()),
+        )
+      ) {
+        count++
+      }
+    })
+
+    return count
+  }, [safeContributions, safeImportedFeedback, safeSelectedTraits])
 
   if (traitCounts.length === 0) {
     return null
@@ -144,7 +140,7 @@ export function PremierTraitBar({
       {/* Trait pills */}
       <div className="flex flex-wrap justify-center gap-2">
         {visibleTraits.map((item) => {
-          if (!item) return null
+          if (!item || !item.trait) return null
           const isSelected = safeSelectedTraits.includes(item.trait)
           return (
             <button
@@ -194,7 +190,10 @@ export function PremierTraitBar({
           <span className="text-neutral-600">
             {matchCount} {matchCount === 1 ? "match" : "matches"}
           </span>
-          <button onClick={onClearFilters} className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
+          <button
+            onClick={() => safeSelectedTraits.forEach((t) => onTraitSelect(t))}
+            className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
+          >
             Clear filters
           </button>
         </div>

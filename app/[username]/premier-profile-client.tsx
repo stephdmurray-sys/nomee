@@ -16,7 +16,27 @@ import { usePinnedHighlights, PinButton } from "@/components/pinned-highlights"
 import { SmartVibePills } from "@/components/smart-vibe-pills"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Link from "next/link"
-import { safeArray, safeString, safeNumber, isEmptyOrZero } from "@/lib/safe-utils"
+
+function safeArray<T>(value: T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value : []
+}
+
+function safeString(value: string | null | undefined, fallback = ""): string {
+  return typeof value === "string" ? value : fallback
+}
+
+function safeNumber(value: number | null | undefined, fallback = 0): number {
+  return typeof value === "number" && !isNaN(value) ? value : fallback
+}
+
+function isEmptyOrZero(value: string | number | null | undefined): boolean {
+  if (value == null) return true
+  if (value === "") return true
+  if (value === "0") return true
+  if (value === 0) return true
+  if (typeof value === "string" && value.trim() === "") return true
+  return false
+}
 
 interface Profile {
   id: string
@@ -112,8 +132,18 @@ export function PremierProfileClient({
     totalDataCount: safeNumber(profileAnalysis?.totalDataCount, 0),
   }
 
-  const contributions = dedupeContributions(safeRawContributions)
-  const voiceContributions = contributions.filter((c) => c?.voice_url || c?.audio_url)
+  let contributions: typeof safeRawContributions = []
+  try {
+    contributions = dedupeContributions(safeRawContributions)
+  } catch (e) {
+    console.error("[v0] dedupeContributions failed:", e)
+    contributions = safeRawContributions
+  }
+
+  const voiceContributions = contributions.filter((c) => {
+    if (!c) return false
+    return Boolean(c.voice_url) || Boolean(c.audio_url)
+  })
 
   const voiceNotesCount = useMemo(() => {
     const count = safeRawContributions.filter((c) => c?.voice_url || c?.audio_url).length
@@ -159,17 +189,22 @@ export function PremierProfileClient({
   )
 
   const topSignals = useMemo(() => {
-    return safeProfileAnalysis.traitSignals.slice(0, 6).map((s) => safeString(s?.label))
+    try {
+      return safeProfileAnalysis.traitSignals.slice(0, 6).map((s) => safeString(s?.label))
+    } catch (e) {
+      console.error("[v0] topSignals extraction failed:", e)
+      return []
+    }
   }, [safeProfileAnalysis.traitSignals])
 
   const filteredVoiceContributions = useMemo(() => {
     if (voiceRelationshipFilter === "All") return voiceContributions
     return voiceContributions.filter((c) => c?.relationship_category === voiceRelationshipFilter)
-  }, [voiceContributions, voiceRelationshipFilter])
+  }, [voiceRelationshipFilter])
 
   const howItFeelsContributions = useMemo(() => {
     return contributions.filter((c) => safeString(c?.written_note).trim())
-  }, [contributions])
+  }, [])
 
   const allCards = useMemo(() => {
     const nomeeCards = howItFeelsContributions.map((c) => ({
@@ -192,12 +227,7 @@ export function PremierProfileClient({
     const nomeeCards = howItFeelsContributions.map((c) => ({
       id: safeString(c?.id),
       excerpt: safeString(c?.written_note),
-      traits: [
-        ...safeArray(c?.traits_category1),
-        ...safeArray(c?.traits_category2),
-        ...safeArray(c?.traits_category3),
-        ...safeArray(c?.traits_category4),
-      ],
+      traits: [...safeArray(c?.traits_category1), ...safeArray(c?.traits_category2), ...safeArray(c?.traits_category3)],
       type: "nomee" as const,
       contributorId: c?.contributor_id,
     }))
@@ -252,7 +282,7 @@ export function PremierProfileClient({
     }
 
     return filtered
-  }, [howItFeelsContributions, howItFeelsRelationshipFilter, selectedTraitFilters])
+  }, [howItFeelsRelationshipFilter, selectedTraitFilters])
 
   const filteredImportedFeedback = useMemo(() => {
     if (selectedTraitFilters.length === 0) return importedFeedback
@@ -321,7 +351,7 @@ export function PremierProfileClient({
         ? "bg-amber-50 text-amber-700 border-amber-200"
         : "bg-slate-50 text-slate-600 border-slate-200"
 
-  if (!profile?.id || !profile?.slug) {
+  if (!profile || !profile.id || !profile.slug) {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
         <div className="text-center">

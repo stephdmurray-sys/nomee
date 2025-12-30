@@ -3,18 +3,36 @@
 import { useState, useMemo } from "react"
 import { X } from "lucide-react"
 
+interface Contribution {
+  id: string
+  written_note?: string | null
+  traits_category1?: string[] | null
+  traits_category2?: string[] | null
+  traits_category3?: string[] | null
+  traits_category4?: string[] | null
+}
+
+interface ImportedFeedback {
+  id: string
+  ai_extracted_excerpt?: string | null
+  traits?: string[] | null
+}
+
+interface TraitWithCount {
+  label: string
+  count: number
+  weightedCount: number
+  category: string
+  examples: string[]
+}
+
 interface SmartVibePillsProps {
-  vibeSignals: Array<{ label: string; count: number }>
-  traitSignals: Array<{ label: string; count: number }>
-  allCards: Array<{
-    id: string
-    excerpt: string
-    traits: string[]
-    type: "nomee" | "imported"
-  }>
+  vibes: string[]
+  traits: TraitWithCount[]
   selectedVibes: string[]
   onVibeSelect: (vibe: string) => void
-  onClearVibes: () => void
+  contributions: Contribution[]
+  importedFeedback: ImportedFeedback[]
 }
 
 // Curated impact phrases
@@ -50,24 +68,67 @@ function safeString(str: string | null | undefined): string {
 }
 
 export function SmartVibePills({
-  vibeSignals,
-  traitSignals,
-  allCards,
+  vibes,
+  traits,
   selectedVibes,
   onVibeSelect,
-  onClearVibes,
+  contributions,
+  importedFeedback,
 }: SmartVibePillsProps) {
   const [activeTab, setActiveTab] = useState<"work-style" | "impact">("work-style")
 
-  const safeVibeSignals = safeArray(vibeSignals)
-  const safeAllCards = safeArray(allCards)
+  const safeVibes = safeArray(vibes)
+  const safeTraits = safeArray(traits)
   const safeSelectedVibes = safeArray(selectedVibes)
+  const safeContributions = safeArray(contributions)
+  const safeImportedFeedback = safeArray(importedFeedback)
+
+  // Build allCards from contributions + importedFeedback
+  const allCards = useMemo(() => {
+    const nomeeCards = safeContributions.map((c) => ({
+      id: safeString(c?.id),
+      excerpt: safeString(c?.written_note),
+      traits: [
+        ...safeArray(c?.traits_category1),
+        ...safeArray(c?.traits_category2),
+        ...safeArray(c?.traits_category3),
+        ...safeArray(c?.traits_category4),
+      ],
+      type: "nomee" as const,
+    }))
+
+    const importedCards = safeImportedFeedback.map((f) => ({
+      id: safeString(f?.id),
+      excerpt: safeString(f?.ai_extracted_excerpt),
+      traits: safeArray(f?.traits),
+      type: "imported" as const,
+    }))
+
+    return [...nomeeCards, ...importedCards]
+  }, [safeContributions, safeImportedFeedback])
+
+  // Compute vibe signals from traits (category4 typically)
+  const vibeSignals = useMemo(() => {
+    // Use vibes directly if available
+    if (safeVibes.length > 0) {
+      const counts: Record<string, number> = {}
+      safeVibes.forEach((vibe) => {
+        counts[vibe] = (counts[vibe] || 0) + 1
+      })
+      return Object.entries(counts)
+        .map(([label, count]) => ({ label, count }))
+        .slice(0, 8)
+    }
+
+    // Fallback: extract from traits
+    return safeTraits.slice(0, 8).map((t) => ({ label: t?.label || "", count: t?.count || 0 }))
+  }, [safeVibes, safeTraits])
 
   // Compute impact signals from excerpts
   const impactSignals = useMemo(() => {
     const counts: Record<string, number> = {}
 
-    safeAllCards.forEach((card) => {
+    allCards.forEach((card) => {
       if (!card) return
       const textLower = safeString(card.excerpt).toLowerCase()
       IMPACT_PHRASES.forEach((phrase) => {
@@ -83,16 +144,16 @@ export function SmartVibePills({
       .sort(([, a], [, b]) => b - a)
       .slice(0, 8)
       .map(([label, count]) => ({ label, count }))
-  }, [safeAllCards])
+  }, [allCards])
 
-  // Work style = vibes (from category4)
-  const workStylePills = safeVibeSignals.slice(0, 8)
+  // Work style = vibes
+  const workStylePills = vibeSignals
 
   // Count matches for selected vibes/impacts
   const matchCount = useMemo(() => {
     if (safeSelectedVibes.length === 0) return 0
 
-    return safeAllCards.filter((card) => {
+    return allCards.filter((card) => {
       if (!card) return false
       const cardText = safeString(card.excerpt).toLowerCase()
       const cardTraits = safeArray(card.traits)
@@ -102,7 +163,7 @@ export function SmartVibePills({
         return cardText.includes(safeString(vibe).toLowerCase())
       })
     }).length
-  }, [safeAllCards, safeSelectedVibes])
+  }, [allCards, safeSelectedVibes])
 
   const currentPills = activeTab === "work-style" ? workStylePills : impactSignals
 
@@ -137,7 +198,7 @@ export function SmartVibePills({
       {/* Pills */}
       <div className="flex flex-wrap justify-center gap-2">
         {currentPills.map((pill) => {
-          if (!pill) return null
+          if (!pill || !pill.label) return null
           const isSelected = safeSelectedVibes.includes(pill.label)
           return (
             <button
@@ -169,7 +230,10 @@ export function SmartVibePills({
           <span className="text-neutral-600">
             {matchCount} {matchCount === 1 ? "match" : "matches"}
           </span>
-          <button onClick={onClearVibes} className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
+          <button
+            onClick={() => safeSelectedVibes.forEach((v) => onVibeSelect(v))}
+            className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
+          >
             Clear filter
           </button>
         </div>

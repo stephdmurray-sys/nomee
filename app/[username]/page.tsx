@@ -18,6 +18,7 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
   try {
     const supabase = await createClient()
 
+    console.log("[v0] Fetching profile for slug:", username)
     const profileResponse = await supabase.from("profiles").select("*").eq("slug", username).maybeSingle()
 
     if (profileResponse.error) {
@@ -25,28 +26,47 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
       notFound()
     }
 
-    if (!profileResponse.data) {
+    const profile = profileResponse.data
+    if (!profile) {
+      console.log("[v0] No profile found for slug:", username)
       notFound()
     }
 
-    const profile = profileResponse.data
-
-    let profileAnalysis = { traitSignals: [], vibeSignals: [], impactSignals: [], totalDataCount: 0 }
+    let profileAnalysis = {
+      traitSignals: [] as Array<{ label: string; count: number; sources: string[] }>,
+      vibeSignals: [] as Array<{ label: string; count: number }>,
+      impactSignals: [] as Array<{ label: string; count: number; phrases: string[] }>,
+      totalDataCount: 0,
+    }
     try {
-      profileAnalysis = await buildProfileAnalysis(profile.id)
+      const result = await buildProfileAnalysis(profile.id)
+      if (result) {
+        profileAnalysis = {
+          traitSignals: Array.isArray(result.traitSignals) ? result.traitSignals : [],
+          vibeSignals: Array.isArray(result.vibeSignals) ? result.vibeSignals : [],
+          impactSignals: Array.isArray(result.impactSignals) ? result.impactSignals : [],
+          totalDataCount: typeof result.totalDataCount === "number" ? result.totalDataCount : 0,
+        }
+      }
     } catch (e) {
       console.error("[v0] buildProfileAnalysis failed:", e)
     }
 
-    const { data: contributions } = await supabase
+    console.log("[v0] Fetching contributions for profile:", profile.id)
+    const contributionsResponse = await supabase
       .from("contributions")
       .select("*")
       .eq("owner_id", profile.id)
       .order("created_at", { ascending: false })
 
-    const featuredContributions = contributions || []
+    if (contributionsResponse.error) {
+      console.error("[v0] Contributions query error:", contributionsResponse.error.message)
+    }
 
-    const { data: importedFeedback } = await supabase
+    const featuredContributions = contributionsResponse.data ?? []
+
+    console.log("[v0] Fetching imported feedback for profile:", profile.id)
+    const importedResponse = await supabase
       .from("imported_feedback")
       .select("*")
       .eq("profile_id", profile.id)
@@ -54,17 +74,26 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
       .eq("visibility", "public")
       .order("created_at", { ascending: false })
 
+    if (importedResponse.error) {
+      console.error("[v0] Imported feedback query error:", importedResponse.error.message)
+    }
+
+    const importedFeedback = importedResponse.data ?? []
+
     const traitFrequency: Record<string, { count: number; examples: string[]; category: string; weight: number }> = {}
 
     featuredContributions.forEach((contribution) => {
+      if (!contribution) return // Skip null items
+
       const allTraits = [
-        ...(contribution.traits_category1 || []),
-        ...(contribution.traits_category2 || []),
-        ...(contribution.traits_category3 || []),
-        ...(contribution.traits_category4 || []),
+        ...(Array.isArray(contribution.traits_category1) ? contribution.traits_category1 : []),
+        ...(Array.isArray(contribution.traits_category2) ? contribution.traits_category2 : []),
+        ...(Array.isArray(contribution.traits_category3) ? contribution.traits_category3 : []),
+        ...(Array.isArray(contribution.traits_category4) ? contribution.traits_category4 : []),
       ]
 
       allTraits.forEach((trait) => {
+        if (!trait || typeof trait !== "string") return // Skip invalid traits
         if (!traitFrequency[trait]) {
           traitFrequency[trait] = { count: 0, examples: [], category: "leadership", weight: 0 }
         }
@@ -75,12 +104,16 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
         }
       })
     })
-    ;(importedFeedback || []).forEach((feedback) => {
-      const traits = feedback.traits || []
-      const confidenceScore = feedback.confidence_score || 0
+
+    importedFeedback.forEach((feedback) => {
+      if (!feedback) return // Skip null items
+
+      const traits = Array.isArray(feedback.traits) ? feedback.traits : []
+      const confidenceScore = typeof feedback.confidence_score === "number" ? feedback.confidence_score : 0
       const feedbackWeight = confidenceScore < 0.7 ? 0.3 : 0.5
 
       traits.forEach((trait: string) => {
+        if (!trait || typeof trait !== "string") return // Skip invalid traits
         if (!traitFrequency[trait]) {
           traitFrequency[trait] = { count: 0, examples: [], category: "leadership", weight: 0 }
         }
@@ -103,34 +136,51 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
       .sort((a, b) => b.weightedCount - a.weightedCount)
 
     const totalContributions = featuredContributions.length
-    const uniqueCompanies = new Set(featuredContributions.map((c) => c.contributor_company).filter((c) => c)).size
+    const uniqueCompanies = new Set(
+      featuredContributions
+        .map((c) => c?.contributor_company)
+        .filter((c): c is string => typeof c === "string" && c.length > 0),
+    ).size
 
     let vibeLabels: string[] = []
     try {
-      vibeLabels = await generateVibeCheck(featuredContributions)
+      const result = await generateVibeCheck(featuredContributions)
+      vibeLabels = Array.isArray(result) ? result : []
     } catch (e) {
       console.error("[v0] generateVibeCheck failed:", e)
     }
 
-    const anchorQuote = extractAnchorQuote(featuredContributions)
+    let anchorQuote = ""
+    try {
+      anchorQuote = extractAnchorQuote(featuredContributions) || ""
+    } catch (e) {
+      console.error("[v0] extractAnchorQuote failed:", e)
+    }
 
     let interpretationSentence = ""
     try {
-      interpretationSentence = await generateInterpretationSentence(
-        profile.full_name || "this person",
-        traitsWithCounts.slice(0, 5),
-        totalContributions,
-      )
+      interpretationSentence =
+        (await generateInterpretationSentence(
+          profile.full_name || "this person",
+          traitsWithCounts.slice(0, 5),
+          totalContributions,
+        )) || ""
     } catch (e) {
       console.error("[v0] generateInterpretationSentence failed:", e)
     }
+
+    console.log("[v0] Successfully loaded profile:", username, {
+      contributions: featuredContributions.length,
+      imported: importedFeedback.length,
+      traits: traitsWithCounts.length,
+    })
 
     return (
       <ProfileErrorBoundary slug={username}>
         <PremierProfileClient
           profile={profile}
           contributions={featuredContributions}
-          importedFeedback={importedFeedback || []}
+          importedFeedback={importedFeedback}
           traits={traitsWithCounts}
           totalContributions={totalContributions}
           uniqueCompanies={uniqueCompanies}
@@ -142,7 +192,7 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
       </ProfileErrorBoundary>
     )
   } catch (error) {
-    console.error("[v0] PublicNomeePage: Error occurred:", error instanceof Error ? error.message : String(error))
+    console.error("[v0] PublicNomeePage FATAL:", username, error instanceof Error ? error.message : String(error))
     throw error
   }
 }

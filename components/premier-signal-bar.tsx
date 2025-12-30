@@ -4,16 +4,33 @@ import { useMemo } from "react"
 import { TrendingUp, Users, Zap, MessageSquare, Upload } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
+interface Contribution {
+  id: string
+  written_note?: string | null
+  traits_category1?: string[] | null
+  traits_category2?: string[] | null
+  traits_category3?: string[] | null
+  traits_category4?: string[] | null
+  contributor_id?: string | null
+}
+
+interface ImportedFeedback {
+  id: string
+  ai_extracted_excerpt?: string | null
+  traits?: string[] | null
+}
+
+interface ProfileAnalysis {
+  traitSignals: Array<{ label: string; count: number; sources: string[] }>
+  vibeSignals: Array<{ label: string; count: number }>
+  impactSignals: Array<{ label: string; count: number; phrases: string[] }>
+  totalDataCount: number
+}
+
 interface PremierSignalBarProps {
-  allCards: Array<{
-    id: string
-    excerpt: string
-    traits: string[]
-    type: "nomee" | "imported"
-    contributorId?: string
-  }>
-  traitSignals: Array<{ label: string; count: number }>
-  totalContributions: number
+  profileAnalysis: ProfileAnalysis
+  contributions: Contribution[]
+  importedFeedback: ImportedFeedback[]
   firstName?: string
 }
 
@@ -134,17 +151,54 @@ const IMPACT_PHRASE_MAP: Record<string, string> = {
   expanded: "Expanded reach",
 }
 
-export function PremierSignalBar({ allCards, traitSignals, totalContributions, firstName }: PremierSignalBarProps) {
-  const safeAllCards = safeArray(allCards)
-  const safeTraitSignals = safeArray(traitSignals)
-  const safeTotalContributions = safeNumber(totalContributions)
+export function PremierSignalBar({
+  profileAnalysis,
+  contributions,
+  importedFeedback,
+  firstName,
+}: PremierSignalBarProps) {
+  const safeContributions = safeArray(contributions)
+  const safeImportedFeedback = safeArray(importedFeedback)
   const safeFirstName = safeString(firstName) || "this person"
+
+  const safeProfileAnalysis = {
+    traitSignals: safeArray(profileAnalysis?.traitSignals),
+    vibeSignals: safeArray(profileAnalysis?.vibeSignals),
+    impactSignals: safeArray(profileAnalysis?.impactSignals),
+    totalDataCount: safeNumber(profileAnalysis?.totalDataCount, 0),
+  }
+
+  // Build allCards from contributions + importedFeedback
+  const allCards = useMemo(() => {
+    const nomeeCards = safeContributions.map((c) => ({
+      id: safeString(c?.id),
+      excerpt: safeString(c?.written_note),
+      traits: [
+        ...safeArray(c?.traits_category1),
+        ...safeArray(c?.traits_category2),
+        ...safeArray(c?.traits_category3),
+        ...safeArray(c?.traits_category4),
+      ],
+      type: "nomee" as const,
+      contributorId: c?.contributor_id,
+    }))
+
+    const importedCards = safeImportedFeedback.map((f) => ({
+      id: safeString(f?.id),
+      excerpt: safeString(f?.ai_extracted_excerpt),
+      traits: safeArray(f?.traits),
+      type: "imported" as const,
+      contributorId: undefined,
+    }))
+
+    return [...nomeeCards, ...importedCards]
+  }, [safeContributions, safeImportedFeedback])
 
   // Top Signals - ranked by count
   const topSignals = useMemo(() => {
     const counts: Record<string, { count: number; sources: Set<"nomee" | "imported">; example?: string }> = {}
 
-    safeAllCards.forEach((card) => {
+    allCards.forEach((card) => {
       if (!card) return
       const cardTraits = safeArray(card.traits)
       cardTraits.forEach((trait) => {
@@ -171,13 +225,13 @@ export function PremierSignalBar({ allCards, traitSignals, totalContributions, f
         example: data.example,
         strength: data.count >= 3 ? "Core" : data.count >= 2 ? "Strong" : "Emerging",
       }))
-  }, [safeAllCards])
+  }, [allCards])
 
   // Most Consistent - traits that appear across multiple unique contributors
   const consistentSignals = useMemo(() => {
     const contributorTraits: Record<string, Set<string>> = {}
 
-    safeAllCards.forEach((card) => {
+    allCards.forEach((card) => {
       if (!card) return
       const contributorKey = card.contributorId || card.id
       const cardTraits = safeArray(card.traits)
@@ -199,13 +253,13 @@ export function PremierSignalBar({ allCards, traitSignals, totalContributions, f
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 4)
-  }, [safeAllCards])
+  }, [allCards])
 
   // Proof of Impact - extracted from text
   const impactSignals = useMemo(() => {
     const counts: Record<string, { count: number; phrases: string[] }> = {}
 
-    safeAllCards.forEach((card) => {
+    allCards.forEach((card) => {
       if (!card) return
       const text = safeString(card.excerpt).toLowerCase()
 
@@ -239,10 +293,10 @@ export function PremierSignalBar({ allCards, traitSignals, totalContributions, f
         phrases: data.phrases,
         strength: data.count >= 3 ? "Core" : data.count >= 2 ? "Strong" : "Emerging",
       }))
-  }, [safeAllCards])
+  }, [allCards])
 
   // Don't render if no data
-  if (safeAllCards.length === 0 && safeTraitSignals.length === 0) {
+  if (allCards.length === 0 && safeProfileAnalysis.traitSignals.length === 0) {
     return null
   }
 
