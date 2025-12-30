@@ -50,6 +50,7 @@ interface Profile {
   title?: string | null
   avatar_url?: string | null
   tier?: string | null
+  headline?: string | null
 }
 
 interface Contribution {
@@ -241,6 +242,67 @@ export function PremierProfileClient({
 
   const firstName = safeString(profile?.full_name).split(" ")[0] || "This person"
 
+  const VIBE_OPTIONS = [
+    "Energized",
+    "Focused",
+    "Aligned",
+    "Inspired",
+    "Empowered",
+    "Calm",
+    "Supported",
+    "Seen",
+    "Safe",
+    "Elevated",
+    "Unstuck",
+    "Grounded",
+  ]
+
+  // Infer vibes from traits if not explicitly provided
+  const TRAIT_TO_VIBE_MAP: Record<string, string> = {
+    strategic: "Focused",
+    thoughtful: "Calm",
+    proactive: "Energized",
+    collaborative: "Aligned",
+    empowering: "Empowered",
+    supportive: "Supported",
+    "detail-oriented": "Focused",
+    organized: "Focused",
+    creative: "Inspired",
+    authentic: "Seen",
+    reliable: "Grounded",
+    patient: "Calm",
+  }
+
+  // Build top 3 vibes with counts
+  const computedVibes = useMemo(() => {
+    const vibeFrequency: Record<string, number> = {}
+
+    // First, count explicitly provided vibes
+    safeVibeLabels.forEach((vibe) => {
+      if (VIBE_OPTIONS.includes(vibe)) {
+        vibeFrequency[vibe] = (vibeFrequency[vibe] || 0) + 1
+      }
+    })
+
+    // If we have fewer than 3 vibes, infer from traits
+    if (Object.keys(vibeFrequency).length < 3) {
+      safeTraits.forEach((trait) => {
+        const traitLabel = safeString(trait?.label).toLowerCase()
+        const mappedVibe = TRAIT_TO_VIBE_MAP[traitLabel]
+        if (mappedVibe) {
+          const weight = Math.ceil((trait?.count || 1) / 2)
+          vibeFrequency[mappedVibe] = (vibeFrequency[mappedVibe] || 0) + weight
+        }
+      })
+    }
+
+    // Sort and return top 3
+    return Object.entries(vibeFrequency)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+      .map(([label, count]) => ({ label, count }))
+  }, [safeVibeLabels, safeTraits])
+
   const confidenceLevel = useMemo(() => {
     const nomeeCount = writtenContributions.length
     const importedCount = importedFeedback.length
@@ -292,6 +354,7 @@ export function PremierProfileClient({
             <h1 className="text-4xl md:text-5xl font-serif text-neutral-900 mb-3">
               {safeString(profile.full_name, "Anonymous")}
             </h1>
+            {!isEmptyOrZero(profile.headline) && <p className="text-lg text-neutral-600 mb-4">{profile.headline}</p>}
             {!isEmptyOrZero(profile.title) && <p className="text-lg text-neutral-600 mb-4">{profile.title}</p>}
 
             {/* Stats row - smaller, muted */}
@@ -353,6 +416,34 @@ export function PremierProfileClient({
                 voiceNotesCount={voiceNotesCount}
                 firstName={firstName}
               />
+
+              {computedVibes.length > 0 && (
+                <div className="mt-6 p-6 bg-white border border-neutral-200 rounded-2xl shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-neutral-900">Vibe</h3>
+                    <span className="text-xs text-neutral-400">How it feels to work together</span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {computedVibes.map((vibe) => (
+                      <div
+                        key={vibe.label}
+                        className="group relative inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-blue-50/80 to-purple-50/80 border border-blue-100/50 shadow-sm hover:shadow-md transition-all duration-200"
+                      >
+                        <span className="text-base font-medium text-neutral-800">{vibe.label}</span>
+                        <span className="text-neutral-400">·</span>
+                        <span className="text-sm font-medium text-blue-600">{vibe.count}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-xs text-neutral-400">
+                    Based on patterns across {totalContributions}{" "}
+                    {totalContributions === 1 ? "perspective" : "perspectives"}
+                    {totalUploads > 0 && ` + ${totalUploads} upload${totalUploads === 1 ? "" : "s"}`}
+                  </p>
+                </div>
+              )}
             </div>
           </section>
         )}
