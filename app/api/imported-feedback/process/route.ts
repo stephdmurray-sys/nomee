@@ -92,7 +92,7 @@ Return ONLY valid JSON with this exact structure:
   "company": "Company/organization name if visible, or null",
   "excerpt": "1-2 sentence verbatim positive quote about the recipient from the recommendation/feedback",
   "traits": ["trait1", "trait2", "trait3"],
-  "source_type": "Best match from: LinkedIn, Email, Slack, Text, DM, Facebook, Teams, Other",
+  "source_type": "Best match from: LinkedIn, Email, Slack, Teams, Text, DM, Facebook, Other",
   "approx_date": "YYYY-MM-DD format if date visible, or null",
   "confidence": {
     "overall": 0.85,
@@ -161,9 +161,9 @@ CRITICAL RULES:
 
 export async function POST(request: NextRequest) {
   const supabase = createAdminClient()
-  const { imageUrl, profileId, recordId } = await request.json()
+  const { profileId, recordId } = await request.json()
 
-  console.log("[v0] Processing extraction request:", { imageUrl, profileId, recordId })
+  console.log("[v0] Processing extraction request:", { profileId, recordId })
 
   if (!profileId || !recordId) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -184,40 +184,53 @@ export async function POST(request: NextRequest) {
 
   const attemptNumber = (currentRecord.extraction_attempts || 0) + 1
 
-  await supabase.from("imported_feedback").update({ extraction_status: "processing" }).eq("id", recordId)
+  await supabase
+    .from("imported_feedback")
+    .update({ extraction_status: "processing", extraction_attempts: attemptNumber })
+    .eq("id", recordId)
 
   try {
-    let imagePath = currentRecord.raw_image_path
+    let imageBuffer: Buffer
+    let bytesDownloaded: number
 
-    // Backwards compatibility: parse path from URL if raw_image_path is missing
-    if (!imagePath && currentRecord.raw_image_url) {
-      console.log("[v0] raw_image_path missing, parsing from URL for backwards compatibility")
-      const urlParts = currentRecord.raw_image_url.split("/object/imported-feedback/")
-      if (urlParts[1]) {
-        imagePath = decodeURIComponent(urlParts[1])
-        console.log("[v0] Parsed image path:", imagePath)
+    const storedImageUrl = currentRecord.raw_image_url
+
+    if (!storedImageUrl) {
+      throw new Error("No image URL available in raw_image_url")
+    }
+
+    console.log("[v0] Stored image URL:", storedImageUrl)
+    console.log("[v0] URL type check - starts with http:", storedImageUrl.startsWith("http"))
+
+    if (storedImageUrl.startsWith("http://") || storedImageUrl.startsWith("https://")) {
+      console.log("[v0] Detected Vercel Blob URL, using fetch")
+
+      const fetchResponse = await fetch(storedImageUrl)
+      if (!fetchResponse.ok) {
+        throw new Error(`Failed to fetch from Vercel Blob (${fetchResponse.status}): ${fetchResponse.statusText}`)
       }
+
+      imageBuffer = Buffer.from(await fetchResponse.arrayBuffer())
+      bytesDownloaded = imageBuffer.length
+
+      console.log("[v0] Downloaded from Vercel Blob:", bytesDownloaded, "bytes")
+    } else {
+      // It's a Supabase Storage path (relative path only)
+      console.log("[v0] Detected Supabase Storage path, using SDK")
+
+      const { data: imageData, error: downloadError } = await supabase.storage
+        .from("imported-feedback")
+        .download(storedImageUrl)
+
+      if (downloadError || !imageData) {
+        throw new Error(`Supabase Storage download failed: ${downloadError?.message || "No data returned"}`)
+      }
+
+      imageBuffer = Buffer.from(await imageData.arrayBuffer())
+      bytesDownloaded = imageBuffer.length
+
+      console.log("[v0] Downloaded from Supabase Storage:", bytesDownloaded, "bytes")
     }
-
-    if (!imagePath) {
-      throw new Error("No image path available (raw_image_path and raw_image_url both missing)")
-    }
-
-    console.log("[v0] Downloading image from storage using SDK:", imagePath)
-
-    const { data: imageData, error: downloadError } = await supabase.storage
-      .from("imported-feedback")
-      .download(imagePath)
-
-    if (downloadError || !imageData) {
-      const errorMsg = `Failed to download image: ${JSON.stringify({ url: currentRecord.raw_image_url, path: imagePath, error: downloadError?.message })}`
-      throw new Error(errorMsg)
-    }
-
-    const imageBuffer = Buffer.from(await imageData.arrayBuffer())
-    const bytesDownloaded = imageBuffer.length
-
-    console.log("[v0] Image downloaded successfully, bytes:", bytesDownloaded)
 
     await supabase
       .from("imported_feedback")

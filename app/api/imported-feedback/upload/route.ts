@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { put } from "@vercel/blob"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
@@ -19,7 +20,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    // Validate file type and size
     const validTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"]
     if (!validTypes.includes(file.type)) {
       return NextResponse.json({ error: "Invalid file type. Only JPG, PNG, and PDF are allowed" }, { status: 400 })
@@ -30,30 +30,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File too large. Maximum size is 10MB" }, { status: 400 })
     }
 
-    const fileName = `${user.id}/${Date.now()}-${file.name}`
-    const fileBuffer = await file.arrayBuffer()
+    const fileName = `imported-feedback/${user.id}/${Date.now()}-${file.name}`
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("imported-feedback")
-      .upload(fileName, fileBuffer, {
-        contentType: file.type,
-        upsert: false,
-      })
+    const blob = await put(fileName, file, {
+      access: "public",
+      addRandomSuffix: false,
+    })
 
-    if (uploadError) {
-      console.error("[v0] Supabase storage upload error:", uploadError)
-      return NextResponse.json({ error: "Upload to storage failed" }, { status: 500 })
-    }
+    console.log("[v0] File uploaded successfully to Vercel Blob:", blob.url)
 
-    // Get public URL for preview (won't work for private buckets, but stored for reference)
-    const { data: urlData } = supabase.storage.from("imported-feedback").getPublicUrl(fileName)
-
-    console.log("[v0] File uploaded successfully to Supabase Storage:", fileName)
-
-    // Return both path (for SDK downloads) and URL (for backwards compatibility)
+    // Return URL only (no path needed for Blob)
     return NextResponse.json({
-      path: fileName,
-      url: urlData.publicUrl,
+      url: blob.url,
+      path: null, // Not used for Blob storage
     })
   } catch (error) {
     console.error("[v0] Upload error:", error)
