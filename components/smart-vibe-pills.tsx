@@ -41,6 +41,14 @@ const IMPACT_PHRASES = [
   "accelerated",
 ]
 
+function safeArray<T>(arr: T[] | null | undefined): T[] {
+  return Array.isArray(arr) ? arr : []
+}
+
+function safeString(str: string | null | undefined): string {
+  return typeof str === "string" ? str : ""
+}
+
 export function SmartVibePills({
   vibeSignals,
   traitSignals,
@@ -51,12 +59,17 @@ export function SmartVibePills({
 }: SmartVibePillsProps) {
   const [activeTab, setActiveTab] = useState<"work-style" | "impact">("work-style")
 
+  const safeVibeSignals = safeArray(vibeSignals)
+  const safeAllCards = safeArray(allCards)
+  const safeSelectedVibes = safeArray(selectedVibes)
+
   // Compute impact signals from excerpts
   const impactSignals = useMemo(() => {
     const counts: Record<string, number> = {}
 
-    allCards.forEach((card) => {
-      const textLower = card.excerpt.toLowerCase()
+    safeAllCards.forEach((card) => {
+      if (!card) return
+      const textLower = safeString(card.excerpt).toLowerCase()
       IMPACT_PHRASES.forEach((phrase) => {
         const regex = new RegExp(`\\b${phrase}\\b`, "gi")
         const matches = textLower.match(regex)
@@ -70,24 +83,26 @@ export function SmartVibePills({
       .sort(([, a], [, b]) => b - a)
       .slice(0, 8)
       .map(([label, count]) => ({ label, count }))
-  }, [allCards])
+  }, [safeAllCards])
 
   // Work style = vibes (from category4)
-  const workStylePills = vibeSignals.slice(0, 8)
+  const workStylePills = safeVibeSignals.slice(0, 8)
 
   // Count matches for selected vibes/impacts
   const matchCount = useMemo(() => {
-    if (selectedVibes.length === 0) return 0
+    if (safeSelectedVibes.length === 0) return 0
 
-    return allCards.filter((card) => {
-      const cardText = card.excerpt.toLowerCase()
-      return selectedVibes.some((vibe) => {
+    return safeAllCards.filter((card) => {
+      if (!card) return false
+      const cardText = safeString(card.excerpt).toLowerCase()
+      const cardTraits = safeArray(card.traits)
+      return safeSelectedVibes.some((vibe) => {
         // Check if vibe is in traits or in text
-        if (card.traits.some((t) => t.toLowerCase() === vibe.toLowerCase())) return true
-        return cardText.includes(vibe.toLowerCase())
+        if (cardTraits.some((t) => safeString(t).toLowerCase() === safeString(vibe).toLowerCase())) return true
+        return cardText.includes(safeString(vibe).toLowerCase())
       })
     }).length
-  }, [allCards, selectedVibes])
+  }, [safeAllCards, safeSelectedVibes])
 
   const currentPills = activeTab === "work-style" ? workStylePills : impactSignals
 
@@ -122,7 +137,8 @@ export function SmartVibePills({
       {/* Pills */}
       <div className="flex flex-wrap justify-center gap-2">
         {currentPills.map((pill) => {
-          const isSelected = selectedVibes.includes(pill.label)
+          if (!pill) return null
+          const isSelected = safeSelectedVibes.includes(pill.label)
           return (
             <button
               key={pill.label}
@@ -139,8 +155,8 @@ export function SmartVibePills({
                 }
               `}
             >
-              <span className="capitalize">{pill.label}</span>
-              <span className={`text-xs ${isSelected ? "opacity-80" : "text-neutral-400"}`}>{pill.count}</span>
+              <span className="capitalize">{safeString(pill.label)}</span>
+              <span className={`text-xs ${isSelected ? "opacity-80" : "text-neutral-400"}`}>{pill.count ?? 0}</span>
               {isSelected && <X className="w-3 h-3 ml-0.5" />}
             </button>
           )
@@ -148,7 +164,7 @@ export function SmartVibePills({
       </div>
 
       {/* Match count & clear */}
-      {selectedVibes.length > 0 && (
+      {safeSelectedVibes.length > 0 && (
         <div className="flex items-center justify-center gap-3 text-sm">
           <span className="text-neutral-600">
             {matchCount} {matchCount === 1 ? "match" : "matches"}

@@ -23,8 +23,20 @@ interface PremierTraitBarProps {
   onClearFilters: () => void
   maxTraits?: number
   sourceFilter: "all" | "nomee" | "imported"
-  totalPeople?: number // Add total people count
-  totalUploads?: number // Add total uploads count
+  totalPeople?: number
+  totalUploads?: number
+}
+
+function safeArray<T>(arr: T[] | null | undefined): T[] {
+  return Array.isArray(arr) ? arr : []
+}
+
+function safeString(str: string | null | undefined): string {
+  return typeof str === "string" ? str : ""
+}
+
+function safeNumber(num: number | null | undefined, fallback = 0): number {
+  return typeof num === "number" && !isNaN(num) ? num : fallback
 }
 
 export function PremierTraitBar({
@@ -39,19 +51,27 @@ export function PremierTraitBar({
 }: PremierTraitBarProps) {
   const [showAllTraits, setShowAllTraits] = useState(false)
 
+  const safeAllCards = safeArray(allCards)
+  const safeSelectedTraits = safeArray(selectedTraits)
+
   // Compute trait counts from visible cards based on sourceFilter
   const traitCounts = useMemo(() => {
-    const filteredCards = sourceFilter === "all" ? allCards : allCards.filter((card) => card.type === sourceFilter)
+    const filteredCards =
+      sourceFilter === "all" ? safeAllCards : safeAllCards.filter((card) => card?.type === sourceFilter)
 
     const counts: Record<string, { count: number; cards: Array<{ id: string; excerpt: string }> }> = {}
 
     filteredCards.forEach((card) => {
-      card.traits.forEach((trait) => {
-        if (!counts[trait]) {
-          counts[trait] = { count: 0, cards: [] }
+      if (!card) return
+      const cardTraits = safeArray(card.traits)
+      cardTraits.forEach((trait) => {
+        const safeTrait = safeString(trait)
+        if (!safeTrait) return
+        if (!counts[safeTrait]) {
+          counts[safeTrait] = { count: 0, cards: [] }
         }
-        counts[trait].count++
-        counts[trait].cards.push({ id: card.id, excerpt: card.excerpt })
+        counts[safeTrait].count++
+        counts[safeTrait].cards.push({ id: safeString(card.id), excerpt: safeString(card.excerpt) })
       })
     })
 
@@ -60,7 +80,7 @@ export function PremierTraitBar({
     // Compute confidence based on heuristic
     const getConfidence = (count: number): "High" | "Med" | "Low" => {
       if (totalCards < 6) {
-        const percentage = (count / totalCards) * 100
+        const percentage = (count / Math.max(totalCards, 1)) * 100
         if (percentage >= 40) return "High"
         if (percentage >= 20) return "Med"
         return "Low"
@@ -78,174 +98,105 @@ export function PremierTraitBar({
         type: (idx < 6 ? "Top signal" : "Emerging") as "Top signal" | "Emerging",
         cards: data.cards,
       }))
-      .sort((a, b) => b.count - a.count) as TraitCount[]
+      .sort((a, b) => b.count - a.count)
 
-    // Re-assign types after sorting
-    return sorted.map((item, idx) => ({
-      ...item,
-      type: (idx < 6 ? "Top signal" : "Emerging") as "Top signal" | "Emerging",
-    }))
-  }, [allCards, sourceFilter])
+    return sorted
+  }, [safeAllCards, sourceFilter])
 
   const visibleTraits = showAllTraits ? traitCounts : traitCounts.slice(0, maxTraits)
-  const hasMoreTraits = traitCounts.length > maxTraits
+  const hiddenCount = Math.max(0, traitCounts.length - maxTraits)
 
-  // Extract micro-evidence snippets for selected traits
-  const microEvidence = useMemo(() => {
-    if (selectedTraits.length === 0) return []
+  // Count how many cards match the selected trait filters
+  const matchCount = useMemo(() => {
+    if (safeSelectedTraits.length === 0) return 0
 
-    const snippets: string[] = []
-    const selectedTrait = selectedTraits[0]
+    const filteredCards =
+      sourceFilter === "all" ? safeAllCards : safeAllCards.filter((card) => card?.type === sourceFilter)
 
-    const traitData = traitCounts.find((t) => t.trait === selectedTrait)
-    if (!traitData) return []
+    return filteredCards.filter((card) => {
+      if (!card) return false
+      const cardTraits = safeArray(card.traits)
+      return safeSelectedTraits.some((selected) =>
+        cardTraits.some((t) => safeString(t).toLowerCase() === safeString(selected).toLowerCase()),
+      )
+    }).length
+  }, [safeAllCards, safeSelectedTraits, sourceFilter])
 
-    traitData.cards.slice(0, 3).forEach((card) => {
-      const sentences = card.excerpt.split(/[.!?]+/).filter((s) => s.trim())
-      for (const sentence of sentences) {
-        if (
-          sentence.toLowerCase().includes(selectedTrait.toLowerCase()) &&
-          sentence.trim().length > 20 &&
-          sentence.trim().length <= 120
-        ) {
-          snippets.push(sentence.trim())
-          break
-        }
-      }
-    })
-
-    if (snippets.length === 0) {
-      traitData.cards.slice(0, 2).forEach((card) => {
-        const firstSentence = card.excerpt.split(/[.!?]+/)[0]?.trim()
-        if (firstSentence && firstSentence.length <= 120) {
-          snippets.push(firstSentence)
-        }
-      })
-    }
-
-    return snippets.slice(0, 2)
-  }, [selectedTraits, traitCounts])
-
-  const handleTraitClick = (trait: string) => {
-    if (selectedTraits.includes(trait)) {
-      onTraitSelect(trait)
-    } else if (selectedTraits.length >= 2) {
-      return
-    } else {
-      onTraitSelect(trait)
-    }
+  if (traitCounts.length === 0) {
+    return null
   }
-
-  const confidenceBadgeStyles = {
-    High: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    Med: "bg-amber-50 text-amber-700 border-amber-200",
-    Low: "bg-neutral-50 text-neutral-500 border-neutral-200",
-  }
-
-  const typeBadgeStyles = {
-    "Top signal": "bg-blue-50 text-blue-700",
-    Emerging: "bg-neutral-100 text-neutral-600",
-  }
-
-  if (traitCounts.length === 0) return null
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {/* Section header */}
       <div className="text-center space-y-1">
-        <div className="flex items-center justify-center gap-2">
-          <Sparkles className="w-4 h-4 text-blue-500" />
-          <h4 className="text-sm font-semibold text-neutral-900">Top signals people repeat</h4>
+        <div className="flex items-center justify-center gap-2 text-blue-600">
+          <Sparkles className="w-4 h-4" />
+          <h3 className="text-sm font-semibold">Top signals people repeat</h3>
         </div>
         <p className="text-xs text-neutral-500">Ranked by how consistently they appear across perspectives</p>
-        {(totalPeople > 0 || totalUploads > 0) && (
-          <p className="text-xs text-neutral-400 mt-1">
-            Based on feedback from {totalPeople > 0 && `${totalPeople} ${totalPeople === 1 ? "person" : "people"}`}
-            {totalPeople > 0 && totalUploads > 0 && " + "}
-            {totalUploads > 0 && `${totalUploads} ${totalUploads === 1 ? "upload" : "uploads"}`}
-          </p>
-        )}
+        <p className="text-xs text-neutral-400">
+          Based on feedback from {safeNumber(totalPeople)} {totalPeople === 1 ? "person" : "people"}
+          {totalUploads > 0 && ` + ${safeNumber(totalUploads)} ${totalUploads === 1 ? "upload" : "uploads"}`}
+        </p>
       </div>
 
-      {/* Trait Pills */}
+      {/* Trait pills */}
       <div className="flex flex-wrap justify-center gap-2">
-        {visibleTraits.map((traitData) => {
-          const isSelected = selectedTraits.includes(traitData.trait)
+        {visibleTraits.map((item) => {
+          if (!item) return null
+          const isSelected = safeSelectedTraits.includes(item.trait)
           return (
             <button
-              key={traitData.trait}
-              onClick={() => handleTraitClick(traitData.trait)}
+              key={item.trait}
+              onClick={() => onTraitSelect(item.trait)}
               className={`
-                group inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium
+                inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm
                 border transition-all duration-200
                 ${
                   isSelected
-                    ? "bg-amber-50 border-amber-300 text-amber-900 shadow-sm"
-                    : "bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50"
+                    ? "bg-blue-100 border-blue-300 text-blue-800 shadow-sm"
+                    : "bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:shadow-sm"
                 }
               `}
             >
-              <span>{traitData.trait}</span>
-              <span className="text-xs text-neutral-400 font-semibold">{traitData.count}</span>
+              <span>{item.trait}</span>
+              <span className={`text-xs ${isSelected ? "text-blue-600" : "text-neutral-400"}`}>{item.count}</span>
               <span
-                className={`
-                  text-[10px] px-1.5 py-0.5 rounded-full font-medium
-                  ${typeBadgeStyles[traitData.type]}
-                `}
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                  item.type === "Top signal" ? "bg-blue-600 text-white" : "bg-neutral-200 text-neutral-600"
+                }`}
               >
-                {traitData.type}
+                {item.type}
               </span>
-              {isSelected && (
-                <X className="w-3 h-3 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-              )}
+              {isSelected && <X className="w-3 h-3 ml-0.5" />}
             </button>
           )
         })}
       </div>
 
-      {/* View all traits toggle */}
-      {hasMoreTraits && (
-        <div className="flex justify-center">
+      {/* View all toggle */}
+      {hiddenCount > 0 && (
+        <div className="text-center">
           <button
             onClick={() => setShowAllTraits(!showAllTraits)}
-            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+            className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
           >
             {showAllTraits ? "Show less" : `View all ${traitCounts.length} traits`}
-            <ChevronDown className={`w-3 h-3 transition-transform ${showAllTraits ? "rotate-180" : ""}`} />
+            <ChevronDown className={`w-4 h-4 transition-transform ${showAllTraits ? "rotate-180" : ""}`} />
           </button>
         </div>
       )}
 
-      {/* Filter limit message */}
-      {selectedTraits.length >= 2 && (
-        <p className="text-center text-xs text-neutral-500">
-          Limit 2 filters for clarity.{" "}
-          <button onClick={onClearFilters} className="text-blue-600 hover:underline">
-            Reset filters
+      {/* Match count & clear */}
+      {safeSelectedTraits.length > 0 && (
+        <div className="flex items-center justify-center gap-3 text-sm">
+          <span className="text-neutral-600">
+            {matchCount} {matchCount === 1 ? "match" : "matches"}
+          </span>
+          <button onClick={onClearFilters} className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
+            Clear filters
           </button>
-        </p>
-      )}
-
-      {/* Clear filters button */}
-      {selectedTraits.length > 0 && selectedTraits.length < 2 && (
-        <div className="flex justify-center">
-          <button onClick={onClearFilters} className="text-xs text-neutral-500 hover:text-neutral-700 underline">
-            Reset filters
-          </button>
-        </div>
-      )}
-
-      {/* Micro-evidence snippets */}
-      {selectedTraits.length > 0 && microEvidence.length > 0 && (
-        <div className="bg-amber-50/50 border border-amber-100 rounded-lg p-4 max-w-2xl mx-auto">
-          <p className="text-xs font-medium text-amber-800 mb-2">Why people say this:</p>
-          <div className="space-y-2">
-            {microEvidence.map((snippet, idx) => (
-              <p key={idx} className="text-sm text-neutral-700 italic">
-                "{snippet}..."
-              </p>
-            ))}
-          </div>
         </div>
       )}
     </div>

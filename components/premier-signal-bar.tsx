@@ -17,6 +17,18 @@ interface PremierSignalBarProps {
   firstName?: string
 }
 
+function safeArray<T>(arr: T[] | null | undefined): T[] {
+  return Array.isArray(arr) ? arr : []
+}
+
+function safeString(str: string | null | undefined): string {
+  return typeof str === "string" ? str : ""
+}
+
+function safeNumber(num: number | null | undefined, fallback = 0): number {
+  return typeof num === "number" && !isNaN(num) ? num : fallback
+}
+
 // Curated impact dictionary (~50 words/phrases)
 const IMPACT_DICTIONARY = [
   "increased",
@@ -98,17 +110,17 @@ const IMPACT_PHRASE_MAP: Record<string, string> = {
   tripled: "Tripled impact",
   revenue: "Grew revenue",
   conversion: "Improved conversion",
-  shipped: "Shipped deliverables",
-  executed: "Executed flawlessly",
+  shipped: "Shipped products",
+  executed: "Executed strategy",
   closed: "Closed deals",
   secured: "Secured wins",
-  won: "Won recognition",
-  earned: "Earned trust",
-  surpassed: "Surpassed expectations",
-  outperformed: "Outperformed benchmarks",
-  promoted: "Promoted growth",
+  won: "Won business",
+  earned: "Earned recognition",
+  surpassed: "Surpassed goals",
+  outperformed: "Outperformed peers",
+  promoted: "Got promoted",
   record: "Set records",
-  breakthrough: "Made breakthroughs",
+  breakthrough: "Achieved breakthrough",
   milestone: "Hit milestones",
   elevated: "Elevated standards",
   simplified: "Simplified complexity",
@@ -116,322 +128,259 @@ const IMPACT_PHRASE_MAP: Record<string, string> = {
   championed: "Championed initiatives",
   enabled: "Enabled success",
   empowered: "Empowered teams",
-  facilitated: "Facilitated outcomes",
-  enhanced: "Enhanced quality",
-  strengthened: "Strengthened results",
+  facilitated: "Facilitated progress",
+  enhanced: "Enhanced outcomes",
+  strengthened: "Strengthened relationships",
   expanded: "Expanded reach",
 }
 
-function getStrengthLabel(count: number): { label: string; className: string } {
-  if (count >= 3) return { label: "Core", className: "bg-neutral-800 text-white" }
-  if (count === 2) return { label: "Strong", className: "bg-neutral-200 text-neutral-700" }
-  return { label: "Emerging", className: "bg-neutral-100 text-neutral-500" }
-}
+export function PremierSignalBar({ allCards, traitSignals, totalContributions, firstName }: PremierSignalBarProps) {
+  const safeAllCards = safeArray(allCards)
+  const safeTraitSignals = safeArray(traitSignals)
+  const safeTotalContributions = safeNumber(totalContributions)
+  const safeFirstName = safeString(firstName) || "this person"
 
-function getSourceInfo(sources: { nomee: number; imported: number }): {
-  label: string
-  icon: "nomee" | "imported" | "both"
-} {
-  if (sources.nomee > 0 && sources.imported > 0) {
-    return { label: "Nomee + Imported", icon: "both" }
-  }
-  if (sources.imported > 0) {
-    return { label: "Imported feedback", icon: "imported" }
-  }
-  return { label: "Nomee submissions", icon: "nomee" }
-}
+  // Top Signals - ranked by count
+  const topSignals = useMemo(() => {
+    const counts: Record<string, { count: number; sources: Set<"nomee" | "imported">; example?: string }> = {}
 
-function SignalPill({
-  label,
-  count,
-  strength,
-  source,
-  examplePhrase,
-  colorScheme,
-}: {
-  label: string
-  count: number
-  strength: { label: string; className: string }
-  source: { label: string; icon: "nomee" | "imported" | "both" }
-  examplePhrase?: string
-  colorScheme: "blue" | "emerald" | "amber"
-}) {
-  const colorClasses = {
-    blue: {
-      bg: "bg-blue-50",
-      text: "text-blue-700",
-      border: "border-blue-100",
-      countText: "text-blue-500",
-      hover: "hover:bg-blue-100 hover:border-blue-200",
-    },
-    emerald: {
-      bg: "bg-emerald-50",
-      text: "text-emerald-700",
-      border: "border-emerald-100",
-      countText: "text-emerald-500",
-      hover: "hover:bg-emerald-100 hover:border-emerald-200",
-    },
-    amber: {
-      bg: "bg-amber-50",
-      text: "text-amber-700",
-      border: "border-amber-100",
-      countText: "text-amber-500",
-      hover: "hover:bg-amber-100 hover:border-amber-200",
-    },
-  }
-
-  const colors = colorClasses[colorScheme]
-
-  return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border cursor-default transition-colors ${colors.bg} ${colors.text} ${colors.border} ${colors.hover}`}
-          >
-            {/* Source indicator dot */}
-            <span className="flex items-center gap-0.5 mr-0.5">
-              {source.icon === "both" ? (
-                <>
-                  <MessageSquare className="w-2.5 h-2.5 opacity-60" />
-                  <Upload className="w-2.5 h-2.5 opacity-60" />
-                </>
-              ) : source.icon === "imported" ? (
-                <Upload className="w-2.5 h-2.5 opacity-60" />
-              ) : (
-                <MessageSquare className="w-2.5 h-2.5 opacity-60" />
-              )}
-            </span>
-
-            {/* Label */}
-            <span className="font-medium">{label}</span>
-
-            {/* Count */}
-            <span className={`${colors.countText} tabular-nums`}>{count}</span>
-
-            {/* Strength micro-label */}
-            <span
-              className={`ml-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold leading-none ${strength.className}`}
-            >
-              {strength.label}
-            </span>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs p-3 space-y-1.5">
-          <p className="text-sm font-medium">
-            Mentioned by {count} {count === 1 ? "person" : "people"}
-          </p>
-          <p className="text-xs text-neutral-500">Source: {source.label}</p>
-          {examplePhrase && (
-            <p className="text-xs text-neutral-600 italic border-t border-neutral-100 pt-1.5 mt-1.5">
-              "{examplePhrase}"
-            </p>
-          )}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  )
-}
-
-export function PremierSignalBar({
-  allCards,
-  traitSignals,
-  totalContributions,
-  firstName = "them",
-}: PremierSignalBarProps) {
-  // Compute signals from cards with source tracking
-  const signals = useMemo(() => {
-    const traitMeta: Record<
-      string,
-      {
-        count: number
-        sources: { nomee: number; imported: number }
-        examples: string[]
-      }
-    > = {}
-
-    allCards.forEach((card) => {
-      card.traits.forEach((trait) => {
-        if (!traitMeta[trait]) {
-          traitMeta[trait] = { count: 0, sources: { nomee: 0, imported: 0 }, examples: [] }
+    safeAllCards.forEach((card) => {
+      if (!card) return
+      const cardTraits = safeArray(card.traits)
+      cardTraits.forEach((trait) => {
+        const safeTrait = safeString(trait)
+        if (!safeTrait) return
+        if (!counts[safeTrait]) {
+          counts[safeTrait] = { count: 0, sources: new Set(), example: undefined }
         }
-        traitMeta[trait].count++
-        traitMeta[trait].sources[card.type]++
-        // Extract a short phrase containing the trait or related content
-        if (traitMeta[trait].examples.length < 3 && card.excerpt.length > 20) {
-          const shortExcerpt = card.excerpt.slice(0, 80).trim()
-          if (shortExcerpt.length > 20) {
-            traitMeta[trait].examples.push(shortExcerpt + (card.excerpt.length > 80 ? "..." : ""))
-          }
+        counts[safeTrait].count++
+        if (card.type) counts[safeTrait].sources.add(card.type)
+        if (!counts[safeTrait].example && card.excerpt) {
+          counts[safeTrait].example = safeString(card.excerpt).slice(0, 80)
         }
       })
     })
 
-    // Top Signals: most frequently mentioned traits (3-6)
-    const topSignals = traitSignals.slice(0, 6).map((s) => ({
-      label: s.label,
-      count: s.count,
-      sources: traitMeta[s.label]?.sources || { nomee: s.count, imported: 0 },
-      example: traitMeta[s.label]?.examples[0],
-    }))
-
-    // Most Consistent: traits appearing across the most unique contributors
-    const traitByContributor: Record<string, Set<string>> = {}
-    allCards.forEach((card) => {
-      const contributorKey = card.contributorId || card.id
-      card.traits.forEach((trait) => {
-        if (!traitByContributor[trait]) {
-          traitByContributor[trait] = new Set()
-        }
-        traitByContributor[trait].add(contributorKey)
-      })
-    })
-
-    const consistentSignals = Object.entries(traitByContributor)
-      .map(([trait, contributors]) => ({
-        label: trait,
-        contributors: contributors.size,
-        sources: traitMeta[trait]?.sources || { nomee: contributors.size, imported: 0 },
-        example: traitMeta[trait]?.examples[0],
+    return Object.entries(counts)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 6)
+      .map(([label, data]) => ({
+        label,
+        count: data.count,
+        sources: Array.from(data.sources),
+        example: data.example,
+        strength: data.count >= 3 ? "Core" : data.count >= 2 ? "Strong" : "Emerging",
       }))
-      .sort((a, b) => b.contributors - a.contributors)
+  }, [safeAllCards])
+
+  // Most Consistent - traits that appear across multiple unique contributors
+  const consistentSignals = useMemo(() => {
+    const contributorTraits: Record<string, Set<string>> = {}
+
+    safeAllCards.forEach((card) => {
+      if (!card) return
+      const contributorKey = card.contributorId || card.id
+      const cardTraits = safeArray(card.traits)
+      cardTraits.forEach((trait) => {
+        const safeTrait = safeString(trait)
+        if (!safeTrait) return
+        if (!contributorTraits[safeTrait]) {
+          contributorTraits[safeTrait] = new Set()
+        }
+        contributorTraits[safeTrait].add(contributorKey)
+      })
+    })
+
+    return Object.entries(contributorTraits)
+      .map(([label, contributors]) => ({
+        label,
+        count: contributors.size,
+        strength: contributors.size >= 3 ? "Core" : contributors.size >= 2 ? "Strong" : "Emerging",
+      }))
+      .sort((a, b) => b.count - a.count)
       .slice(0, 4)
-      .filter((s) => s.contributors >= 2)
+  }, [safeAllCards])
 
-    const impactMeta: Record<
-      string,
-      {
-        count: number
-        sources: { nomee: number; imported: number }
-        examples: string[]
-      }
-    > = {}
+  // Proof of Impact - extracted from text
+  const impactSignals = useMemo(() => {
+    const counts: Record<string, { count: number; phrases: string[] }> = {}
 
-    allCards.forEach((card) => {
-      const textLower = card.excerpt.toLowerCase()
+    safeAllCards.forEach((card) => {
+      if (!card) return
+      const text = safeString(card.excerpt).toLowerCase()
+
       IMPACT_DICTIONARY.forEach((word) => {
         const regex = new RegExp(`\\b${word}\\b`, "gi")
-        const matches = textLower.match(regex)
+        const matches = text.match(regex)
         if (matches) {
-          if (!impactMeta[word]) {
-            impactMeta[word] = { count: 0, sources: { nomee: 0, imported: 0 }, examples: [] }
+          if (!counts[word]) {
+            counts[word] = { count: 0, phrases: [] }
           }
-          impactMeta[word].count += matches.length
-          impactMeta[word].sources[card.type]++
-          // Extract phrase around the impact word
-          if (impactMeta[word].examples.length < 2) {
-            const wordIndex = textLower.indexOf(word)
-            if (wordIndex !== -1) {
-              const start = Math.max(0, wordIndex - 20)
-              const end = Math.min(card.excerpt.length, wordIndex + word.length + 40)
-              const phrase =
-                (start > 0 ? "..." : "") +
-                card.excerpt.slice(start, end).trim() +
-                (end < card.excerpt.length ? "..." : "")
-              impactMeta[word].examples.push(phrase)
-            }
+          counts[word].count += matches.length
+
+          // Extract a phrase around the word
+          const idx = text.indexOf(word.toLowerCase())
+          if (idx !== -1 && counts[word].phrases.length < 2) {
+            const start = Math.max(0, idx - 20)
+            const end = Math.min(text.length, idx + word.length + 30)
+            const phrase = "..." + text.slice(start, end).trim() + "..."
+            counts[word].phrases.push(phrase)
           }
         }
       })
     })
 
-    const outcomeSignals = Object.entries(impactMeta)
+    return Object.entries(counts)
       .sort(([, a], [, b]) => b.count - a.count)
       .slice(0, 4)
-      .map(([word, meta]) => ({
-        keyword: word,
+      .map(([word, data]) => ({
         label: IMPACT_PHRASE_MAP[word] || word,
-        count: meta.count,
-        sources: meta.sources,
-        example: meta.examples[0],
+        count: data.count,
+        phrases: data.phrases,
+        strength: data.count >= 3 ? "Core" : data.count >= 2 ? "Strong" : "Emerging",
       }))
+  }, [safeAllCards])
 
-    return { topSignals, consistentSignals, outcomeSignals }
-  }, [allCards, traitSignals])
+  // Don't render if no data
+  if (safeAllCards.length === 0 && safeTraitSignals.length === 0) {
+    return null
+  }
 
-  // Fallback if not enough data
-  if (totalContributions < 3 || signals.topSignals.length === 0) {
-    return (
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-6 text-center">
-        <p className="text-sm text-neutral-500">Signals will appear after 3+ contributions.</p>
-      </div>
-    )
+  const getStrengthStyle = (strength: string) => {
+    switch (strength) {
+      case "Core":
+        return "bg-emerald-600 text-white"
+      case "Strong":
+        return "bg-neutral-200 text-neutral-700"
+      default:
+        return "bg-neutral-100 text-neutral-500"
+    }
+  }
+
+  const getSourceIcon = (sources: string[]) => {
+    if (!sources || sources.length === 0) return null
+    const hasNomee = sources.includes("nomee")
+    const hasImported = sources.includes("imported")
+
+    if (hasNomee && hasImported) {
+      return (
+        <span className="flex gap-0.5">
+          <MessageSquare className="w-3 h-3 text-sky-500" />
+          <Upload className="w-3 h-3 text-amber-500" />
+        </span>
+      )
+    }
+    if (hasNomee) return <MessageSquare className="w-3 h-3 text-sky-500" />
+    if (hasImported) return <Upload className="w-3 h-3 text-amber-500" />
+    return null
   }
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-elegant">
-      <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-neutral-100">
-        {/* Top Signals */}
-        <div className="p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-blue-500" />
-            <h4 className="text-sm font-semibold text-neutral-900 tracking-tight">Top Signals</h4>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {signals.topSignals.map((signal) => (
-              <SignalPill
-                key={signal.label}
-                label={signal.label}
-                count={signal.count}
-                strength={getStrengthLabel(signal.count)}
-                source={getSourceInfo(signal.sources)}
-                examplePhrase={signal.example}
-                colorScheme="blue"
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Most Consistent */}
-        <div className="p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Users className="w-4 h-4 text-emerald-500" />
-            <h4 className="text-sm font-semibold text-neutral-900 tracking-tight">Most Consistent</h4>
-          </div>
-          {signals.consistentSignals.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {signals.consistentSignals.map((signal) => (
-                <SignalPill
-                  key={signal.label}
-                  label={signal.label}
-                  count={signal.contributors}
-                  strength={getStrengthLabel(signal.contributors)}
-                  source={getSourceInfo(signal.sources)}
-                  examplePhrase={signal.example}
-                  colorScheme="emerald"
-                />
-              ))}
+    <TooltipProvider>
+      <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Top Signals */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-neutral-700">
+              <TrendingUp className="w-4 h-4" />
+              <h3 className="font-semibold text-sm">Top Signals</h3>
             </div>
-          ) : (
-            <p className="text-xs text-neutral-500">Need 2+ contributors per signal</p>
-          )}
-        </div>
-
-        {/* Proof of Impact */}
-        <div className="p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Zap className="w-4 h-4 text-amber-500" />
-            <h4 className="text-sm font-semibold text-neutral-900 tracking-tight">Proof of impact</h4>
-          </div>
-          {signals.outcomeSignals.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {signals.outcomeSignals.map((signal) => (
-                <SignalPill
-                  key={signal.keyword}
-                  label={signal.label}
-                  count={signal.count}
-                  strength={getStrengthLabel(signal.count)}
-                  source={getSourceInfo(signal.sources)}
-                  examplePhrase={signal.example}
-                  colorScheme="amber"
-                />
-              ))}
+            <div className="space-y-2">
+              {topSignals.length > 0 ? (
+                topSignals.map((signal) => (
+                  <Tooltip key={signal.label}>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2 text-sm cursor-help">
+                        {getSourceIcon(signal.sources)}
+                        <span className="text-neutral-700">{signal.label}</span>
+                        <span className="text-neutral-400">{signal.count}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getStrengthStyle(signal.strength)}`}>
+                          {signal.strength}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="text-xs">
+                        Mentioned by {signal.count} {signal.count === 1 ? "person" : "people"}
+                      </p>
+                      {signal.example && <p className="text-xs text-neutral-400 mt-1 italic">"{signal.example}..."</p>}
+                    </TooltipContent>
+                  </Tooltip>
+                ))
+              ) : (
+                <p className="text-xs text-neutral-400">No signals yet</p>
+              )}
             </div>
-          ) : (
-            <p className="text-xs text-neutral-500">No outcome verbs detected</p>
-          )}
+          </div>
+
+          {/* Most Consistent */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-neutral-700">
+              <Users className="w-4 h-4" />
+              <h3 className="font-semibold text-sm">Most Consistent</h3>
+            </div>
+            <div className="space-y-2">
+              {consistentSignals.length > 0 ? (
+                consistentSignals.map((signal) => (
+                  <Tooltip key={signal.label}>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2 text-sm cursor-help">
+                        <Users className="w-3 h-3 text-teal-500" />
+                        <span className="text-neutral-700">{signal.label}</span>
+                        <span className="text-neutral-400">{signal.count}p</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getStrengthStyle(signal.strength)}`}>
+                          {signal.strength}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p className="text-xs">
+                        Mentioned by {signal.count} different {signal.count === 1 ? "person" : "people"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))
+              ) : (
+                <p className="text-xs text-neutral-400">No consistent signals yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Proof of Impact */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-amber-600">
+              <Zap className="w-4 h-4" />
+              <h3 className="font-semibold text-sm">Proof of impact</h3>
+            </div>
+            <div className="space-y-2">
+              {impactSignals.length > 0 ? (
+                impactSignals.map((signal) => (
+                  <Tooltip key={signal.label}>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2 text-sm cursor-help">
+                        <MessageSquare className="w-3 h-3 text-amber-500" />
+                        <span className="text-amber-700">{signal.label}</span>
+                        <span className="text-amber-400">{signal.count}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getStrengthStyle(signal.strength)}`}>
+                          {signal.strength}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="text-xs">Found {signal.count} times in feedback</p>
+                      {signal.phrases && signal.phrases.length > 0 && (
+                        <p className="text-xs text-neutral-400 mt-1 italic">{signal.phrases[0]}</p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                ))
+              ) : (
+                <p className="text-xs text-neutral-400">No impact signals yet</p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   )
 }

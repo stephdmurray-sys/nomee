@@ -5,6 +5,7 @@ import { generateVibeCheck } from "@/lib/generate-vibe-check"
 import { extractAnchorQuote } from "@/lib/extract-anchor-quote"
 import { generateInterpretationSentence } from "@/lib/generate-interpretation-sentence"
 import { buildProfileAnalysis } from "@/lib/build-profile-analysis"
+import { ProfileErrorBoundary } from "@/components/profile-error-boundary"
 
 export default async function PublicNomeePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params
@@ -14,25 +15,10 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
     redirect("/" + username)
   }
 
-  console.log("[v0] PublicNomeePage: Loading profile for username:", username)
-
   try {
     const supabase = await createClient()
-    console.log("[v0] PublicNomeePage: Supabase client created successfully")
 
     const profileResponse = await supabase.from("profiles").select("*").eq("slug", username).maybeSingle()
-
-    console.log("[v0] Profile query response:", {
-      hasData: !!profileResponse.data,
-      hasError: !!profileResponse.error,
-      errorDetails: profileResponse.error
-        ? {
-            message: profileResponse.error.message,
-            code: profileResponse.error.code,
-            details: profileResponse.error.details,
-          }
-        : null,
-    })
 
     if (profileResponse.error) {
       console.error("[v0] Profile query error:", profileResponse.error.message)
@@ -40,19 +26,17 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
     }
 
     if (!profileResponse.data) {
-      console.log("[v0] PublicNomeePage: No profile found, calling notFound()")
       notFound()
     }
 
     const profile = profileResponse.data
 
-    console.log("[v0] PublicNomeePage: Profile found:", {
-      id: profile.id,
-      slug: profile.slug,
-      name: profile.full_name,
-    })
-
-    const profileAnalysis = await buildProfileAnalysis(profile.id)
+    let profileAnalysis = { traitSignals: [], vibeSignals: [], impactSignals: [], totalDataCount: 0 }
+    try {
+      profileAnalysis = await buildProfileAnalysis(profile.id)
+    } catch (e) {
+      console.error("[v0] buildProfileAnalysis failed:", e)
+    }
 
     const { data: contributions } = await supabase
       .from("contributions")
@@ -61,24 +45,6 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
       .order("created_at", { ascending: false })
 
     const featuredContributions = contributions || []
-
-    console.log("[v0] PublicNomeePage: Total contributions fetched:", featuredContributions.length)
-    console.log(
-      "[v0] PublicNomeePage: Contributions with audio_url field:",
-      featuredContributions.filter((c) => c.audio_url).length,
-    )
-    console.log(
-      "[v0] PublicNomeePage: Sample contributions with audio:",
-      featuredContributions
-        .filter((c) => c.audio_url)
-        .slice(0, 3)
-        .map((c) => ({
-          id: c.id,
-          contributor_name: c.contributor_name,
-          audio_url: c.audio_url ? "EXISTS" : "NULL",
-          audio_url_length: c.audio_url?.length,
-        })),
-    )
 
     const { data: importedFeedback } = await supabase
       .from("imported_feedback")
@@ -109,13 +75,12 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
         }
       })
     })
-
-    importedFeedback?.forEach((feedback) => {
+    ;(importedFeedback || []).forEach((feedback) => {
       const traits = feedback.traits || []
       const confidenceScore = feedback.confidence_score || 0
       const feedbackWeight = confidenceScore < 0.7 ? 0.3 : 0.5
 
-      traits.forEach((trait) => {
+      traits.forEach((trait: string) => {
         if (!traitFrequency[trait]) {
           traitFrequency[trait] = { count: 0, examples: [], category: "leadership", weight: 0 }
         }
@@ -140,34 +105,41 @@ export default async function PublicNomeePage({ params }: { params: Promise<{ us
     const totalContributions = featuredContributions.length
     const uniqueCompanies = new Set(featuredContributions.map((c) => c.contributor_company).filter((c) => c)).size
 
-    const vibeLabels = await generateVibeCheck(featuredContributions)
+    let vibeLabels: string[] = []
+    try {
+      vibeLabels = await generateVibeCheck(featuredContributions)
+    } catch (e) {
+      console.error("[v0] generateVibeCheck failed:", e)
+    }
+
     const anchorQuote = extractAnchorQuote(featuredContributions)
 
-    const interpretationSentence = await generateInterpretationSentence(
-      profile.full_name || "this person",
-      traitsWithCounts.slice(0, 5),
-      totalContributions,
-    )
-
-    console.log("[v0] PublicNomeePage: Rendering profile with", {
-      contributionsCount: featuredContributions.length,
-      importedFeedbackCount: importedFeedback?.length || 0,
-      traitsCount: traitsWithCounts.length,
-    })
+    let interpretationSentence = ""
+    try {
+      interpretationSentence = await generateInterpretationSentence(
+        profile.full_name || "this person",
+        traitsWithCounts.slice(0, 5),
+        totalContributions,
+      )
+    } catch (e) {
+      console.error("[v0] generateInterpretationSentence failed:", e)
+    }
 
     return (
-      <PremierProfileClient
-        profile={profile}
-        contributions={featuredContributions}
-        importedFeedback={importedFeedback || []}
-        traits={traitsWithCounts}
-        totalContributions={totalContributions}
-        uniqueCompanies={uniqueCompanies}
-        interpretationSentence={interpretationSentence}
-        vibeLabels={vibeLabels}
-        anchorQuote={anchorQuote}
-        profileAnalysis={profileAnalysis}
-      />
+      <ProfileErrorBoundary slug={username}>
+        <PremierProfileClient
+          profile={profile}
+          contributions={featuredContributions}
+          importedFeedback={importedFeedback || []}
+          traits={traitsWithCounts}
+          totalContributions={totalContributions}
+          uniqueCompanies={uniqueCompanies}
+          interpretationSentence={interpretationSentence}
+          vibeLabels={vibeLabels}
+          anchorQuote={anchorQuote}
+          profileAnalysis={profileAnalysis}
+        />
+      </ProfileErrorBoundary>
     )
   } catch (error) {
     console.error("[v0] PublicNomeePage: Error occurred:", error instanceof Error ? error.message : String(error))

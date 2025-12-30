@@ -16,6 +16,7 @@ import { usePinnedHighlights, PinButton } from "@/components/pinned-highlights"
 import { SmartVibePills } from "@/components/smart-vibe-pills"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Link from "next/link"
+import { safeArray, safeString, safeNumber, isEmptyOrZero } from "@/lib/safe-utils"
 
 interface Profile {
   id: string
@@ -99,28 +100,42 @@ export function PremierProfileClient({
   profileAnalysis,
   isOwner = false,
 }: PremierProfileClientProps) {
-  const contributions = dedupeContributions(rawContributions)
-  const voiceContributions = contributions.filter((c) => c.voice_url || c.audio_url)
-  const voiceNotesCount = useMemo(() => {
-    const count = rawContributions.filter((c) => c.voice_url || c.audio_url).length
-    return count
-  }, [rawContributions])
+  const safeRawContributions = safeArray(rawContributions)
+  const safeRawImportedFeedback = safeArray(rawImportedFeedback)
+  const safeTraits = safeArray(traits)
+  const safeVibeLabels = safeArray(vibeLabels)
 
-  const analyzableUploads = rawImportedFeedback.filter((u) => u.included_in_analysis && u.ocr_text)
-  const totalUploads = rawImportedFeedback.length
+  const safeProfileAnalysis = {
+    traitSignals: safeArray(profileAnalysis?.traitSignals),
+    vibeSignals: safeArray(profileAnalysis?.vibeSignals),
+    impactSignals: safeArray(profileAnalysis?.impactSignals),
+    totalDataCount: safeNumber(profileAnalysis?.totalDataCount, 0),
+  }
+
+  const contributions = dedupeContributions(safeRawContributions)
+  const voiceContributions = contributions.filter((c) => c?.voice_url || c?.audio_url)
+
+  const voiceNotesCount = useMemo(() => {
+    const count = safeRawContributions.filter((c) => c?.voice_url || c?.audio_url).length
+    return count
+  }, [safeRawContributions])
+
+  const analyzableUploads = safeRawImportedFeedback.filter((u) => u?.included_in_analysis && u?.ocr_text)
+  const totalUploads = safeRawImportedFeedback.length
 
   const dedupedImportedFeedback = Array.from(
     new Map(
-      rawImportedFeedback.map((feedback) => {
-        const key = `${feedback.giver_name}|${feedback.giver_company}|${feedback.ai_extracted_excerpt}`
+      safeRawImportedFeedback.map((feedback) => {
+        const key = `${safeString(feedback?.giver_name)}|${safeString(feedback?.giver_company)}|${safeString(feedback?.ai_extracted_excerpt)}`
         return [key, feedback]
       }),
     ).values(),
   )
 
   const importedFeedback = dedupedImportedFeedback.filter((feedback) => {
-    const ownerFirstName = profile.full_name?.split(" ")[0]?.toLowerCase()
-    const excerptLower = (feedback.ai_extracted_excerpt || "").toLowerCase()
+    if (!feedback) return false
+    const ownerFirstName = safeString(profile?.full_name).split(" ")[0]?.toLowerCase() || ""
+    const excerptLower = safeString(feedback.ai_extracted_excerpt).toLowerCase()
     const commonNames = ["stephanie", "sarah", "john", "michael", "david", "jennifer", "jessica"]
     const mentionsDifferentName = commonNames.some((name) => name !== ownerFirstName && excerptLower.includes(name))
     return !mentionsDifferentName
@@ -136,7 +151,7 @@ export function PremierProfileClient({
   const [howItFeelsRelationshipFilter, setHowItFeelsRelationshipFilter] = useState<RelationshipFilterCategory>("All")
   const [voiceRelationshipFilter, setVoiceRelationshipFilter] = useState<RelationshipFilterCategory>("All")
 
-  const { pinnedItems, pinQuote, pinVoice, pinTrait, unpin, isPinned } = usePinnedHighlights(profile.slug)
+  const { pinnedItems, pinQuote, pinVoice, pinTrait, unpin, isPinned } = usePinnedHighlights(safeString(profile?.slug))
 
   const [selectedVibeFilters, setSelectedVibeFilters] = useState<string[]>([])
   const [snapshotFilter, setSnapshotFilter] = useState<{ type: "trait" | "vibe" | "outcome"; value: string } | null>(
@@ -144,30 +159,30 @@ export function PremierProfileClient({
   )
 
   const topSignals = useMemo(() => {
-    return profileAnalysis.traitSignals.slice(0, 6).map((s) => s.label)
-  }, [profileAnalysis.traitSignals])
+    return safeProfileAnalysis.traitSignals.slice(0, 6).map((s) => safeString(s?.label))
+  }, [safeProfileAnalysis.traitSignals])
 
   const filteredVoiceContributions = useMemo(() => {
     if (voiceRelationshipFilter === "All") return voiceContributions
-    return voiceContributions.filter((c) => c.relationship_category === voiceRelationshipFilter)
+    return voiceContributions.filter((c) => c?.relationship_category === voiceRelationshipFilter)
   }, [voiceContributions, voiceRelationshipFilter])
 
   const howItFeelsContributions = useMemo(() => {
-    return contributions.filter((c) => c.written_note?.trim())
+    return contributions.filter((c) => safeString(c?.written_note).trim())
   }, [contributions])
 
   const allCards = useMemo(() => {
     const nomeeCards = howItFeelsContributions.map((c) => ({
-      id: c.id,
-      excerpt: c.written_note || "",
+      id: safeString(c?.id),
+      excerpt: safeString(c?.written_note),
       traits: [
-        ...(c.traits_category1 || []),
-        ...(c.traits_category2 || []),
-        ...(c.traits_category3 || []),
-        ...(c.traits_category4 || []),
+        ...safeArray(c?.traits_category1),
+        ...safeArray(c?.traits_category2),
+        ...safeArray(c?.traits_category3),
+        ...safeArray(c?.traits_category4),
       ],
       type: "nomee" as const,
-      contributorId: c.contributor_id,
+      contributorId: c?.contributor_id,
     }))
 
     return nomeeCards
@@ -175,22 +190,22 @@ export function PremierProfileClient({
 
   const allCardsForSignals = useMemo(() => {
     const nomeeCards = howItFeelsContributions.map((c) => ({
-      id: c.id,
-      excerpt: c.written_note || "",
+      id: safeString(c?.id),
+      excerpt: safeString(c?.written_note),
       traits: [
-        ...(c.traits_category1 || []),
-        ...(c.traits_category2 || []),
-        ...(c.traits_category3 || []),
-        ...(c.traits_category4 || []),
+        ...safeArray(c?.traits_category1),
+        ...safeArray(c?.traits_category2),
+        ...safeArray(c?.traits_category3),
+        ...safeArray(c?.traits_category4),
       ],
       type: "nomee" as const,
-      contributorId: c.contributor_id,
+      contributorId: c?.contributor_id,
     }))
 
     const importedCards = importedFeedback.map((f) => ({
-      id: f.id,
-      excerpt: f.ai_extracted_excerpt || "",
-      traits: f.traits || [],
+      id: safeString(f?.id),
+      excerpt: safeString(f?.ai_extracted_excerpt),
+      traits: safeArray(f?.traits),
       type: "imported" as const,
     }))
 
@@ -201,15 +216,15 @@ export function PremierProfileClient({
     if (!snapshotFilter) return cards
 
     return cards.filter((card) => {
-      const text = (card.excerpt || "").toLowerCase()
-      const cardTraits = card.traits || []
+      const text = safeString(card?.excerpt).toLowerCase()
+      const cardTraits = safeArray(card?.traits)
 
       if (snapshotFilter.type === "trait") {
-        return cardTraits.some((t) => t.toLowerCase().includes(snapshotFilter.value.toLowerCase()))
+        return cardTraits.some((t) => safeString(t).toLowerCase().includes(snapshotFilter.value.toLowerCase()))
       } else if (snapshotFilter.type === "vibe") {
         return (
           text.includes(snapshotFilter.value.toLowerCase()) ||
-          cardTraits.some((t) => t.toLowerCase().includes(snapshotFilter.value.toLowerCase()))
+          cardTraits.some((t) => safeString(t).toLowerCase().includes(snapshotFilter.value.toLowerCase()))
         )
       } else if (snapshotFilter.type === "outcome") {
         return text.includes(snapshotFilter.value.toLowerCase())
@@ -222,12 +237,16 @@ export function PremierProfileClient({
     let filtered = howItFeelsContributions
 
     if (howItFeelsRelationshipFilter !== "All") {
-      filtered = filtered.filter((c) => c.relationship_category === howItFeelsRelationshipFilter)
+      filtered = filtered.filter((c) => c?.relationship_category === howItFeelsRelationshipFilter)
     }
 
     if (selectedTraitFilters.length > 0) {
       filtered = filtered.filter((c) => {
-        const allTraits = [...(c.traits_category1 || []), ...(c.traits_category2 || []), ...(c.traits_category3 || [])]
+        const allTraits = [
+          ...safeArray(c?.traits_category1),
+          ...safeArray(c?.traits_category2),
+          ...safeArray(c?.traits_category3),
+        ]
         return selectedTraitFilters.some((t) => allTraits.includes(t))
       })
     }
@@ -238,7 +257,7 @@ export function PremierProfileClient({
   const filteredImportedFeedback = useMemo(() => {
     if (selectedTraitFilters.length === 0) return importedFeedback
     return importedFeedback.filter((f) => {
-      return selectedTraitFilters.some((t) => f.traits?.includes(t))
+      return selectedTraitFilters.some((t) => safeArray(f?.traits).includes(t))
     })
   }, [importedFeedback, selectedTraitFilters])
 
@@ -275,12 +294,15 @@ export function PremierProfileClient({
   }, [])
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(`https://www.nomee.co/${profile.slug}`)
-    setShowCopied(true)
-    setTimeout(() => setShowCopied(false), 2000)
+    const slug = safeString(profile?.slug)
+    if (slug) {
+      navigator.clipboard.writeText(`https://www.nomee.co/${slug}`)
+      setShowCopied(true)
+      setTimeout(() => setShowCopied(false), 2000)
+    }
   }
 
-  const firstName = profile.full_name?.split(" ")[0] || "This person"
+  const firstName = safeString(profile?.full_name).split(" ")[0] || "This person"
 
   const confidenceLevel = useMemo(() => {
     const nomeeCount = howItFeelsContributions.length
@@ -299,6 +321,20 @@ export function PremierProfileClient({
         ? "bg-amber-50 text-amber-700 border-amber-200"
         : "bg-slate-50 text-slate-600 border-slate-200"
 
+  if (!profile?.id || !profile?.slug) {
+    return (
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-serif text-neutral-900 mb-2">Profile not found</h1>
+          <p className="text-neutral-600 mb-4">This profile may have been moved or deleted.</p>
+          <Button asChild>
+            <Link href="/">Go home</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <TooltipProvider>
       <main className="min-h-screen bg-[#FAF9F7]">
@@ -307,14 +343,16 @@ export function PremierProfileClient({
           className={`pt-12 pb-8 px-4 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
         >
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-serif text-neutral-900 mb-3">{profile.full_name}</h1>
-            {profile.title && <p className="text-lg text-neutral-600 mb-6">{profile.title}</p>}
+            <h1 className="text-4xl md:text-5xl font-serif text-neutral-900 mb-3">
+              {safeString(profile.full_name, "Anonymous")}
+            </h1>
+            {!isEmptyOrZero(profile.title) && <p className="text-lg text-neutral-600 mb-6">{profile.title}</p>}
 
             {/* Stats row */}
             <div className="flex items-center justify-center gap-2 text-sm text-neutral-500 mb-4 flex-wrap">
               <span className="font-medium text-neutral-700">NOMEE PROFILE</span>
               <span className="text-neutral-300">·</span>
-              <span>{totalContributions} people</span>
+              <span>{safeNumber(totalContributions, 0)} people</span>
               {voiceNotesCount > 0 && (
                 <>
                   <span className="text-neutral-300">·</span>
@@ -338,12 +376,12 @@ export function PremierProfileClient({
         </section>
 
         {/* Vibe Pills Section */}
-        {vibeLabels && vibeLabels.length > 0 && (
+        {safeVibeLabels.length > 0 && (
           <section className="pb-8 px-4">
             <div className="max-w-4xl mx-auto">
               <SmartVibePills
-                vibes={vibeLabels}
-                traits={traits}
+                vibes={safeVibeLabels}
+                traits={safeTraits}
                 selectedVibes={selectedVibeFilters}
                 onVibeSelect={handleVibeSelect}
                 contributions={howItFeelsContributions}
@@ -354,15 +392,15 @@ export function PremierProfileClient({
         )}
 
         {/* AI Summary Section */}
-        {profileAnalysis.totalDataCount >= 1 && (
+        {safeProfileAnalysis.totalDataCount >= 1 && (
           <section className="pb-8 px-4">
             <div className="max-w-4xl mx-auto">
               <AiPatternSummary
-                traits={traits}
-                totalContributions={totalContributions}
-                uniqueCompanies={uniqueCompanies}
-                interpretationSentence={interpretationSentence}
-                vibeLabels={vibeLabels}
+                traits={safeTraits}
+                totalContributions={safeNumber(totalContributions, 0)}
+                uniqueCompanies={safeNumber(uniqueCompanies, 0)}
+                interpretationSentence={safeString(interpretationSentence)}
+                vibeLabels={safeVibeLabels}
                 uploadsCount={totalUploads}
               />
             </div>
@@ -370,11 +408,11 @@ export function PremierProfileClient({
         )}
 
         {/* Trait Bar Section */}
-        {traits.length > 0 && (
+        {safeTraits.length > 0 && (
           <section className="pb-8 px-4">
             <div className="max-w-4xl mx-auto">
               <PremierTraitBar
-                traits={traits}
+                traits={safeTraits}
                 selectedTraits={selectedTraitFilters}
                 onTraitSelect={handleTraitFilterSelect}
                 contributions={howItFeelsContributions}
@@ -441,13 +479,15 @@ export function PremierProfileClient({
               {/* Direct/Nomee Cards */}
               {(sourceFilter === "all" || sourceFilter === "nomee") &&
                 filteredHowItFeels.map((contribution) => {
+                  if (!contribution?.id) return null
+
                   const allTraits = [
-                    ...(contribution.traits_category1 || []),
-                    ...(contribution.traits_category2 || []),
-                    ...(contribution.traits_category3 || []),
-                    ...(contribution.traits_category4 || []),
+                    ...safeArray(contribution.traits_category1),
+                    ...safeArray(contribution.traits_category2),
+                    ...safeArray(contribution.traits_category3),
+                    ...safeArray(contribution.traits_category4),
                   ]
-                  const keywords = extractKeywordsFromText(contribution.written_note || "", allTraits, topSignals)
+                  const keywords = extractKeywordsFromText(safeString(contribution.written_note), allTraits, topSignals)
 
                   return (
                     <div
@@ -465,7 +505,7 @@ export function PremierProfileClient({
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           <PinButton
                             isPinned={isPinned("quote", contribution.id)}
-                            onPin={() => pinQuote(contribution.id, contribution.written_note || "")}
+                            onPin={() => pinQuote(contribution.id, safeString(contribution.written_note))}
                             onUnpin={() => unpin("quote", contribution.id)}
                           />
                         </div>
@@ -473,14 +513,14 @@ export function PremierProfileClient({
 
                       <div className="pt-8">
                         <p className="text-neutral-700 text-sm leading-relaxed mb-4">
-                          {highlightQuote(contribution.written_note || "", keywords)}
+                          {highlightQuote(safeString(contribution.written_note), keywords)}
                         </p>
 
                         {/* Trait Pills */}
                         {allTraits.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mb-4">
-                            {allTraits.slice(0, 4).map((trait) => (
-                              <Tooltip key={trait}>
+                            {allTraits.slice(0, 4).map((trait, idx) => (
+                              <Tooltip key={`${trait}-${idx}`}>
                                 <TooltipTrigger asChild>
                                   <span
                                     className={`px-2 py-0.5 text-xs rounded-full border cursor-default transition-all ${
@@ -493,7 +533,9 @@ export function PremierProfileClient({
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>Appears in {traits.find((t) => t.label === trait)?.count || 1} contributions</p>
+                                  <p>
+                                    Appears in {safeTraits.find((t) => t?.label === trait)?.count || 1} contributions
+                                  </p>
                                 </TooltipContent>
                               </Tooltip>
                             ))}
@@ -502,14 +544,14 @@ export function PremierProfileClient({
 
                         {/* Contributor Info */}
                         <div className="pt-3 border-t border-neutral-100">
-                          <p className="font-medium text-neutral-900 text-sm">{contribution.contributor_name}</p>
-                          {contribution.relationship && contribution.relationship !== "0" && (
-                            <p className="text-xs text-neutral-500">
-                              {contribution.relationship}
-                              {contribution.contributor_company &&
-                                contribution.contributor_company.trim() !== "" &&
-                                ` · ${contribution.contributor_company}`}
-                            </p>
+                          <p className="font-medium text-neutral-900 text-sm">
+                            {safeString(contribution.contributor_name, "Anonymous")}
+                          </p>
+                          {!isEmptyOrZero(contribution.relationship) && (
+                            <p className="text-xs text-neutral-500">{contribution.relationship}</p>
+                          )}
+                          {!isEmptyOrZero(contribution.contributor_company) && (
+                            <p className="text-xs text-neutral-400">{contribution.contributor_company}</p>
                           )}
                         </div>
                       </div>
@@ -520,11 +562,16 @@ export function PremierProfileClient({
               {/* Imported Cards */}
               {(sourceFilter === "all" || sourceFilter === "imported") &&
                 filteredImportedFeedback.map((feedback) => {
+                  if (!feedback?.id) return null
+
+                  const feedbackTraits = safeArray(feedback.traits)
                   const keywords = extractKeywordsFromText(
-                    feedback.ai_extracted_excerpt || "",
-                    feedback.traits || [],
+                    safeString(feedback.ai_extracted_excerpt),
+                    feedbackTraits,
                     topSignals,
                   )
+                  const confidenceValue = safeNumber(feedback.confidence_score, 0)
+                  const confidencePercent = confidenceValue > 1 ? confidenceValue : Math.round(confidenceValue * 100)
 
                   return (
                     <div
@@ -532,91 +579,63 @@ export function PremierProfileClient({
                       className="break-inside-avoid mb-4 bg-gradient-to-br from-amber-50/50 to-white border border-amber-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative group"
                     >
                       {/* Source Badge */}
-                      <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                        <span className="flex items-center gap-1 px-2 py-1 bg-amber-100/80 rounded-full">
-                          <Upload className="w-3 h-3 text-amber-600" />
-                          <span className="text-[10px] font-medium text-amber-700">Imported</span>
-                        </span>
-                        {feedback.source_type && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-medium rounded-full">
-                            {feedback.source_type}
-                          </span>
-                        )}
+                      <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 bg-amber-100/80 rounded-full">
+                        <Upload className="w-3 h-3 text-amber-600" />
+                        <span className="text-[10px] font-medium text-amber-700">Imported</span>
                       </div>
 
-                      {/* Pin Button */}
-                      {isOwner && (
-                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <PinButton
-                            isPinned={isPinned("quote", feedback.id)}
-                            onPin={() => pinQuote(feedback.id, feedback.ai_extracted_excerpt || "")}
-                            onUnpin={() => unpin("quote", feedback.id)}
-                          />
-                        </div>
+                      {/* Confidence Badge */}
+                      {confidencePercent > 0 && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-neutral-100 rounded-full cursor-help">
+                              <Info className="w-3 h-3 text-neutral-500" />
+                              <span className="text-[10px] text-neutral-600">{confidencePercent}%</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Extraction confidence: How confident we are that the screenshot text was read correctly
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
 
                       <div className="pt-8">
                         <p className="text-neutral-700 text-sm leading-relaxed mb-4">
-                          {highlightQuote(feedback.ai_extracted_excerpt || "", keywords)}
+                          {highlightQuote(safeString(feedback.ai_extracted_excerpt), keywords)}
                         </p>
 
                         {/* Trait Pills */}
-                        {feedback.traits && feedback.traits.length > 0 && (
+                        {feedbackTraits.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mb-4">
-                            {feedback.traits.slice(0, 4).map((trait) => (
-                              <Tooltip key={trait}>
-                                <TooltipTrigger asChild>
-                                  <span
-                                    className={`px-2 py-0.5 text-xs rounded-full border cursor-default transition-all ${
-                                      selectedTraitFilters.includes(trait)
-                                        ? "bg-amber-100 text-amber-800 border-amber-300"
-                                        : "bg-neutral-50 text-neutral-600 border-neutral-200 hover:bg-neutral-100"
-                                    }`}
-                                  >
-                                    {trait}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Appears in {traits.find((t) => t.label === trait)?.count || 1} contributions</p>
-                                </TooltipContent>
-                              </Tooltip>
+                            {feedbackTraits.slice(0, 4).map((trait, idx) => (
+                              <span
+                                key={`${trait}-${idx}`}
+                                className={`px-2 py-0.5 text-xs rounded-full border ${
+                                  selectedTraitFilters.includes(trait)
+                                    ? "bg-amber-100 text-amber-800 border-amber-300"
+                                    : "bg-neutral-50 text-neutral-600 border-neutral-200"
+                                }`}
+                              >
+                                {trait}
+                              </span>
                             ))}
                           </div>
                         )}
 
-                        {/* Contributor Info */}
-                        <div className="pt-3 border-t border-neutral-100 flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-neutral-900 text-sm">{feedback.giver_name || "Anonymous"}</p>
-                            {feedback.giver_company && feedback.giver_company.trim() !== "" && (
-                              <p className="text-xs text-neutral-500">{feedback.giver_company}</p>
-                            )}
-                          </div>
-                          {feedback.source_type && (
-                            <span className="px-2 py-1 bg-blue-600 text-white text-[10px] font-medium rounded">
-                              {feedback.source_type}
-                            </span>
+                        {/* Giver Info */}
+                        <div className="pt-3 border-t border-neutral-100">
+                          <p className="font-medium text-neutral-900 text-sm">
+                            {safeString(feedback.giver_name, "Anonymous")}
+                          </p>
+                          {!isEmptyOrZero(feedback.giver_company) && (
+                            <p className="text-xs text-neutral-400">{feedback.giver_company}</p>
+                          )}
+                          {!isEmptyOrZero(feedback.source_type) && (
+                            <p className="text-xs text-neutral-400 mt-1">Source: {feedback.source_type}</p>
                           )}
                         </div>
-
-                        {/* Extraction confidence */}
-                        {feedback.confidence_score && (
-                          <div className="mt-3 pt-3 border-t border-amber-100/50">
-                            <div className="flex items-center gap-1 text-[10px] text-amber-600">
-                              <span>Extraction confidence: {Math.round(feedback.confidence_score * 100)}%</span>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Info className="w-3 h-3 cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="max-w-xs">
-                                    How confident we are that the screenshot text was read correctly (OCR + parsing)
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   )
@@ -625,33 +644,31 @@ export function PremierProfileClient({
 
             {/* Empty State */}
             {filteredHowItFeels.length === 0 && filteredImportedFeedback.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-neutral-500">No contributions match your filters.</p>
-                <button
-                  onClick={() => {
-                    setSelectedTraitFilters([])
-                    setHowItFeelsRelationshipFilter("All")
-                    setSourceFilter("all")
-                  }}
-                  className="mt-2 text-sm text-sky-600 hover:underline"
-                >
-                  Clear all filters
-                </button>
+              <div className="text-center py-12 text-neutral-500">
+                <p>No feedback matches the current filters.</p>
+                {selectedTraitFilters.length > 0 && (
+                  <button
+                    onClick={() => setSelectedTraitFilters([])}
+                    className="mt-2 text-sm text-blue-600 hover:underline"
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
             )}
           </div>
         </section>
 
-        {/* Voice Notes Section */}
+        {/* Voice Section */}
         {voiceContributions.length > 0 && (
           <section className="py-12 px-4 bg-white">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-serif text-neutral-900 mb-2">In their own words</h2>
-                <p className="text-neutral-500">Voice notes from people who know {firstName}</p>
+                <h2 className="text-2xl font-serif text-neutral-900 mb-2">In their own voice</h2>
+                <p className="text-neutral-500">Audio testimonials from people who know {firstName}</p>
+                <div className="w-16 h-px bg-neutral-300 mx-auto mt-4" />
               </div>
 
-              {/* Voice Relationship Filter */}
               <div className="flex justify-center mb-6">
                 <RelationshipFilter
                   selectedCategory={voiceRelationshipFilter}
@@ -660,60 +677,68 @@ export function PremierProfileClient({
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                {filteredVoiceContributions.map((contribution) => (
-                  <div key={contribution.id} className="relative group">
-                    <VoiceCard
-                      audioUrl={contribution.voice_url || contribution.audio_url || ""}
-                      contributorName={contribution.contributor_name || "Anonymous"}
-                      relationship={contribution.relationship || ""}
-                    />
-                    {isOwner && (
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <PinButton
-                          isPinned={isPinned("voice", contribution.id)}
-                          onPin={() =>
-                            pinVoice(
-                              contribution.id,
-                              contribution.voice_url || contribution.audio_url || "",
-                              contribution.contributor_name || "",
-                            )
-                          }
-                          onUnpin={() => unpin("voice", contribution.id)}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <div className="grid gap-4">
+                {filteredVoiceContributions.map((contribution) => {
+                  if (!contribution?.id) return null
+                  const audioUrl = safeString(contribution.voice_url) || safeString(contribution.audio_url)
+                  if (!audioUrl) return null
+
+                  return (
+                    <div key={contribution.id} className="relative group">
+                      <VoiceCard
+                        audioUrl={audioUrl}
+                        contributorName={safeString(contribution.contributor_name, "Anonymous")}
+                        relationship={safeString(contribution.relationship)}
+                        traits={[
+                          ...safeArray(contribution.traits_category1),
+                          ...safeArray(contribution.traits_category2),
+                        ].slice(0, 3)}
+                      />
+                      {isOwner && (
+                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <PinButton
+                            isPinned={isPinned("voice", contribution.id)}
+                            onPin={() => pinVoice(contribution.id, audioUrl)}
+                            onUnpin={() => unpin("voice", contribution.id)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </section>
         )}
 
         {/* Signals Section */}
-        {profileAnalysis.traitSignals.length > 0 && (
+        {safeProfileAnalysis.totalDataCount >= 3 && (
           <section className="py-12 px-4 bg-white">
             <div className="max-w-5xl mx-auto">
+              <div className="text-center mb-8">
+                <h2 className="text-xl font-serif text-neutral-900 mb-2">Signals people repeat</h2>
+                <p className="text-sm text-neutral-500">Patterns across all feedback</p>
+              </div>
               <PremierSignalBar
-                traitSignals={profileAnalysis.traitSignals}
-                impactSignals={profileAnalysis.impactSignals}
-                allCards={allCardsForSignals}
+                profileAnalysis={safeProfileAnalysis}
+                contributions={howItFeelsContributions}
+                importedFeedback={importedFeedback}
                 firstName={firstName}
               />
             </div>
           </section>
         )}
 
-        {/* Final CTA Section */}
+        {/* Final CTA */}
         <section className="py-16 px-4 bg-neutral-900">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-3xl font-serif text-white mb-4">Build your own Nomee profile</h2>
-            <p className="text-neutral-300 mb-8">
+            <p className="text-neutral-400 mb-8">
               Get feedback from people you've worked with. Create a profile that shows how you collaborate, solve
               problems, and make an impact.
             </p>
             <Button asChild size="lg" className="bg-white text-neutral-900 hover:bg-neutral-100">
-              <Link href="/auth/sign-up">Get started for free</Link>
+              <Link href="/auth/signup">Get started for free</Link>
             </Button>
           </div>
         </section>
