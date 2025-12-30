@@ -103,9 +103,7 @@ export default function DashboardClient({
     }
   }
 
-  const approvedImportedItems = importedFeedback.filter(
-    (f) => f.approved_by_owner && f.extraction_status === "completed",
-  )
+  const approvedImportedItems = importedFeedback.filter((f) => f.approved_by_owner && f.extraction_status === "success")
 
   const showNomeeSection = activeFilter === "all" || activeFilter === "nomee"
   const showImportedSection = activeFilter === "all" || activeFilter === "imported"
