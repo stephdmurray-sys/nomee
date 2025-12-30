@@ -502,98 +502,98 @@ export function PremierProfileClient({
         {/* ============================================ */}
         {voiceContributions.length > 0 && (
           <section className="py-[var(--space-section)] px-4 w-full">
-            <div className="max-w-6xl mx-auto">
-              <SectionHeading
-                title="In Their Own Words"
-                subtitle={`Unedited voice notes from people who know ${firstName}`}
-              />
-
-              {/* Filter tabs */}
-              <div className="flex justify-center mb-6">
-                <RelationshipFilter
-                  selectedCategory={voiceRelationshipFilter}
-                  onCategoryChange={setVoiceRelationshipFilter}
-                  contributions={voiceContributions}
+            <div className="w-full">
+              <div className="mx-auto w-full max-w-6xl px-6">
+                <SectionHeading
+                  title="In Their Own Words"
+                  subtitle={`Unedited voice notes from people who know ${firstName}`}
                 />
-              </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredVoiceContributions.map((contribution) => {
-                  if (!contribution?.id) return null
-                  const audioUrl = safeString(contribution.voice_url) || safeString(contribution.audio_url)
-                  if (!audioUrl) return null
+                {/* Filter tabs */}
+                <div className="flex justify-center mb-6">
+                  <RelationshipFilter
+                    selectedCategory={voiceRelationshipFilter}
+                    onCategoryChange={setVoiceRelationshipFilter}
+                    contributions={voiceContributions}
+                  />
+                </div>
 
-                  const allTraits = [
-                    ...safeArray(contribution.traits_category1),
-                    ...safeArray(contribution.traits_category2),
-                  ].slice(0, 5)
+                <div className="mt-10 columns-1 md:columns-2 lg:columns-3 [column-gap:2rem]">
+                  {filteredVoiceContributions.map((contribution) => {
+                    if (!contribution?.id) return null
+                    const audioUrl = safeString(contribution.voice_url) || safeString(contribution.audio_url)
+                    if (!audioUrl) return null
 
-                  const keywords = extractKeywordsFromText(safeString(contribution.written_note), allTraits, topSignals)
+                    const allTraits = [
+                      ...safeArray(contribution.traits_category1),
+                      ...safeArray(contribution.traits_category2),
+                    ].slice(0, 5)
 
-                  return (
-                    <div key={contribution.id} className="relative group">
-                      <CardShell variant="direct" className="w-full">
-                        <div className="mb-4">
-                          <VoiceCard
-                            audioUrl={audioUrl}
-                            contributorName={safeString(contribution.contributor_name, "Anonymous")}
-                            relationship={safeString(contribution.relationship, "Colleague")}
-                            traits={[]}
-                            compact
-                          />
+                    const keywords = extractKeywordsFromText(
+                      safeString(contribution.written_note),
+                      allTraits,
+                      topSignals,
+                    )
+
+                    return (
+                      <div key={contribution.id} className="mb-8 break-inside-avoid">
+                        <div className="relative group">
+                          <CardShell variant="direct" className="w-full">
+                            <div className="mb-4">
+                              <VoiceCard
+                                audioUrl={audioUrl}
+                                contributorName={safeString(contribution.contributor_name, "Anonymous")}
+                                relationship={safeString(contribution.relationship, "Colleague")}
+                                traits={[]}
+                                compact
+                              />
+                            </div>
+
+                            {/* Written note with highlights */}
+                            {safeString(contribution.written_note).trim() && (
+                              <p className="text-neutral-700 text-[var(--text-small)] leading-relaxed mb-4">
+                                {highlightQuote(safeString(contribution.written_note), keywords)}
+                              </p>
+                            )}
+
+                            {/* Trait pills */}
+                            {allTraits.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mb-4">
+                                {allTraits.slice(0, 5).map((trait, idx) => {
+                                  const traitData = safeTraits.find(
+                                    (t) => t?.label?.toLowerCase() === trait.toLowerCase(),
+                                  )
+                                  const count = traitData?.count || 1
+                                  const tier = getStrengthTier(count, maxTraitCount)
+
+                                  return (
+                                    <Pill key={`${trait}-${idx}`} variant="trait" tier={tier}>
+                                      {trait}
+                                    </Pill>
+                                  )
+                                })}
+                              </div>
+                            )}
+
+                            <div className="pt-3 border-t border-neutral-100">
+                              <p className="font-medium text-[var(--nomee-near-black)] text-[var(--text-small)]">
+                                {safeString(contribution.contributor_name, "Anonymous")}
+                              </p>
+                              <p className="text-[var(--text-micro)] text-neutral-500 capitalize">
+                                {safeString(contribution.relationship, "Colleague").replace(/_/g, " ")}
+                              </p>
+                              {!isEmptyOrZero(contribution.contributor_company) && (
+                                <p className="text-[var(--text-micro)] text-neutral-400">
+                                  {contribution.contributor_company}
+                                </p>
+                              )}
+                            </div>
+                          </CardShell>
                         </div>
-
-                        {/* Written note with highlights */}
-                        {safeString(contribution.written_note).trim() && (
-                          <p className="text-neutral-700 text-[var(--text-small)] leading-relaxed mb-4">
-                            {highlightQuote(safeString(contribution.written_note), keywords)}
-                          </p>
-                        )}
-
-                        {/* Trait pills */}
-                        {allTraits.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-4">
-                            {allTraits.slice(0, 5).map((trait, idx) => {
-                              const traitData = safeTraits.find((t) => t?.label?.toLowerCase() === trait.toLowerCase())
-                              const count = traitData?.count || 1
-                              const tier = getStrengthTier(count, maxTraitCount)
-
-                              return (
-                                <Pill key={`${trait}-${idx}`} variant="trait" tier={tier}>
-                                  {trait}
-                                </Pill>
-                              )
-                            })}
-                          </div>
-                        )}
-
-                        <div className="pt-3 border-t border-neutral-100">
-                          <p className="font-medium text-[var(--nomee-near-black)] text-[var(--text-small)]">
-                            {safeString(contribution.contributor_name, "Anonymous")}
-                          </p>
-                          <p className="text-[var(--text-micro)] text-neutral-500 capitalize">
-                            {safeString(contribution.relationship, "Colleague").replace(/_/g, " ")}
-                          </p>
-                          {!isEmptyOrZero(contribution.contributor_company) && (
-                            <p className="text-[var(--text-micro)] text-neutral-400">
-                              {contribution.contributor_company}
-                            </p>
-                          )}
-                        </div>
-                      </CardShell>
-
-                      {isOwner && (
-                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <PinButton
-                            isPinned={isPinned("voice", contribution.id)}
-                            onPin={() => pinVoice(contribution.id, audioUrl)}
-                            onUnpin={() => unpin("voice", contribution.id)}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </section>
@@ -733,122 +733,126 @@ export function PremierProfileClient({
         {/* ============================================ */}
         {writtenContributions.length > 0 && (
           <section className="py-[var(--space-section)] px-4 bg-white border-t border-[var(--nomee-neutral-border)]">
-            <div className="max-w-6xl mx-auto">
-              <SectionHeading title="How it feels" subtitle="Day-to-day collaboration style and working patterns" />
+            <div className="w-full">
+              <div className="mx-auto w-full max-w-6xl px-6">
+                <SectionHeading title="How it feels" subtitle="Day-to-day collaboration style and working patterns" />
 
-              {/* Relationship Filter */}
-              <div className="flex justify-center mb-6">
-                <RelationshipFilter
-                  selectedCategory={howItFeelsRelationshipFilter}
-                  onCategoryChange={setHowItFeelsRelationshipFilter}
-                  contributions={writtenContributions}
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredWrittenContributions
-                  .filter((c) => !c.voice_url && !c.audio_url)
-                  .map((contribution) => {
-                    if (!contribution?.id) return null
-
-                    const allTraits = [
-                      ...safeArray(contribution.traits_category1),
-                      ...safeArray(contribution.traits_category2),
-                      ...safeArray(contribution.traits_category3),
-                      ...safeArray(contribution.traits_category4),
-                    ]
-                    const keywords = extractKeywordsFromText(
-                      safeString(contribution.written_note),
-                      allTraits,
-                      topSignals,
-                    )
-
-                    return (
-                      <div key={contribution.id} className="relative group">
-                        <CardShell variant="direct" className="w-full">
-                          <div className="mb-6">
-                            <Pill variant="direct" className="text-xs px-2 py-1">
-                              <MessageSquare className="w-2.5 h-2.5" />
-                              Nomee Submission
-                            </Pill>
-                          </div>
-
-                          {isOwner && (
-                            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <PinButton
-                                isPinned={isPinned("quote", contribution.id)}
-                                onPin={() => pinQuote(contribution.id, safeString(contribution.written_note))}
-                                onUnpin={() => unpin("quote", contribution.id)}
-                              />
-                            </div>
-                          )}
-
-                          {/* Written note */}
-                          {safeString(contribution.written_note).trim() && (
-                            <p className="text-neutral-700 text-[var(--text-small)] leading-relaxed mb-4">
-                              {highlightQuote(safeString(contribution.written_note), keywords)}
-                            </p>
-                          )}
-
-                          {/* Trait Pills */}
-                          {allTraits.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mb-4">
-                              {allTraits.slice(0, 5).map((trait, idx) => {
-                                const traitData = safeTraits.find(
-                                  (t) => t?.label?.toLowerCase() === trait.toLowerCase(),
-                                )
-                                const count = traitData?.count || 1
-                                const tier = getStrengthTier(count, maxTraitCount)
-
-                                return (
-                                  <Pill
-                                    key={`${trait}-${idx}`}
-                                    variant="trait"
-                                    tier={tier}
-                                    onClick={() => handleTraitFilterSelect(trait)}
-                                    isSelected={selectedTraitFilters.includes(trait)}
-                                  >
-                                    {trait}
-                                  </Pill>
-                                )
-                              })}
-                            </div>
-                          )}
-
-                          {/* Contributor Info */}
-                          <div className="pt-3 border-t border-neutral-100">
-                            <p className="font-medium text-[var(--nomee-near-black)] text-[var(--text-small)]">
-                              {safeString(contribution.contributor_name, "Anonymous")}
-                            </p>
-                            <p className="text-[var(--text-micro)] text-neutral-500 capitalize">
-                              {safeString(contribution.relationship, "Colleague").replace(/_/g, " ")}
-                            </p>
-                            {!isEmptyOrZero(contribution.contributor_company) && (
-                              <p className="text-[var(--text-micro)] text-neutral-400">
-                                {contribution.contributor_company}
-                              </p>
-                            )}
-                          </div>
-                        </CardShell>
-                      </div>
-                    )
-                  })}
-              </div>
-
-              {/* Empty State */}
-              {filteredWrittenContributions.filter((c) => !c.voice_url && !c.audio_url).length === 0 && (
-                <div className="text-center py-12 text-neutral-500">
-                  <p>No feedback matches the current filters.</p>
-                  {selectedTraitFilters.length > 0 && (
-                    <button
-                      onClick={() => setSelectedTraitFilters([])}
-                      className="mt-2 text-sm text-blue-600 hover:underline"
-                    >
-                      Clear filters
-                    </button>
-                  )}
+                {/* Relationship Filter */}
+                <div className="flex justify-center mb-6">
+                  <RelationshipFilter
+                    selectedCategory={howItFeelsRelationshipFilter}
+                    onCategoryChange={setHowItFeelsRelationshipFilter}
+                    contributions={writtenContributions}
+                  />
                 </div>
-              )}
+
+                <div className="mt-10 columns-1 md:columns-2 lg:columns-3 [column-gap:2rem]">
+                  {filteredWrittenContributions
+                    .filter((c) => !c.voice_url && !c.audio_url)
+                    .map((contribution) => {
+                      if (!contribution?.id) return null
+
+                      const allTraits = [
+                        ...safeArray(contribution.traits_category1),
+                        ...safeArray(contribution.traits_category2),
+                        ...safeArray(contribution.traits_category3),
+                        ...safeArray(contribution.traits_category4),
+                      ]
+                      const keywords = extractKeywordsFromText(
+                        safeString(contribution.written_note),
+                        allTraits,
+                        topSignals,
+                      )
+
+                      return (
+                        <div key={contribution.id} className="mb-8 break-inside-avoid">
+                          <div className="relative group">
+                            <CardShell variant="direct" className="w-full">
+                              <div className="mb-6">
+                                <Pill variant="direct" className="text-xs px-2 py-1">
+                                  <MessageSquare className="w-2.5 h-2.5" />
+                                  Nomee Submission
+                                </Pill>
+                              </div>
+
+                              {isOwner && (
+                                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <PinButton
+                                    isPinned={isPinned("quote", contribution.id)}
+                                    onPin={() => pinQuote(contribution.id, safeString(contribution.written_note))}
+                                    onUnpin={() => unpin("quote", contribution.id)}
+                                  />
+                                </div>
+                              )}
+
+                              {/* Written note */}
+                              {safeString(contribution.written_note).trim() && (
+                                <p className="text-neutral-700 text-[var(--text-small)] leading-relaxed mb-4">
+                                  {highlightQuote(safeString(contribution.written_note), keywords)}
+                                </p>
+                              )}
+
+                              {/* Trait Pills */}
+                              {allTraits.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 mb-4">
+                                  {allTraits.slice(0, 5).map((trait, idx) => {
+                                    const traitData = safeTraits.find(
+                                      (t) => t?.label?.toLowerCase() === trait.toLowerCase(),
+                                    )
+                                    const count = traitData?.count || 1
+                                    const tier = getStrengthTier(count, maxTraitCount)
+
+                                    return (
+                                      <Pill
+                                        key={`${trait}-${idx}`}
+                                        variant="trait"
+                                        tier={tier}
+                                        onClick={() => handleTraitFilterSelect(trait)}
+                                        isSelected={selectedTraitFilters.includes(trait)}
+                                      >
+                                        {trait}
+                                      </Pill>
+                                    )
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Contributor Info */}
+                              <div className="pt-3 border-t border-neutral-100">
+                                <p className="font-medium text-[var(--nomee-near-black)] text-[var(--text-small)]">
+                                  {safeString(contribution.contributor_name, "Anonymous")}
+                                </p>
+                                <p className="text-[var(--text-micro)] text-neutral-500 capitalize">
+                                  {safeString(contribution.relationship, "Colleague").replace(/_/g, " ")}
+                                </p>
+                                {!isEmptyOrZero(contribution.contributor_company) && (
+                                  <p className="text-[var(--text-micro)] text-neutral-400">
+                                    {contribution.contributor_company}
+                                  </p>
+                                )}
+                              </div>
+                            </CardShell>
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+
+                {/* Empty State */}
+                {filteredWrittenContributions.filter((c) => !c.voice_url && !c.audio_url).length === 0 && (
+                  <div className="text-center py-12 text-neutral-500">
+                    <p>No feedback matches the current filters.</p>
+                    {selectedTraitFilters.length > 0 && (
+                      <button
+                        onClick={() => setSelectedTraitFilters([])}
+                        className="mt-2 text-sm text-blue-600 hover:underline"
+                      >
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
         )}
