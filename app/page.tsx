@@ -195,7 +195,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="text-center space-y-6"
             >
-              <h2 className="text-2xl md:text-3xl font-semibold text-slate-900">Use your Nomee anywhere</h2>
+              <h2 className="text-2xl md:text-3xl font-semibold text-slate-900">Use your Proof Link anywhere</h2>
               <p className="text-lg text-slate-600 max-w-2xl mx-auto">
                 Share your Proof Link anywhere for free. Embed Proof Tiles on your website with Pro.
               </p>
@@ -237,15 +237,6 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="pt-4">
-                <Link
-                  href="/pricing"
-                  className="inline-flex items-center gap-2 text-base font-medium text-slate-600 hover:text-slate-900 transition-colors"
-                >
-                  See all sharing options →
-                </Link>
               </div>
 
               <p className="text-xs text-slate-500 mt-6 max-w-lg mx-auto">
@@ -292,120 +283,6 @@ export default function Home() {
                 <h3 className="text-xl font-semibold text-slate-900">Save praise before it disappears</h3>
                 <p className="text-slate-600 leading-relaxed">
                   The best feedback is already in your inbox and messages. Capture it now.
-                </p>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Why Nomee Exists section */}
-        <section className="py-20 px-6 bg-white">
-          <div className="max-w-3xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="space-y-12"
-            >
-              {/* Anchor line */}
-              <div className="bg-blue-50/40 rounded-lg px-8 py-6 border border-blue-100/50">
-                <p className="text-xl md:text-2xl text-slate-700 text-center leading-relaxed font-medium">
-                  People don't struggle to describe their work — they struggle to show what they're like.
-                </p>
-              </div>
-
-              {/* Three outcome blocks */}
-              <div className="space-y-6">
-                {/* Block 1: Jobs */}
-                <div className="flex gap-4 items-start">
-                  <div className="w-1.5 h-6 bg-blue-400 rounded-full flex-shrink-0 mt-0.5" />
-                  <div className="space-y-2 flex-1">
-                    <h3 className="text-lg font-semibold text-slate-900">Get hired without over-explaining yourself</h3>
-                    <p className="text-base text-slate-600 leading-relaxed">
-                      Hiring managers don't struggle to assess skills — they struggle to understand what it's actually
-                      like to work with someone.
-                    </p>
-                    {expandedOutcome === 1 && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="text-base text-slate-600 leading-relaxed"
-                      >
-                        Nomee gives them that answer before the interview.
-                      </motion.p>
-                    )}
-                    <button
-                      onClick={() => setExpandedOutcome(expandedOutcome === 1 ? null : 1)}
-                      className="text-sm text-slate-500 hover:text-slate-700 font-medium mt-2"
-                    >
-                      {expandedOutcome === 1 ? "Show less" : "Read more"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Block 2: Deals & partnerships */}
-                <div className="flex gap-4 items-start">
-                  <div className="w-1.5 h-6 bg-blue-400 rounded-full flex-shrink-0 mt-0.5" />
-                  <div className="space-y-2 flex-1">
-                    <h3 className="text-lg font-semibold text-slate-900">Win trust before the first call</h3>
-                    <p className="text-base text-slate-600 leading-relaxed">
-                      Brands, partners, and collaborators choose people who feel reliable and easy to work with.
-                    </p>
-                    {expandedOutcome === 2 && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="text-base text-slate-600 leading-relaxed"
-                      >
-                        Nomee lets them hear that directly — from people you've already worked with.
-                      </motion.p>
-                    )}
-                    <button
-                      onClick={() => setExpandedOutcome(expandedOutcome === 2 ? null : 2)}
-                      className="text-sm text-slate-500 hover:text-slate-700 font-medium mt-2"
-                    >
-                      {expandedOutcome === 2 ? "Show less" : "Read more"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Block 3: Reputation over time */}
-                <div className="flex gap-4 items-start">
-                  <div className="w-1.5 h-6 bg-blue-400 rounded-full flex-shrink-0 mt-0.5" />
-                  <div className="space-y-2 flex-1">
-                    <h3 className="text-lg font-semibold text-slate-900">Keep the praise that usually disappears</h3>
-                    <p className="text-base text-slate-600 leading-relaxed">
-                      Positive feedback gets buried in emails, DMs, and past jobs.
-                    </p>
-                    {expandedOutcome === 3 && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="text-base text-slate-600 leading-relaxed"
-                      >
-                        Nomee saves it, organizes it, and lets it compound as your work and relationships grow.
-                      </motion.p>
-                    )}
-                    <button
-                      onClick={() => setExpandedOutcome(expandedOutcome === 3 ? null : 3)}
-                      className="text-sm text-slate-500 hover:text-slate-700 font-medium mt-2"
-                    >
-                      {expandedOutcome === 3 ? "Show less" : "Read more"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-8 border-t border-slate-100">
-                <p className="text-sm text-slate-500 text-center">
-                  Submissions are tied to real people — one per contributor.
                 </p>
               </div>
             </motion.div>
@@ -566,9 +443,6 @@ export default function Home() {
               <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">
                 Shared by people who've worked with them
               </h2>
-              <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-                A Proof Link isn't written by the person. It's built from the people who've worked with them.
-              </p>
             </motion.div>
 
             {/* Scrollable card grid */}
@@ -643,7 +517,7 @@ export default function Home() {
             >
               <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">What stands out, consistently</h2>
               <p className="text-sm text-slate-500 max-w-2xl mx-auto leading-relaxed">
-                These traits appear repeatedly as more people share their experience.
+                These signals repeat across contributors.
               </p>
             </motion.div>
 
@@ -654,7 +528,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="space-y-4"
             >
-              {/* Top 8 traits (always visible) */}
+              {/* Top 6 traits (always visible) */}
               <div className="flex flex-wrap justify-center gap-3">
                 {[
                   { trait: "Strategic", count: 6 },
@@ -663,8 +537,6 @@ export default function Home() {
                   { trait: "Thoughtful", count: 5 },
                   { trait: "Detail-oriented", count: 5 },
                   { trait: "Reliable", count: 5 },
-                  { trait: "Calm under pressure", count: 5 },
-                  { trait: "Patient", count: 4 },
                 ].map((item, idx) => (
                   <button
                     key={idx}
@@ -685,6 +557,8 @@ export default function Home() {
                   className="flex flex-wrap justify-center gap-2.5"
                 >
                   {[
+                    { trait: "Calm under pressure", count: 5 },
+                    { trait: "Patient", count: 4 },
                     { trait: "Proactive", count: 4 },
                     { trait: "Empathetic", count: 4 },
                     { trait: "Organized", count: 3 },
@@ -708,6 +582,57 @@ export default function Home() {
                 >
                   {showAllTraits ? "Show less" : "View all signals"}
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Built for credibility section moved above How a Nomee comes together */}
+        <section className="py-24 px-6 bg-white">
+          <div className="max-w-4xl mx-auto space-y-12">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl md:text-4xl font-semibold text-slate-900 text-center"
+            >
+              Built for credibility
+            </motion.h2>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="grid md:grid-cols-2 gap-8"
+            >
+              <div className="space-y-4 p-6 bg-slate-50 rounded-xl">
+                <h3 className="text-lg font-semibold text-slate-900">Real names + real relationships</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Every contribution shows the contributor's name, company, and working relationship.
+                </p>
+              </div>
+
+              <div className="space-y-4 p-6 bg-slate-50 rounded-xl">
+                <h3 className="text-lg font-semibold text-slate-900">One perspective per person</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Each person can only contribute once, ensuring authentic and diverse viewpoints.
+                </p>
+              </div>
+
+              <div className="space-y-4 p-6 bg-slate-50 rounded-xl">
+                <h3 className="text-lg font-semibold text-slate-900">Identity-backed submissions</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Contributors provide their full name and company, creating accountability and trust.
+                </p>
+              </div>
+
+              <div className="space-y-4 p-6 bg-slate-50 rounded-xl">
+                <h3 className="text-lg font-semibold text-slate-900">You control what's shown</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Choose which contributions appear on your profile without changing what was actually said.
+                </p>
               </div>
             </motion.div>
           </div>
@@ -774,56 +699,6 @@ export default function Home() {
                 </p>
               </motion.div>
             </div>
-          </div>
-        </section>
-
-        <section className="py-24 px-6 bg-white">
-          <div className="max-w-4xl mx-auto space-y-12">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-3xl md:text-4xl font-semibold text-slate-900 text-center"
-            >
-              Built for credibility
-            </motion.h2>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="grid md:grid-cols-2 gap-8"
-            >
-              <div className="space-y-4 p-6 bg-slate-50 rounded-xl">
-                <h3 className="text-lg font-semibold text-slate-900">Real names + real relationships</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Every contribution shows the contributor's name, company, and working relationship.
-                </p>
-              </div>
-
-              <div className="space-y-4 p-6 bg-slate-50 rounded-xl">
-                <h3 className="text-lg font-semibold text-slate-900">One perspective per person</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Each person can only contribute once, ensuring authentic and diverse viewpoints.
-                </p>
-              </div>
-
-              <div className="space-y-4 p-6 bg-slate-50 rounded-xl">
-                <h3 className="text-lg font-semibold text-slate-900">Identity-backed submissions</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Contributors provide their full name and company, creating accountability and trust.
-                </p>
-              </div>
-
-              <div className="space-y-4 p-6 bg-slate-50 rounded-xl">
-                <h3 className="text-lg font-semibold text-slate-900">You control what's shown</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Choose which contributions appear on your profile without changing what was actually said.
-                </p>
-              </div>
-            </motion.div>
           </div>
         </section>
 
