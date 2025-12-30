@@ -492,19 +492,6 @@ export default function DashboardClient({
                       </div>
                     </div>
 
-                    {/* Confidence meter (compact) */}
-                    {item.confidence_score && (
-                      <div className="mb-3 flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-green-500 rounded-full"
-                            style={{ width: `${Math.round(item.confidence_score * 100)}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-slate-500">{Math.round(item.confidence_score * 100)}%</span>
-                      </div>
-                    )}
-
                     {/* Bottom: giver info */}
                     <div className="pt-2 border-t border-slate-200 text-xs text-slate-500">
                       <div className="font-medium text-slate-800 truncate">{item.giver_name || "Unknown"}</div>
