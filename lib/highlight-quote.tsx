@@ -49,7 +49,7 @@ export function highlightQuote(text: string, patterns: HighlightPattern[], maxHi
 
   if (nonOverlapping.length === 0) return text
 
-  // Build the highlighted text with light blue marker style (NO PILLS)
+  // Build the highlighted text with premium nomee-highlight class
   const parts: React.ReactNode[] = []
   let lastIndex = 0
 
@@ -58,9 +58,8 @@ export function highlightQuote(text: string, patterns: HighlightPattern[], maxHi
       parts.push(text.slice(lastIndex, match.index))
     }
 
-    // Increased visual emphasis of inline highlights for better scanning
     parts.push(
-      <span key={`highlight-${idx}`} className="bg-blue-100 px-1.5 py-0.5 rounded-md font-medium text-slate-900">
+      <span key={`highlight-${idx}`} className="nomee-highlight">
         {match.phrase}
       </span>,
     )

@@ -1017,9 +1017,23 @@ export default function ContributorFlow({ profile }: ContributorFlowProps) {
             <p className="mb-8 text-lg text-neutral-600">
               Your recognition has been shared with {profile.full_name}. They'll be thrilled to see it!
             </p>
-            <Button onClick={() => (window.location.href = `/${profile.slug}`)} size="lg" className="px-8">
-              View {profile.full_name}'s Nomee
-            </Button>
+            <div className="flex flex-col items-center gap-3">
+              <Button
+                onClick={() => (window.location.href = `/${profile.slug}`)}
+                size="lg"
+                className="w-full max-w-xs px-8"
+              >
+                View {profile.full_name}'s Nomee
+              </Button>
+              <Button
+                onClick={() => (window.location.href = "/signup")}
+                variant="outline"
+                size="lg"
+                className="w-full max-w-xs px-8 border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+              >
+                Create Your Own Nomee
+              </Button>
+            </div>
           </Card>
         </div>
       </div>

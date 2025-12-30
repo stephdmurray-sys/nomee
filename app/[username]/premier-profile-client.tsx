@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Share2, Copy } from "lucide-react"
 import { VoiceCard } from "@/components/voice-card"
@@ -10,6 +10,8 @@ import type { RelationshipFilterCategory } from "@/lib/relationship-filter"
 import { dedupeContributions } from "@/lib/dedupe-contributions"
 import type { Profile, Contribution, ImportedFeedback } from "@/lib/types"
 import type { ProfileAnalysis } from "@/lib/build-profile-analysis"
+import { highlightQuote } from "@/lib/highlight-quote"
+import { extractKeywordsFromText } from "@/lib/extract-keywords-from-text"
 
 interface PremierProfileClientProps {
   profile: Profile
@@ -502,24 +504,27 @@ export function PremierProfileClient({
 
               {filteredHowItFeels.length > 0 ? (
                 <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
-                  {filteredHowItFeels.map((contribution) => (
-                    <div
-                      key={contribution.id}
-                      className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all"
-                    >
-                      <p className="text-sm leading-relaxed text-neutral-700 mb-4">{contribution.written_note}</p>
+                  {filteredHowItFeels.map((contribution) => {
+                    const allTraits = [
+                      ...(contribution.traits_category1 || []),
+                      ...(contribution.traits_category2 || []),
+                      ...(contribution.traits_category3 || []),
+                    ]
+                    const keywords = extractKeywordsFromText(contribution.written_note || "", allTraits)
+                    const highlightedText = highlightQuote(contribution.written_note || "", keywords, 4)
 
-                      {(contribution.traits_category1?.length ||
-                        contribution.traits_category2?.length ||
-                        contribution.traits_category3?.length) && (
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {[
-                            ...(contribution.traits_category1 || []),
-                            ...(contribution.traits_category2 || []),
-                            ...(contribution.traits_category3 || []),
-                          ]
-                            .slice(0, 5)
-                            .map((trait, idx) => (
+                    return (
+                      <div
+                        key={contribution.id}
+                        className="break-inside-avoid rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all"
+                      >
+                        <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
+
+                        {(contribution.traits_category1?.length ||
+                          contribution.traits_category2?.length ||
+                          contribution.traits_category3?.length) && (
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {allTraits.slice(0, 5).map((trait, idx) => (
                               <span
                                 key={idx}
                                 className="px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100 hover:border-blue-200 hover:bg-blue-100 transition-colors"
@@ -527,24 +532,25 @@ export function PremierProfileClient({
                                 {trait}
                               </span>
                             ))}
-                        </div>
-                      )}
-
-                      <div className="border-t border-neutral-100 pt-3">
-                        <div className="text-sm font-semibold text-neutral-900">{contribution.contributor_name}</div>
-                        {contribution.relationship && (
-                          <div className="text-xs text-neutral-600 capitalize mt-0.5">
-                            {contribution.relationship.replace(/_/g, " ")}
                           </div>
                         )}
-                        {contribution.contributor_company ? (
-                          <div className="text-xs text-neutral-500 mt-0.5">{contribution.contributor_company}</div>
-                        ) : (
-                          <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
-                        )}
+
+                        <div className="border-t border-neutral-100 pt-3">
+                          <div className="text-sm font-semibold text-neutral-900">{contribution.contributor_name}</div>
+                          {contribution.relationship && (
+                            <div className="text-xs text-neutral-600 capitalize mt-0.5">
+                              {contribution.relationship.replace(/_/g, " ")}
+                            </div>
+                          )}
+                          {contribution.contributor_company ? (
+                            <div className="text-xs text-neutral-500 mt-0.5">{contribution.contributor_company}</div>
+                          ) : (
+                            <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -570,7 +576,7 @@ export function PremierProfileClient({
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
             <div className="space-y-6">
               <div className="space-y-2 max-w-2xl mx-auto text-center">
-                <h3 className="text-2xl sm:text-3xl font-semibold text-neutral-900">Screenshots and highlights</h3>
+                <h3 className="text-2xl sm:text-3xl font-semibold text-neutral-900">Past Praise</h3>
                 <p className="text-sm text-neutral-500 leading-relaxed">
                   {profile.full_name?.split(" ")[0]} saved {importedFeedback.length} piece
                   {importedFeedback.length === 1 ? "" : "s"} of feedback
@@ -578,44 +584,63 @@ export function PremierProfileClient({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {importedFeedback.map((feedback) => (
-                  <div
-                    key={feedback.id}
-                    className="rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative"
-                  >
-                    <p className="text-sm leading-relaxed text-neutral-700 mb-4">{feedback.ai_extracted_excerpt}</p>
+                {importedFeedback.map((feedback) => {
+                  const feedbackTraits = feedback.traits || []
+                  const keywords = extractKeywordsFromText(feedback.ai_extracted_excerpt || "", feedbackTraits)
+                  const highlightedText = highlightQuote(feedback.ai_extracted_excerpt || "", keywords, 4)
 
-                    <div className="border-t border-neutral-100 pt-3">
-                      <div className="text-sm font-semibold text-neutral-900">{feedback.giver_name}</div>
-                      {feedback.giver_title && (
-                        <div className="text-xs text-neutral-600 mt-0.5">{feedback.giver_title}</div>
+                  return (
+                    <div
+                      key={feedback.id}
+                      className="rounded-xl p-6 bg-white border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all relative"
+                    >
+                      <p className="text-sm leading-relaxed text-neutral-700 mb-4">{highlightedText}</p>
+
+                      {feedbackTraits.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {feedbackTraits.slice(0, 4).map((trait, idx) => (
+                            <span
+                              key={idx}
+                              className="px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100"
+                            >
+                              {trait}
+                            </span>
+                          ))}
+                        </div>
                       )}
-                      {feedback.giver_company ? (
-                        <div className="text-xs text-neutral-500 mt-0.5">{feedback.giver_company}</div>
-                      ) : (
-                        <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
+
+                      <div className="border-t border-neutral-100 pt-3">
+                        <div className="text-sm font-semibold text-neutral-900">{feedback.giver_name}</div>
+                        {feedback.giver_title && (
+                          <div className="text-xs text-neutral-600 mt-0.5">{feedback.giver_title}</div>
+                        )}
+                        {feedback.giver_company ? (
+                          <div className="text-xs text-neutral-500 mt-0.5">{feedback.giver_company}</div>
+                        ) : (
+                          <div className="text-xs text-neutral-400 italic mt-0.5">Company not provided</div>
+                        )}
+                      </div>
+
+                      {feedback.source_type && (
+                        <div className="absolute bottom-4 right-4">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                              feedback.source_type === "Email"
+                                ? "bg-neutral-900 text-white border-neutral-900"
+                                : feedback.source_type === "LinkedIn"
+                                  ? "bg-blue-600 text-white border-blue-600"
+                                  : feedback.source_type === "DM"
+                                    ? "bg-black text-white border-black"
+                                    : "bg-neutral-100 text-neutral-700 border-neutral-200"
+                            }`}
+                          >
+                            {feedback.source_type}
+                          </span>
+                        </div>
                       )}
                     </div>
-
-                    {feedback.source_type && (
-                      <div className="absolute bottom-4 right-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                            feedback.source_type === "Email"
-                              ? "bg-neutral-900 text-white border-neutral-900"
-                              : feedback.source_type === "LinkedIn"
-                                ? "bg-blue-600 text-white border-blue-600"
-                                : feedback.source_type === "DM"
-                                  ? "bg-black text-white border-black"
-                                  : "bg-neutral-100 text-neutral-700 border-neutral-200"
-                          }`}
-                        >
-                          {feedback.source_type}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>
