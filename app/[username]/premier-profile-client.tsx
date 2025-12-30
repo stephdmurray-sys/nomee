@@ -18,6 +18,7 @@ import { PremierSignalBar } from "@/components/premier-signal-bar"
 import { usePinnedHighlights, PinnedHighlightsDisplay, PinButton } from "@/components/pinned-highlights"
 import { SmartVibePills } from "@/components/smart-vibe-pills"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import Link from "next/link"
 
 interface PremierProfileClientProps {
   profile: Profile
@@ -105,11 +106,27 @@ export function PremierProfileClient({
   }, [contributions])
 
   const allCards = useMemo(() => {
+    // Only include Nomee submissions in allCards for "How it feels" section
     const nomeeCards = howItFeelsContributions.map((c) => ({
       id: c.id,
-      excerpt: c.written_note || "",
-      traits: [...(c.traits_category1 || []), ...(c.traits_category2 || []), ...(c.traits_category3 || [])],
+      excerpt: c.feedback_text, // Changed from c.written_note
+      traits: c.traits || [], // Assuming traits exist on Contribution, adjust if not
       type: "nomee" as const,
+      contributorId: c.contributor_id, // Assuming contributor_id exists on Contribution
+    }))
+
+    // Imported cards are handled separately in "Past Praise" section
+    // DO NOT merge them here - this was causing duplication
+    return nomeeCards
+  }, [howItFeelsContributions])
+
+  const allCardsForSignals = useMemo(() => {
+    const nomeeCards = howItFeelsContributions.map((c) => ({
+      id: c.id,
+      excerpt: c.feedback_text, // Changed from c.written_note
+      traits: c.traits || [], // Assuming traits exist on Contribution, adjust if not
+      type: "nomee" as const,
+      contributorId: c.contributor_id, // Assuming contributor_id exists on Contribution
     }))
 
     const importedCards = importedFeedback.map((f) => ({
@@ -699,7 +716,7 @@ export function PremierProfileClient({
               <SmartVibePills
                 vibeSignals={profileAnalysis.vibeSignals}
                 traitSignals={profileAnalysis.traitSignals}
-                allCards={allCards}
+                allCards={allCards} // Use allCards here which now only contains nomee cards
                 selectedVibes={selectedVibeFilters}
                 onVibeSelect={handleVibeSelect}
                 onClearVibes={handleClearVibes}
@@ -707,36 +724,16 @@ export function PremierProfileClient({
 
               {/* Existing trait bar - kept exactly as-is */}
               <PremierTraitBar
-                allCards={allCards}
+                allCards={allCards} // Use allCards here which now only contains nomee cards
                 selectedTraits={selectedTraitFilters}
                 onTraitSelect={handleTraitFilterSelect}
                 onClearFilters={handleClearFilters}
-                sourceFilter={sourceFilter}
+                sourceFilter={sourceFilter} // This is still used for filtering within the "How it feels" section
                 totalPeople={profileAnalysis.counts.contributions}
                 totalUploads={profileAnalysis.counts.uploads}
               />
 
-              {/* Existing source filter toggles - KEPT EXACTLY AS-IS */}
-              <div className="flex justify-center gap-2">
-                {(["all", "nomee", "imported"] as const).map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setSourceFilter(filter)}
-                    className={`
-                      px-4 py-2 text-sm font-medium rounded-full border transition-all
-                      ${
-                        sourceFilter === filter
-                          ? "bg-neutral-900 text-white border-neutral-900"
-                          : "bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300"
-                      }
-                    `}
-                  >
-                    {filter === "all" && `All (${allCards.length})`}
-                    {filter === "nomee" && `Direct (${howItFeelsContributions.length})`}
-                    {filter === "imported" && `Imported (${importedFeedback.length})`}
-                  </button>
-                ))}
-              </div>
+              {/* Source filter is no longer needed - Direct in "How it feels", Imported in "Past Praise" */}
 
               {/* Cards Grid - Direct submissions */}
               {(sourceFilter === "all" || sourceFilter === "nomee") &&
@@ -1095,10 +1092,14 @@ export function PremierProfileClient({
 
       {/* PremierSignalBar moved to bottom */}
       {profileAnalysis.counts.contributions + profileAnalysis.counts.uploads >= 3 && (
-        <section className="w-full bg-neutral-900">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <section className="w-full bg-white border-t border-neutral-100">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            <div className="space-y-2 max-w-2xl mx-auto text-center mb-8">
+              <h3 className="text-xl sm:text-2xl font-semibold text-neutral-900">Signals people repeat</h3>
+              <p className="text-sm text-neutral-500">A quick read of patterns across feedback</p>
+            </div>
             <PremierSignalBar
-              allCards={allCards}
+              allCards={allCardsForSignals} // Use allCardsForSignals here
               traitSignals={profileAnalysis.traitSignals}
               totalContributions={profileAnalysis.counts.contributions + profileAnalysis.counts.uploads}
             />
@@ -1106,17 +1107,19 @@ export function PremierProfileClient({
         </section>
       )}
 
-      {/* Final CTA */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
-        <div className="text-center space-y-4">
-          <h3 className="text-2xl sm:text-3xl font-semibold text-neutral-900">Build your own Nomee profile</h3>
-          <p className="text-neutral-600 max-w-md mx-auto">
+      <section className="w-full bg-neutral-900">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24 text-center">
+          <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-4">Build your own Nomee profile</h3>
+          <p className="text-neutral-400 text-lg max-w-xl mx-auto mb-8">
             Get feedback from people you've worked with. Create a profile that shows how you collaborate, solve
             problems, and make an impact.
           </p>
-          <Button asChild className="bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-3 rounded-full">
-            <a href="/signup">Get started for free</a>
-          </Button>
+          <Link
+            href="/signup"
+            className="inline-flex items-center justify-center px-8 py-4 bg-white text-neutral-900 font-semibold rounded-full hover:bg-neutral-100 transition-colors shadow-lg"
+          >
+            Get started for free
+          </Link>
         </div>
       </section>
     </div>
