@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react"
 import { CheckCircle2, AlertCircle, Trash2, Eye, EyeOff, RefreshCw, Loader2, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { LOCKED_TRAITS, SOURCE_TYPES, type ImportedFeedback } from "@/lib/imported-feedback-traits"
+import { SOURCE_TYPES, type ImportedFeedback } from "@/lib/imported-feedback-traits"
 import { useToast } from "@/hooks/use-toast"
 
 type ReviewListProps = {
@@ -344,19 +344,29 @@ export default function ReviewList({ initialPending, initialApproved }: ReviewLi
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <Label className="mb-1 block text-sm font-medium">Giver Name</Label>
-                                <p className="text-sm text-neutral-700">
-                                  {feedback.giver_name === "Review needed" || feedback.giver_name === "Unknown"
-                                    ? "Not detected — add manually if known"
-                                    : feedback.giver_name}
-                                </p>
+                                {feedback.giver_name === "Review needed" ||
+                                feedback.giver_name === "Unknown" ||
+                                !feedback.giver_name ? (
+                                  <p className="text-sm text-amber-600 font-medium">Needs input</p>
+                                ) : (
+                                  <p className="text-sm text-neutral-700">{feedback.giver_name}</p>
+                                )}
                               </div>
                               <div>
                                 <Label className="mb-1 block text-sm font-medium">Company</Label>
-                                <p className="text-sm text-neutral-700">{feedback.giver_company || "Not detected"}</p>
+                                {!feedback.giver_company ? (
+                                  <p className="text-sm text-amber-600 font-medium">Needs input</p>
+                                ) : (
+                                  <p className="text-sm text-neutral-700">{feedback.giver_company}</p>
+                                )}
                               </div>
                               <div>
                                 <Label className="mb-1 block text-sm font-medium">Role</Label>
-                                <p className="text-sm text-neutral-700">{feedback.giver_role || "Not detected"}</p>
+                                {!feedback.giver_role ? (
+                                  <p className="text-sm text-amber-600 font-medium">Needs input</p>
+                                ) : (
+                                  <p className="text-sm text-neutral-700">{feedback.giver_role}</p>
+                                )}
                               </div>
                               <div>
                                 <Label className="mb-1 block text-sm font-medium">Source</Label>
@@ -446,7 +456,8 @@ export default function ReviewList({ initialPending, initialApproved }: ReviewLi
                                   id="giverName"
                                   value={editForm.giverName}
                                   onChange={(e) => setEditForm({ ...editForm, giverName: e.target.value })}
-                                  className="text-sm"
+                                  className={`text-sm ${!editForm.giverName || editForm.giverName === "Review needed" || editForm.giverName === "Unknown" ? "border-amber-400 bg-amber-50" : ""}`}
+                                  placeholder="Enter name"
                                 />
                               </div>
                               <div>
@@ -457,7 +468,8 @@ export default function ReviewList({ initialPending, initialApproved }: ReviewLi
                                   id="giverCompany"
                                   value={editForm.giverCompany}
                                   onChange={(e) => setEditForm({ ...editForm, giverCompany: e.target.value })}
-                                  className="text-sm"
+                                  className={`text-sm ${!editForm.giverCompany ? "border-amber-400 bg-amber-50" : ""}`}
+                                  placeholder="Enter company"
                                 />
                               </div>
                               <div>
@@ -468,7 +480,8 @@ export default function ReviewList({ initialPending, initialApproved }: ReviewLi
                                   id="giverRole"
                                   value={editForm.giverRole}
                                   onChange={(e) => setEditForm({ ...editForm, giverRole: e.target.value })}
-                                  className="text-sm"
+                                  className={`text-sm ${!editForm.giverRole ? "border-amber-400 bg-amber-50" : ""}`}
+                                  placeholder="Enter role"
                                 />
                               </div>
                               <div>
@@ -494,19 +507,21 @@ export default function ReviewList({ initialPending, initialApproved }: ReviewLi
                             </div>
 
                             <div>
-                              <Label className="mb-2 block text-sm font-medium">Traits (max 3, toggle on/off)</Label>
+                              <Label className="mb-2 block text-sm font-medium">AI-Extracted Traits</Label>
                               <div className="flex flex-wrap gap-2">
-                                {LOCKED_TRAITS.map((trait) => (
-                                  <Badge
-                                    key={trait}
-                                    variant={editForm.traits.includes(trait) ? "default" : "outline"}
-                                    className="cursor-pointer"
-                                    onClick={() => handleTraitToggle(trait)}
-                                  >
-                                    {trait}
-                                  </Badge>
-                                ))}
+                                {editForm.traits && editForm.traits.length > 0 ? (
+                                  editForm.traits.map((trait) => (
+                                    <Badge key={trait} variant="default">
+                                      {trait}
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <p className="text-sm text-neutral-500">No traits extracted</p>
+                                )}
                               </div>
+                              <p className="mt-1 text-xs text-neutral-500">
+                                Traits are AI-generated and cannot be edited
+                              </p>
                             </div>
 
                             <div>
