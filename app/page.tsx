@@ -270,7 +270,8 @@ export default function Home() {
                             <span className="text-[10px] text-slate-500">11:23 AM</span>
                           </div>
                           <p className="text-xs leading-relaxed text-slate-700">
-                            Just wrapped the client call — they were so impressed by how you handled their questions and concerns. That's the kind of thinking we need more of. 💯
+                            Just wrapped the client call — they were so impressed by how you handled their questions and
+                            concerns. That's the kind of thinking we need more of. 💯
                           </p>
                         </div>
                       </div>
@@ -736,7 +737,7 @@ export default function Home() {
                     <p className="text-slate-600 text-sm leading-relaxed">
                       People you've worked with describe the experience.
                     </p>
-                    <p className="text-xs text-slate-500 pt-1">Written once. Never edited.</p>
+                    <p className="text-xs text-slate-500 pt-1">Saved exactly as received.</p>
                     <p className="text-xs text-slate-500 leading-relaxed font-medium">
                       You don't write it. You can't edit it.
                     </p>
@@ -1083,27 +1084,32 @@ export default function Home() {
               {/* Free Plan */}
               <div className="border border-slate-200 rounded-xl p-8 bg-white space-y-6 hover:shadow-lg transition-shadow">
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-bold text-slate-900">Free</h3>
+                  <h3 className="text-2xl font-bold text-slate-900">Collect</h3>
                   <p className="text-4xl font-bold text-slate-900">$0</p>
-                  <p className="text-base font-semibold text-slate-700">Submissions free forever</p>
+                  <p className="text-sm text-slate-500">Forever</p>
+                  <p className="text-base font-semibold text-slate-700">For collecting Human Proof.</p>
                 </div>
 
                 <ul className="space-y-3 text-slate-600">
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Unlimited Nomee submissions (your link)</span>
+                    <span>Unlimited contributions</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>AI Summary + Pattern Recognition + Top 3 Vibes</span>
+                    <span>Public Proof Link (Nomee Page)</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>3 uploads included</span>
+                    <span>Core summary + traits</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Share your Proof Link anywhere</span>
+                    <span>Up to 3 proof uploads (emails, screenshots)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-slate-400 mt-1">•</span>
+                    <span className="text-sm italic text-slate-500">One contribution per person. Never edited.</span>
                   </li>
                 </ul>
 
@@ -1113,78 +1119,98 @@ export default function Home() {
                 >
                   Start free
                 </Button>
+
+                <p className="text-xs text-slate-500 text-center">Capture what people say — before it gets lost.</p>
               </div>
 
               {/* Pro Plan */}
               <div className="border-2 border-blue-600 rounded-xl p-8 bg-white space-y-6 shadow-lg relative">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-semibold">
-                  POPULAR
+                  Keep it current
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-bold text-slate-900">Pro</h3>
+                  <h3 className="text-2xl font-bold text-slate-900">Maintain</h3>
                   <p className="text-4xl font-bold text-slate-900">
-                    $7<span className="text-lg font-normal text-slate-600">/month</span>
+                    $8<span className="text-lg font-normal text-slate-600">/month</span>
                   </p>
-                  <p className="text-sm text-slate-500">or $77/year</p>
-                  <p className="text-base font-semibold text-slate-700">Unlimited uploads + embeds</p>
+                  <p className="text-sm text-slate-500">or $79/year</p>
+                  <p className="text-base font-semibold text-slate-700">
+                    For keeping your Proof Link accurate over time.
+                  </p>
                 </div>
 
                 <ul className="space-y-3 text-slate-600">
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Unlimited uploads (past praise)</span>
+                    <span>Everything in Free</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Better extraction + cleaner excerpts</span>
+                    <span>Unlimited proof uploads & secure storage</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Pin your strongest proof</span>
+                    <span>Feature, pin, or hide proof and contributions</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Add Proof Tiles to your website (copy/paste)</span>
+                    <span>Signal freshness (recent vs long-term feedback)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-1">✓</span>
+                    <span>Monthly "What's changed" digest</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-1">✓</span>
+                    <span>Advanced summaries</span>
                   </li>
                 </ul>
 
                 <Button className="w-full bg-blue-600 text-white hover:bg-blue-700 rounded-full py-6 text-base font-medium transition-all">
-                  Go Pro
+                  Keep my Proof Link current
                 </Button>
+
+                <p className="text-xs text-slate-500 text-center">
+                  Store all your proof in one place — so you don't lose sight of it over time.
+                </p>
               </div>
 
               {/* Premier Plan */}
               <div className="border border-slate-200 rounded-xl p-8 bg-white space-y-6 hover:shadow-lg transition-shadow">
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-bold text-slate-900">Premier</h3>
+                  <h3 className="text-2xl font-bold text-slate-900">Pro</h3>
                   <p className="text-4xl font-bold text-slate-900">
-                    $14<span className="text-lg font-normal text-slate-600">/month</span>
+                    $16<span className="text-lg font-normal text-slate-600">/month</span>
                   </p>
-                  <p className="text-sm text-slate-500">or $149/year</p>
-                  <p className="text-base font-semibold text-slate-700">Decision-Maker View</p>
+                  <p className="text-sm text-slate-500">or $159/year</p>
+                  <p className="text-base font-semibold text-slate-700">For professionals using Nomee actively.</p>
                 </div>
 
                 <ul className="space-y-3 text-slate-600">
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Everything in Pro</span>
+                    <span>Everything in Maintain</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Decision-Maker View (skim mode)</span>
+                    <span>Proof Tiles embed (websites, portfolios)</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Stronger credibility signals (role mix, recency)</span>
+                    <span>Saved views (Hiring · Clients · Partnerships)</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Basic analytics (views / clicks)</span>
+                    <span>One-page proof export (PDF)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-1">✓</span>
+                    <span>Subtle branding control</span>
                   </li>
                 </ul>
 
                 <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 rounded-full py-6 text-base font-medium transition-all">
-                  Go Premier
+                  Upgrade to Pro
                 </Button>
               </div>
             </motion.div>
@@ -1197,7 +1223,7 @@ export default function Home() {
               className="text-center pt-8"
             >
               <p className="text-sm text-slate-500 max-w-2xl mx-auto">
-                Uploads require processing — that's why Pro exists. Submissions stay free forever.
+                Contributions are free forever. Subscription keeps uploaded proof stored, organized, and current.
               </p>
             </motion.div>
           </div>

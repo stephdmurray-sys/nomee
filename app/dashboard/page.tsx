@@ -80,7 +80,9 @@ export default async function DashboardPage() {
           <h2 className="mb-2 text-4xl font-bold text-neutral-900">
             Welcome back, {profile.full_name?.split(" ")[0] || profile.full_name}
           </h2>
-          <p className="text-xl text-neutral-600">Your professional reputation — captured and ready to share</p>
+          <p className="text-xl text-neutral-600">
+            Your professional reputation — captured, current, and ready to share.
+          </p>
         </div>
 
         <DashboardClient

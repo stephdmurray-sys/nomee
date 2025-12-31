@@ -141,17 +141,18 @@ export default function DashboardClient({
             </Card>
             <Card className="p-4">
               <div className="mb-1 text-2xl font-bold text-amber-600">{pendingCount}</div>
-              <div className="text-xs font-medium text-neutral-600">Pending (if any)</div>
+              <div className="text-xs font-medium text-neutral-600">Pending</div>
+              {pendingCount === 0 && <div className="text-xs text-neutral-500 mt-1">No action needed</div>}
             </Card>
             <Card className="p-4 border-2 border-blue-200 bg-blue-50/30">
               <div className="mb-1 text-2xl font-bold text-blue-900">{featuredCount}</div>
-              <div className="text-xs font-medium text-neutral-600">
-                Featured ({featuredLimit === Number.POSITIVE_INFINITY ? "∞" : featuredLimit} max)
-              </div>
+              <div className="text-xs font-medium text-neutral-600">Featured</div>
+              <div className="text-xs text-neutral-500 mt-1">What appears first on your Nomee Page</div>
             </Card>
             <Card className="p-4">
               <div className="mb-1 text-lg font-bold text-neutral-900 capitalize">{plan}</div>
               <div className="text-xs font-medium text-neutral-600">Current Plan</div>
+              <div className="text-xs text-neutral-500 mt-1">Keeps your Proof Link current</div>
               {plan === "free" && (
                 <Button size="sm" variant="link" className="mt-1 p-0 h-auto text-blue-600 text-xs" asChild>
                   <Link href="/pricing">Upgrade</Link>
@@ -215,8 +216,10 @@ export default function DashboardClient({
         {confirmedCount > 0 && topPhrases.length > 0 && (
           <section>
             <Card className="p-6 border-2 border-blue-100 bg-blue-50/20">
-              <h3 className="text-base font-semibold text-neutral-900 mb-1">What people consistently say</h3>
-              <p className="text-xs text-neutral-500 mb-3">Based on patterns across submissions</p>
+              <h3 className="text-base font-semibold text-neutral-900 mb-1">
+                What people consistently say about working with you
+              </h3>
+              <p className="text-xs text-neutral-500 mb-3">Based on patterns across independent contributions.</p>
               <div className="flex flex-wrap gap-2">
                 {topPhrases.map((item, idx) => (
                   <div
@@ -272,7 +275,7 @@ export default function DashboardClient({
             <div className="mb-4">
               <h2 className="text-lg font-semibold text-neutral-900">Nomee Contributions</h2>
               <p className="text-sm text-neutral-500">
-                Real people, real perspective — submitted directly to your Nomee.
+                Real people. One perspective each. Submitted directly to your Nomee.
               </p>
             </div>
 
@@ -429,7 +432,7 @@ export default function DashboardClient({
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-900">Imported Feedback</h2>
-                <p className="text-sm text-neutral-500">Pulled from screenshots. Review and publish the best parts.</p>
+                <p className="text-sm text-neutral-500">Pulled from screenshots. Reviewed by you. Preserved here.</p>
               </div>
               <div className="flex items-center gap-2 text-xs">
                 {importedStats.pending > 0 && (

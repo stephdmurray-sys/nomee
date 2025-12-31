@@ -237,6 +237,7 @@ export default function SettingsClient({ profile, userEmail }: { profile: Profil
           {/* SECTION 2: Nomee Visibility */}
           <Card className="p-8 rounded-2xl border border-neutral-200 shadow-sm">
             <h2 className="mb-6 text-2xl font-semibold text-neutral-900">Nomee Visibility</h2>
+            <p className="text-sm text-neutral-600 mb-4">This controls who can view your Proof Link.</p>
             <RadioGroup value={visibility} onValueChange={setVisibility} className="space-y-4">
               <div className="flex items-start space-x-3 p-4 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors">
                 <RadioGroupItem value="public" id="public" className="mt-1" />
@@ -292,7 +293,7 @@ export default function SettingsClient({ profile, userEmail }: { profile: Profil
               </div>
             </div>
             <p className="mt-6 text-sm text-neutral-600 leading-relaxed">
-              Nomee protects credibility by requiring real identities and limiting submissions to one per person.
+              Nomee protects credibility by showing real identities and limiting each person to one perspective.
             </p>
           </Card>
 
@@ -306,7 +307,7 @@ export default function SettingsClient({ profile, userEmail }: { profile: Profil
             ) : (
               <>
                 <p className="text-base text-neutral-700 leading-relaxed mb-6">
-                  Choose which perspectives are featured and reorder how they appear.
+                  Choose which perspectives appear first on your public Proof Link.
                 </p>
                 <Button variant="outline" asChild>
                   <Link href="/dashboard">Manage featured perspectives</Link>
@@ -337,7 +338,7 @@ export default function SettingsClient({ profile, userEmail }: { profile: Profil
                 <option value="other">Other</option>
               </select>
               <p className="mt-2 text-sm text-neutral-500">
-                This helps Nomee optimize your experience. Not shown publicly.
+                This helps Nomee tailor your experience. Never shown publicly.
               </p>
             </div>
           </Card>
@@ -361,7 +362,10 @@ export default function SettingsClient({ profile, userEmail }: { profile: Profil
             )}
             {(profile.plan === "Pro" || profile.plan === "Premier") && (
               <>
-                <p className="mb-4 text-base text-neutral-700">You have access to premium features.</p>
+                <p className="mb-2 text-base text-neutral-700">
+                  Your Proof Link updates as new perspectives are added.
+                </p>
+                <p className="mb-4 text-sm text-neutral-600">Canceling pauses updates — your proof remains visible.</p>
                 <Button variant="outline" asChild>
                   <Link href="/pricing">Manage billing</Link>
                 </Button>
