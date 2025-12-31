@@ -527,34 +527,26 @@ export function PremierProfileClient({
           className={`pt-12 pb-[var(--space-section)] px-4 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
         >
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-7xl font-sans font-semibold text-[var(--nomee-near-black)] mb-3 leading-tight">
+            {/* Primary focal point: person's name */}
+            <h1 className="text-7xl font-sans font-semibold text-[var(--nomee-near-black)] mb-4 leading-tight">
               {safeString(profile.full_name, "Anonymous")}
             </h1>
-            <p className="text-[var(--text-body)] text-neutral-700 font-medium mb-6 tracking-tighter">
-              This is a Proof Link — showing what it's actually like to work with {firstName}, based on real
-              experiences.
-            </p>
+
+            {/* Role/title - part of cohesive identity block */}
             {!isEmptyOrZero(profile.headline) && (
               <p className="text-[var(--text-subhead)] text-neutral-600 mb-4">{profile.headline}</p>
             )}
 
-            <div className="flex items-center gap-2 text-sm text-neutral-500 mb-3 flex-wrap opacity-60">
-              <span className="font-medium text-neutral-600 uppercase tracking-wide text-xs">NOMEE PROFILE</span>
+            {/* Framing sentence - completes identity block */}
+            <p className="text-[var(--text-body)] text-neutral-700 font-medium mb-12 tracking-tighter leading-relaxed">
+              This is a Proof Link — showing what it's actually like to work with {firstName}, based on real
+              experiences.
+            </p>
 
-              <span className="text-neutral-300">·</span>
-              <span className="uppercase tracking-wide text-xs">
-                BASED ON FEEDBACK FROM {safeNumber(totalContributions, 0)} PEOPLE
-              </span>
-              {totalUploads > 0 && (
-                <>
-                  <span className="text-neutral-300">·</span>
-                  <span className="uppercase tracking-wide text-xs">{totalUploads} UPLOADS</span>
-                </>
-              )}
-            </div>
-
-            <div className="flex justify-center mt-4 mb-8 opacity-60">
-              <Pill variant="direct">
+            {/* Supporting trust signals and meta information grouped together */}
+            <div className="flex items-center gap-3 text-sm flex-wrap">
+              {/* High confidence pill repositioned as supporting trust signal */}
+              <Pill variant="direct" className="opacity-70">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     confidenceLevel === "High"
@@ -566,9 +558,20 @@ export function PremierProfileClient({
                 />
                 {confidenceLevel} confidence
               </Pill>
-            </div>
 
-            <p className="text-xs text-neutral-400 opacity-60">Each contributor can submit once.</p>
+              <span className="text-neutral-300">·</span>
+
+              {/* Meta information cluster */}
+              <span className="text-xs text-neutral-500 opacity-75">
+                Based on feedback from {safeNumber(totalContributions, 0)} people
+                {totalUploads > 0 && ` · ${totalUploads} uploads`}
+              </span>
+
+              <span className="text-neutral-300">·</span>
+
+              {/* Trust rule */}
+              <span className="text-xs text-neutral-500 opacity-75">Each contributor can submit once</span>
+            </div>
             {/* </CHANGE> */}
           </div>
         </section>
@@ -772,7 +775,6 @@ export function PremierProfileClient({
                         const tier = getStrengthTier(trait.count, maxTraitCount)
                         const bgOpacity = 0.05 + (trait.count / maxTraitCount) * 0.15
                         const borderOpacity = 0.1 + (trait.count / maxTraitCount) * 0.3
-                        const pillSize = trait.count >= 5 ? "lg" : trait.count >= 4 ? "md" : "sm"
 
                         return (
                           <Pill
@@ -780,7 +782,6 @@ export function PremierProfileClient({
                             variant="topSignal"
                             tier={tier}
                             count={trait.count}
-                            size={pillSize}
                             onClick={() => handleTraitFilterSelect(trait.label)}
                             isSelected={selectedTraitFilters.includes(trait.label)}
                             style={{
@@ -793,7 +794,6 @@ export function PremierProfileClient({
                         )
                       })}
                     </div>
-                    {/* </CHANGE> */}
                   </div>
 
                   {/* EMERGING SIGNALS */}
