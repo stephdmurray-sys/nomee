@@ -387,7 +387,7 @@ export function PremierProfileClient({
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-serif text-neutral-900 mb-2 leading-tight">
+          <h1 className="text-2xl font-sans font-semibold text-neutral-900 mb-2 leading-tight">
             {safeString(profile.full_name, "Anonymous")}
           </h1>
           {!isEmptyOrZero(profile.headline) && (
@@ -527,14 +527,13 @@ export function PremierProfileClient({
           className={`pt-12 pb-[var(--space-section)] px-4 transition-all duration-700 ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
         >
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-7xl font-serif text-[var(--nomee-near-black)] mb-3 leading-tight">
+            <h1 className="text-7xl font-sans font-semibold text-[var(--nomee-near-black)] mb-3 leading-tight">
               {safeString(profile.full_name, "Anonymous")}
             </h1>
-            <p className="text-[var(--text-body)] text-neutral-700 font-medium mb-6 tracking-tight">
+            <p className="text-[var(--text-body)] text-neutral-700 font-medium mb-6 tracking-tighter">
               This is a Proof Link — showing what it's actually like to work with {firstName}, based on real
               experiences.
             </p>
-            {/* </CHANGE> */}
             {!isEmptyOrZero(profile.headline) && (
               <p className="text-[var(--text-subhead)] text-neutral-600 mb-4">{profile.headline}</p>
             )}
@@ -597,7 +596,7 @@ export function PremierProfileClient({
               {computedVibes.length > 0 && (
                 <CardShell className="mt-6 bg-white border border-neutral-200">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-[1.75rem] font-serif font-semibold text-[var(--nomee-near-black)]">Vibe</h3>
+                    <h3 className="text-[1.75rem] font-sans font-semibold text-[var(--nomee-near-black)]">Vibe</h3>
                     <p className="text-sm text-neutral-500">How it feels to work together</p>
                   </div>
 
@@ -1082,7 +1081,7 @@ export function PremierProfileClient({
         {/* ============================================ */}
         <section className="py-16 px-4 bg-[var(--nomee-near-black)]">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-[var(--text-section)] md:text-[2.5rem] font-serif text-white mb-4">
+            <h2 className="text-[var(--text-section)] md:text-[2.5rem] font-sans text-white mb-4">
               Build your own Nomee profile
             </h2>
             <p className="text-neutral-400 text-[var(--text-body)] mb-8 leading-relaxed">
