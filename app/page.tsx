@@ -463,57 +463,116 @@ export default function Home() {
                     </div>
 
                     <div className="relative overflow-hidden">
-                      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 snap-x snap-mandatory scroll-smooth">
-                        {/* Card 1 */}
-                        <div className="flex-none w-64 snap-start border border-slate-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-                          <p className="text-sm text-slate-700 leading-relaxed mb-3">
-                            "Clear communicator, calm under pressure, and deeply thoughtful in how she approaches
-                            complex work."
-                          </p>
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-8 h-8 rounded-full bg-slate-200" />
-                            <div>
-                              <div className="text-xs font-medium text-slate-900">Sarah Chen</div>
-                              <div className="text-xs text-slate-500">Product Lead</div>
+                      <div className="flex gap-3 animate-scroll-left">
+                        {/* First set of cards */}
+                        <div className="flex gap-3 flex-shrink-0">
+                          {/* Card 1 */}
+                          <div className="w-64 border border-slate-200 rounded-lg p-4 bg-white shadow-sm">
+                            <p className="text-sm text-slate-700 leading-relaxed mb-3">
+                              "Clear communicator, calm under pressure, and deeply thoughtful in how she approaches
+                              complex work."
+                            </p>
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-full bg-slate-200" />
+                              <div>
+                                <div className="text-xs font-medium text-slate-900">Sarah Chen</div>
+                                <div className="text-xs text-slate-500">Product Lead</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] text-slate-400 text-center pt-2 border-t border-slate-100">
+                              Powered by Nomee
                             </div>
                           </div>
-                          <div className="text-[10px] text-slate-400 text-center pt-2 border-t border-slate-100">
-                            Powered by Nomee
+
+                          {/* Card 2 */}
+                          <div className="w-64 border border-slate-200 rounded-lg p-4 bg-white shadow-sm">
+                            <p className="text-sm text-slate-700 leading-relaxed mb-3">
+                              "One of the most reliable collaborators I've worked with. Strong judgment and
+                              follow-through."
+                            </p>
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-full bg-slate-200" />
+                              <div>
+                                <div className="text-xs font-medium text-slate-900">Marcus Johnson</div>
+                                <div className="text-xs text-slate-500">Design Director</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] text-slate-400 text-center pt-2 border-t border-slate-100">
+                              Powered by Nomee
+                            </div>
+                          </div>
+
+                          {/* Card 3 */}
+                          <div className="w-64 border border-slate-200 rounded-lg p-4 bg-white shadow-sm">
+                            <p className="text-sm text-slate-700 leading-relaxed mb-3">
+                              "Consistently strategic while still being easy to work with."
+                            </p>
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-full bg-slate-200" />
+                              <div>
+                                <div className="text-xs font-medium text-slate-900">Alex Rivera</div>
+                                <div className="text-xs text-slate-500">Co-Founder</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] text-slate-400 text-center pt-2 border-t border-slate-100">
+                              Powered by Nomee
+                            </div>
                           </div>
                         </div>
 
-                        {/* Card 2 */}
-                        <div className="flex-none w-64 snap-start border border-slate-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-                          <p className="text-sm text-slate-700 leading-relaxed mb-3">
-                            "One of the most reliable collaborators I've worked with. Strong judgment and
-                            follow-through."
-                          </p>
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-8 h-8 rounded-full bg-slate-200" />
-                            <div>
-                              <div className="text-xs font-medium text-slate-900">Marcus Johnson</div>
-                              <div className="text-xs text-slate-500">Design Director</div>
+                        {/* Duplicate set for seamless loop */}
+                        <div className="flex gap-3 flex-shrink-0">
+                          {/* Card 1 duplicate */}
+                          <div className="w-64 border border-slate-200 rounded-lg p-4 bg-white shadow-sm">
+                            <p className="text-sm text-slate-700 leading-relaxed mb-3">
+                              "Clear communicator, calm under pressure, and deeply thoughtful in how she approaches
+                              complex work."
+                            </p>
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-full bg-slate-200" />
+                              <div>
+                                <div className="text-xs font-medium text-slate-900">Sarah Chen</div>
+                                <div className="text-xs text-slate-500">Product Lead</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] text-slate-400 text-center pt-2 border-t border-slate-100">
+                              Powered by Nomee
                             </div>
                           </div>
-                          <div className="text-[10px] text-slate-400 text-center pt-2 border-t border-slate-100">
-                            Powered by Nomee
-                          </div>
-                        </div>
 
-                        {/* Card 3 */}
-                        <div className="flex-none w-64 snap-start border border-slate-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-                          <p className="text-sm text-slate-700 leading-relaxed mb-3">
-                            "Consistently strategic while still being easy to work with."
-                          </p>
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-8 h-8 rounded-full bg-slate-200" />
-                            <div>
-                              <div className="text-xs font-medium text-slate-900">Alex Rivera</div>
-                              <div className="text-xs text-slate-500">Co-Founder</div>
+                          {/* Card 2 duplicate */}
+                          <div className="w-64 border border-slate-200 rounded-lg p-4 bg-white shadow-sm">
+                            <p className="text-sm text-slate-700 leading-relaxed mb-3">
+                              "One of the most reliable collaborators I've worked with. Strong judgment and
+                              follow-through."
+                            </p>
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-full bg-slate-200" />
+                              <div>
+                                <div className="text-xs font-medium text-slate-900">Marcus Johnson</div>
+                                <div className="text-xs text-slate-500">Design Director</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] text-slate-400 text-center pt-2 border-t border-slate-100">
+                              Powered by Nomee
                             </div>
                           </div>
-                          <div className="text-[10px] text-slate-400 text-center pt-2 border-t border-slate-100">
-                            Powered by Nomee
+
+                          {/* Card 3 duplicate */}
+                          <div className="w-64 border border-slate-200 rounded-lg p-4 bg-white shadow-sm">
+                            <p className="text-sm text-slate-700 leading-relaxed mb-3">
+                              "Consistently strategic while still being easy to work with."
+                            </p>
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-full bg-slate-200" />
+                              <div>
+                                <div className="text-xs font-medium text-slate-900">Alex Rivera</div>
+                                <div className="text-xs text-slate-500">Co-Founder</div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] text-slate-400 text-center pt-2 border-t border-slate-100">
+                              Powered by Nomee
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -647,91 +706,10 @@ export default function Home() {
           </div>
         </section>
 
+        {/* How a Nomee is built */}
         <section className="py-24 px-6 bg-white">
-          <div className="max-w-4xl mx-auto space-y-12">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-3xl md:text-4xl font-semibold text-slate-900 text-center"
-            >
-              How a Nomee comes together
-            </motion.h2>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="space-y-4 text-center"
-              >
-                <div className="w-12 h-12 mx-auto bg-slate-900 text-white rounded-full flex items-center justify-center text-lg font-bold">
-                  1
-                </div>
-                <h3 className="text-xl font-semibold text-slate-900">Share your Nomee link</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Send one link to people you've worked with.
-                  <br />
-                  There's no limit — contributions are always free.
-                </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="space-y-4 text-center"
-              >
-                <div className="w-12 h-12 mx-auto bg-slate-900 text-white rounded-full flex items-center justify-center text-lg font-bold">
-                  2
-                </div>
-                <h3 className="text-xl font-semibold text-slate-900">People contribute their perspective</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  They share a few sentences (or a short voice note).
-                  <br />
-                  It takes about two minutes.
-                </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="space-y-4 text-center"
-              >
-                <div className="w-12 h-12 mx-auto bg-slate-900 text-white rounded-full flex items-center justify-center text-lg font-bold">
-                  3
-                </div>
-                <h3 className="text-xl font-semibold text-slate-900">Patterns form over time</h3>
-                <p className="text-slate-600 leading-relaxed">
-                  As more people contribute, shared traits and themes surface automatically.
-                </p>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Authority line before final CTA */}
-        <section className="py-12 px-6 bg-white">
-          <div className="max-w-2xl mx-auto">
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-sm text-slate-500 text-center font-medium"
-            >
-              This is context people usually only get after interviews or reference checks.
-            </motion.p>
-          </div>
-        </section>
-
-        <section id="decision-makers" className="py-24 px-6 bg-slate-50">
-          <div className="max-w-5xl mx-auto space-y-12">
+          <div className="max-w-6xl mx-auto space-y-16">
+            {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -739,78 +717,328 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="text-center space-y-4"
             >
-              <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">For decision-makers</h2>
-              <p className="text-xl text-slate-600">A faster way to validate working style.</p>
+              <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">How a Nomee is built</h2>
+              <p className="text-xl text-slate-600">Two inputs. One Proof Link. Real signals people trust.</p>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="grid md:grid-cols-3 gap-8"
-            >
-              <div className="space-y-3 text-center">
-                <h3 className="text-lg font-semibold text-slate-900">Hiring</h3>
-                <p className="text-slate-600">Understand working style before interviews begin.</p>
+            <div className="relative">
+              {/* Two Input Cards - Side by Side */}
+              <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-6">
+                {/* Input 1: Contributions */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                  className="bg-slate-50 rounded-xl p-5 space-y-3 border border-slate-200/80"
+                >
+                  <div className="space-y-1.5">
+                    <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Input 1</div>
+                    <h3 className="text-lg font-semibold text-slate-900">Contributions</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">
+                      People you've worked with describe the experience.
+                    </p>
+                  </div>
+                </motion.div>
+
+                {/* Input 2: Uploaded proof */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                  className="bg-slate-50 rounded-xl p-5 space-y-3 border border-slate-200/80"
+                >
+                  <div className="space-y-1.5">
+                    <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Input 2</div>
+                    <h3 className="text-lg font-semibold text-slate-900">Uploaded proof</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">Save praise from email, Slack, and DMs.</p>
+                  </div>
+                </motion.div>
               </div>
 
-              <div className="space-y-3 text-center">
-                <h3 className="text-lg font-semibold text-slate-900">Partnerships</h3>
-                <p className="text-slate-600">Confirm reliability and collaboration fit early.</p>
+              <div className="hidden md:block relative h-8 max-w-3xl mx-auto mb-4">
+                {/* Left arrow from Input 1 */}
+                <svg
+                  className="absolute left-1/4 top-0 text-slate-300"
+                  width="100"
+                  height="40"
+                  viewBox="0 0 100 40"
+                  fill="none"
+                >
+                  <path
+                    d="M10 0 Q40 20, 90 40"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  <path d="M90 40 L86 35 M90 40 L85 40" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+
+                {/* Right arrow from Input 2 */}
+                <svg
+                  className="absolute right-1/4 top-0 text-slate-300"
+                  width="100"
+                  height="40"
+                  viewBox="0 0 100 40"
+                  fill="none"
+                >
+                  <path
+                    d="M90 0 Q60 20, 10 40"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  <path d="M10 40 L14 35 M10 40 L15 40" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
               </div>
 
-              <div className="space-y-3 text-center">
-                <h3 className="text-lg font-semibold text-slate-900">Clients & collaborators</h3>
-                <p className="text-slate-600">See how it feels to work together before committing.</p>
+              {/* Mobile simple arrow */}
+              <div className="md:hidden flex items-center justify-center mb-6">
+                <svg width="2" height="24" viewBox="0 0 2 24" fill="none" className="text-slate-300">
+                  <path d="M1 0V20M1 20L-3 16M1 20L5 16" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
               </div>
-            </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="bg-white rounded-2xl p-10 shadow-[0_10px_40px_rgba(0,0,0,0.08)] border-2 border-blue-100/50 max-w-2xl mx-auto"
+              >
+                <div className="space-y-5">
+                  <div className="space-y-3">
+                    <div className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Output</div>
+                    <h3 className="text-2xl md:text-3xl font-semibold text-slate-900">Your Personal Nomee Link</h3>
+                    <p className="text-slate-600 text-lg leading-relaxed">
+                      A single link that shows patterns + proof — in their words.
+                    </p>
+                  </div>
+                  <div className="pt-4 border-t border-slate-100">
+                    <ul className="space-y-3 text-sm text-slate-600">
+                      <li className="flex items-start gap-3">
+                        <span className="text-blue-500 mt-0.5">✓</span>
+                        <span>AI summary + emerging themes</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="text-blue-500 mt-0.5">✓</span>
+                        <span>Share anywhere, forever</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="max-w-2xl mx-auto space-y-4"
+              className="space-y-8"
             >
-              <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-3">
-                <p className="text-sm font-medium text-slate-700">Copy/paste options for applications:</p>
-                <div className="space-y-2 text-sm text-slate-600">
-                  <p className="font-mono bg-slate-50 px-3 py-2 rounded border border-slate-200">
-                    Optional: Nomee Proof Link (collaboration signals)
-                  </p>
-                  <p className="font-mono bg-slate-50 px-3 py-2 rounded border border-slate-200">
-                    Optional: Partnership proof link
-                  </p>
-                  <p className="font-mono bg-slate-50 px-3 py-2 rounded border border-slate-200">
-                    Optional: Working style evidence link
-                  </p>
-                </div>
-              </div>
+              <h4 className="text-xl md:text-2xl font-semibold text-slate-900 text-center">
+                Different sources. One signal.
+              </h4>
 
-              <div className="text-center pt-4">
-                <Link
-                  href="/maya-torres"
-                  className="inline-flex items-center gap-2 text-slate-900 hover:text-slate-700 font-medium text-sm transition-colors"
-                >
-                  View an example Proof Link
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+              <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+                {/* Contribution preview - clearly a person */}
+                <div className="bg-white rounded-xl p-5 border border-slate-200 space-y-4 hover:shadow-md transition-shadow">
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                    "Jordan brings strategic thinking and clear communication to every project. Exactly who you want in
+                    the room."
+                  </p>
+                  <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+                    <div className="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0"></div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Sarah Chen</p>
+                      <p className="text-xs text-slate-500">Former colleague</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Uploaded proof preview - clearly documentation */}
+                <div className="bg-slate-50/80 rounded-xl p-5 border border-slate-200 space-y-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-start gap-2">
+                    <div className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-semibold uppercase tracking-wide flex-shrink-0 mt-0.5">
+                      Email
+                    </div>
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      "This campaign exceeded our goals by 40%. Jordan's attention to detail made all the difference."
+                    </p>
+                  </div>
+                  <div className="text-xs text-slate-500 pt-2 border-t border-slate-200">Saved 3 weeks ago</div>
+                </div>
               </div>
             </motion.div>
 
-            <motion.div
+            {/* Authority line */}
+            <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.6 }}
-              className="text-center pt-6"
+              className="text-sm text-slate-500 text-center max-w-2xl mx-auto"
             >
-              <p className="text-sm text-slate-500 leading-relaxed">
-                Your Nomee link is free to share — forever.
-                <br />
-                Unlimited people can contribute. You only upgrade to save and showcase highlights.
+              This is the context people usually wait until the reference check to get — now it's visible upfront.
+            </motion.p>
+          </div>
+        </section>
+
+        <section id="decision-makers" className="py-24 px-6 bg-slate-50">
+          <div className="max-w-6xl mx-auto space-y-12">
+            {/* Header */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center space-y-3"
+            >
+              <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">For people who decide</h2>
+              <p className="text-xl text-slate-600">
+                Validate working style in minutes — before interviews, contracts, or commitments.
               </p>
+            </motion.div>
+
+            {/* Interactive Tabs + Skim Mode Preview */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="grid md:grid-cols-2 gap-8 items-start"
+            >
+              {/* Left: Tab Content */}
+              <div className="space-y-6">
+                {/* Tab Buttons */}
+                <div className="flex gap-2 border-b border-slate-200">
+                  <button className="px-4 py-2 text-sm font-medium text-slate-900 border-b-2 border-slate-900 -mb-px">
+                    Hiring
+                  </button>
+                  <button className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+                    Partnerships
+                  </button>
+                  <button className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+                    Clients & collaborators
+                  </button>
+                </div>
+
+                {/* Tab Content: Hiring */}
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-base text-slate-700 leading-relaxed">
+                      See how candidates actually operate with others.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-semibold text-slate-900">What you learn</p>
+                    <ul className="space-y-2 text-sm text-slate-600">
+                      <li className="flex items-start gap-2">
+                        <span className="text-slate-400 mt-0.5">•</span>
+                        <span>Collaboration style and reliability</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-slate-400 mt-0.5">•</span>
+                        <span>Repeated strengths (not one-off claims)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-slate-400 mt-0.5">•</span>
+                        <span>Direct signals from real people</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Skim Mode Preview */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-slate-900">Decision-Maker View (Skim Mode)</p>
+                  <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">~1 min</span>
+                </div>
+
+                {/* Top Signals */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Top Signals</p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
+                      Strategic
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
+                      Clear communicator
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
+                      Reliable
+                    </span>
+                  </div>
+                </div>
+
+                {/* One-minute read */}
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Quick Scan</p>
+
+                  {/* Quote 1 */}
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      "Brings clarity to complex projects. Always two steps ahead."
+                    </p>
+                  </div>
+
+                  {/* Quote 2 */}
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      "The kind of collaborator who makes everyone better."
+                    </p>
+                  </div>
+
+                  {/* Uploaded proof excerpt */}
+                  <div className="bg-white rounded-lg p-3 border border-slate-200">
+                    <p className="text-xs text-slate-500 mb-1">📎 From client email</p>
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      "This exceeded our expectations. Thank you."
+                    </p>
+                  </div>
+                </div>
+
+                {/* Patterns forming */}
+                <div className="pt-3 border-t border-slate-200">
+                  <p className="text-xs text-slate-500">
+                    Patterns forming: <span className="font-medium">Strategic ×5, Clear communicator ×4</span>
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Strong CTA Row */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-center space-y-4"
+            >
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link
+                  href="/maya-torres"
+                  className="inline-flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-lg font-medium hover:bg-slate-800 transition-colors"
+                >
+                  See an example Proof Link
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="inline-flex items-center gap-2 border border-slate-300 text-slate-900 px-6 py-3 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+                >
+                  Create your Nomee
+                </Link>
+              </div>
+
+              {/* Trust micro-line */}
+              <p className="text-sm text-slate-500">Real names. Real relationships. One contribution per person.</p>
             </motion.div>
           </div>
         </section>
