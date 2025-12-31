@@ -44,11 +44,11 @@ export default function Home() {
                 </p>
 
                 <h1 className="text-5xl md:text-6xl font-bold text-slate-900 leading-tight tracking-tight">
-                  Your reputation already exists. Nomee makes it visible.
+                  Your reputation already exists. Your Nomee Page shows it.
                 </h1>
 
                 <p className="text-xl md:text-2xl text-slate-700 leading-relaxed">
-                  One link that shows how people experience working with you — in their words.
+                  One Proof Link that shows how people experience working with you — in their words.
                 </p>
 
                 <p className="text-sm text-slate-600 font-medium">
@@ -61,7 +61,7 @@ export default function Home() {
                     size="lg"
                     className="bg-slate-900 text-white hover:bg-slate-800 rounded-full px-8 py-6 text-base font-medium shadow-lg hover:shadow-xl transition-all"
                   >
-                    Create your Nomee
+                    Create your Nomee Page
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
 
@@ -74,7 +74,7 @@ export default function Home() {
                 </div>
 
                 <p className="text-sm text-slate-500">
-                  Nomee submissions are free forever • 3 saved highlights included
+                  Creating your Nomee Page is free forever • 3 saved highlights included
                 </p>
               </motion.div>
 
@@ -124,7 +124,7 @@ export default function Home() {
                 className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-3xl mx-auto"
               >
                 Praise already exists in your emails, Slack, texts, and DMs. Nomee helps you save the moments that show
-                how people experience working with you — then turns them into something you can actually use.
+                how people experience working with you — then turns them into a Proof Link you can actually use.
               </motion.p>
             </div>
 
@@ -244,7 +244,7 @@ export default function Home() {
                   </div>
                 </motion.div>
 
-                {/* Slack snippet */}
+                {/* Slack snippet - Fixed height alignment to match other cards */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -264,9 +264,8 @@ export default function Home() {
                         <path d="M13.5 6C12.6716 6 12 6.67157 12 7.5C12 8.32843 12.6716 9 13.5 9H15C15.8284 9 16.5 8.32843 16.5 7.5C16.5 6.67157 15.8284 6 15 6H13.5Z" />
                       </svg>
                     </div>
-                    {/* Slack content */}
-                    <div className="p-4 space-y-3 h-32 flex flex-col justify-center">
-                      <div className="flex items-start gap-2">
+                    <div className="p-4 h-32 flex flex-col justify-center">
+                      <div className="flex items-start gap-2 w-full">
                         <div className="w-6 h-6 rounded bg-teal-500 flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0 mt-0.5">
                           AS
                         </div>
@@ -293,32 +292,35 @@ export default function Home() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.8, delay: 0.9 }}
-                  className="absolute -top-6 left-0 right-0 h-12 hidden md:flex items-center justify-center"
+                  className="absolute -top-6 left-0 right-0 h-24 hidden md:block"
                 >
-                  <svg className="w-full h-full" style={{ maxWidth: "600px" }}>
-                    {/* Left arrow */}
+                  <svg className="w-full h-full" viewBox="0 0 1200 96" preserveAspectRatio="xMidYMid meet">
+                    {/* Left arrow: straight down from left card center, then horizontal to center */}
                     <path
-                      d="M 100 0 Q 150 30, 250 40"
-                      stroke="rgba(59, 130, 246, 0.3)"
+                      d="M 200 0 L 200 48 L 600 48"
+                      stroke="rgba(148, 163, 184, 0.4)"
                       strokeWidth="2"
                       fill="none"
-                      strokeDasharray="4 4"
+                      strokeDasharray="6 6"
+                      strokeLinecap="round"
                     />
-                    {/* Center arrow */}
+                    {/* Center arrow: straight down from middle card center */}
                     <path
-                      d="M 300 0 L 300 40"
-                      stroke="rgba(59, 130, 246, 0.3)"
+                      d="M 600 0 L 600 96"
+                      stroke="rgba(148, 163, 184, 0.4)"
                       strokeWidth="2"
                       fill="none"
-                      strokeDasharray="4 4"
+                      strokeDasharray="6 6"
+                      strokeLinecap="round"
                     />
-                    {/* Right arrow */}
+                    {/* Right arrow: straight down from right card center, then horizontal to center */}
                     <path
-                      d="M 500 0 Q 450 30, 350 40"
-                      stroke="rgba(59, 130, 246, 0.3)"
+                      d="M 1000 0 L 1000 48 L 600 48"
+                      stroke="rgba(148, 163, 184, 0.4)"
                       strokeWidth="2"
                       fill="none"
-                      strokeDasharray="4 4"
+                      strokeDasharray="6 6"
+                      strokeLinecap="round"
                     />
                   </svg>
                 </motion.div>
@@ -359,7 +361,7 @@ export default function Home() {
               transition={{ duration: 0.5 }}
               className="text-3xl md:text-4xl font-semibold text-slate-900"
             >
-              How Nomee works.
+              How Nomee works
             </motion.h3>
 
             <motion.p
@@ -386,7 +388,7 @@ export default function Home() {
                 </div>
                 <h4 className="text-lg font-semibold text-slate-900">Share your Nomee link</h4>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  Send your unique link to people you've collaborated with directly.
+                  Send people to your Nomee Page to contribute their perspective directly.
                 </p>
               </motion.div>
 
@@ -719,7 +721,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="text-center space-y-4"
             >
-              <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">How a Nomee is built</h2>
+              <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">How your Nomee Page is built</h2>
               <p className="text-xl text-slate-600">Two inputs. One Proof Link. Real signals people trust.</p>
             </motion.div>
 
@@ -870,11 +872,9 @@ export default function Home() {
               transition={{ duration: 0.8 }}
               className="text-center space-y-6 mb-20"
             >
-              <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 tracking-tight">
-                For people who decide
-              </h2>
+              <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 tracking-tight">For decision-makers</h2>
               <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-                See how someone actually operates — in under 60 seconds.
+                Review someone's Proof Link — see how they operate in under 60 seconds.
               </p>
             </motion.div>
 
@@ -1216,7 +1216,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="text-4xl md:text-5xl font-bold text-white"
             >
-              Create once. Let it grow over time.
+              Create your Nomee Page once. Let it grow over time.
             </motion.h2>
 
             <motion.p
@@ -1226,7 +1226,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xl text-slate-300"
             >
-              One link. Many perspectives. Patterns emerge.
+              One Proof Link. Many perspectives. Patterns emerge.
             </motion.p>
 
             <motion.div
@@ -1240,7 +1240,7 @@ export default function Home() {
                 size="lg"
                 className="bg-white text-slate-900 hover:bg-slate-100 rounded-full px-8 py-6 text-base font-medium shadow-lg hover:shadow-xl transition-all"
               >
-                Start uploading today
+                Create your Nomee Page
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </motion.div>
