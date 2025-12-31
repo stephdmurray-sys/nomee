@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import type React from "react"
+
+import { useState, useMemo, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { MessageSquare, ChevronDown } from "lucide-react"
 import { VoiceCard } from "@/components/voice-card"
@@ -14,6 +16,7 @@ import { usePinnedHighlights, PinButton } from "@/components/pinned-highlights"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { HeatPill, getStrengthTier } from "@/components/heat-pill"
 import Link from "next/link"
+import { cn } from "@/lib/utils" // Added for cn utility
 
 // Design system components
 import { SectionHeading } from "@/components/design-system/section-heading"
@@ -183,6 +186,54 @@ export function PremierProfileClient({
   const [howItFeelsRelationshipFilter, setHowItFeelsRelationshipFilter] = useState<RelationshipFilterCategory>("All")
   const [voiceRelationshipFilter, setVoiceRelationshipFilter] = useState<RelationshipFilterCategory>("All")
   const [showAllTraits, setShowAllTraits] = useState(false)
+
+  const summaryRef = useRef<HTMLElement>(null)
+  const voiceRef = useRef<HTMLElement>(null)
+  const patternsRef = useRef<HTMLElement>(null)
+  const howItFeelsRef = useRef<HTMLElement>(null)
+  const screenshotsRef = useRef<HTMLElement>(null)
+
+  const [activeSection, setActiveSection] = useState<string>("")
+
+  const scrollToSection = (sectionRef: React.RefObject<HTMLElement>) => {
+    if (sectionRef.current) {
+      const offset = 80 // Account for sticky toolbar height
+      const elementPosition = sectionRef.current.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - offset
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      })
+    }
+  }
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = [
+        { ref: summaryRef, name: "summary" },
+        { ref: voiceRef, name: "voice" },
+        { ref: patternsRef, name: "patterns" },
+        { ref: howItFeelsRef, name: "how-it-feels" },
+        { ref: screenshotsRef, name: "screenshots" },
+      ]
+
+      for (const section of sections) {
+        if (section.ref.current) {
+          const rect = section.ref.current.getBoundingClientRect()
+          if (rect.top <= 120 && rect.bottom >= 120) {
+            setActiveSection(section.name)
+            break
+          }
+        }
+      }
+    }
+
+    window.addEventListener("scroll", handleScroll)
+    handleScroll() // Initial check
+
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   const { pinnedItems, pinQuote, pinVoice, pinTrait, unpin, isPinned } = usePinnedHighlights(safeString(profile?.slug))
 
@@ -396,7 +447,79 @@ export function PremierProfileClient({
 
   return (
     <TooltipProvider>
-      <main className="min-h-screen bg-[var(--nomee-cream)]">
+      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-neutral-200">
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          <nav className="flex items-center gap-2 overflow-x-auto">
+            {(safeProfileAnalysis.totalDataCount >= 1 || safeTraits.length > 0) && (
+              <button
+                onClick={() => scrollToSection(summaryRef)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                  activeSection === "summary" ? "bg-blue-100 text-blue-900" : "text-neutral-600 hover:bg-neutral-100",
+                )}
+              >
+                Summary
+              </button>
+            )}
+
+            {voiceContributions.length > 0 && (
+              <button
+                onClick={() => scrollToSection(voiceRef)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                  activeSection === "voice" ? "bg-blue-100 text-blue-900" : "text-neutral-600 hover:bg-neutral-100",
+                )}
+              >
+                Voice Notes
+              </button>
+            )}
+
+            {safeTraits.length > 0 && (
+              <button
+                onClick={() => scrollToSection(patternsRef)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                  activeSection === "patterns" ? "bg-blue-100 text-blue-900" : "text-neutral-600 hover:bg-neutral-100",
+                )}
+              >
+                Patterns
+              </button>
+            )}
+
+            {writtenContributions.length > 0 && (
+              <button
+                onClick={() => scrollToSection(howItFeelsRef)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                  activeSection === "how-it-feels"
+                    ? "bg-blue-100 text-blue-900"
+                    : "text-neutral-600 hover:bg-neutral-100",
+                )}
+              >
+                How it feels
+              </button>
+            )}
+
+            {importedFeedback.length > 0 && (
+              <button
+                onClick={() => scrollToSection(screenshotsRef)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                  activeSection === "screenshots"
+                    ? "bg-blue-100 text-blue-900"
+                    : "text-neutral-600 hover:bg-neutral-100",
+                )}
+              >
+                Screenshots
+              </button>
+            )}
+          </nav>
+        </div>
+      </div>
+
+      <main className="relative min-h-screen bg-[var(--nomee-neutral-bg)]">
+        {" "}
+        {/* Changed to relative */}
         {/* ============================================ */}
         {/* SECTION 1: HERO / HEADER */}
         {/* ============================================ */}
@@ -407,12 +530,16 @@ export function PremierProfileClient({
             <h1 className="text-7xl font-serif text-[var(--nomee-near-black)] mb-3 leading-tight">
               {safeString(profile.full_name, "Anonymous")}
             </h1>
+            <p className="text-[var(--text-body)] text-neutral-600 mb-6">
+              This is a Proof Link — showing what it's actually like to work with {firstName}, based on real
+              experiences.
+            </p>
+            {/* </CHANGE> */}
             {!isEmptyOrZero(profile.headline) && (
               <p className="text-[var(--text-subhead)] text-neutral-600 mb-4">{profile.headline}</p>
             )}
 
-            {/* Stats row - smaller, muted */}
-            <div className="flex items-center gap-2 text-sm text-neutral-500 mb-3 flex-wrap">
+            <div className="flex items-center gap-2 text-sm text-neutral-500 mb-3 flex-wrap opacity-70">
               <span className="font-medium text-neutral-600 uppercase tracking-wide text-xs">NOMEE PROFILE</span>
               <span className="text-neutral-300">·</span>
               <span className="uppercase tracking-wide text-xs">
@@ -426,7 +553,7 @@ export function PremierProfileClient({
               )}
             </div>
 
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3 mb-2 opacity-70">
               <Pill variant="direct">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
@@ -441,15 +568,17 @@ export function PremierProfileClient({
               </Pill>
             </div>
 
-            <p className="text-xs text-neutral-400">Each contributor can submit once.</p>
+            <p className="text-xs text-neutral-400 opacity-70">Each contributor can submit once.</p>
+            {/* </CHANGE> */}
           </div>
         </section>
-
         {/* ============================================ */}
         {/* SECTION 2: SUMMARY - with teal left border */}
         {/* ============================================ */}
         {(safeProfileAnalysis.totalDataCount >= 1 || safeTraits.length > 0) && (
-          <section className="pb-[var(--space-section)] px-4">
+          <section ref={summaryRef} className="pb-[var(--space-section)] px-4">
+            {" "}
+            {/* Added ref */}
             <div className="max-w-4xl mx-auto">
               <CardShell>
                 <AiPatternSummary
@@ -496,27 +625,30 @@ export function PremierProfileClient({
             </div>
           </section>
         )}
-
         {/* ============================================ */}
         {/* SECTION 3: IN THEIR OWN WORDS (Voice Notes) */}
         {/* ============================================ */}
         {voiceContributions.length > 0 && (
-          <section className="py-[var(--space-section)] px-4 w-full">
+          <section ref={voiceRef} className="py-[var(--space-section)] px-4 w-full">
+            {" "}
+            {/* Added ref */}
             <div className="w-full">
               <div className="mx-auto w-full max-w-6xl px-6">
+                <p className="text-sm text-neutral-500 mb-3 text-center">One contribution per person. Never edited.</p>
+                {/* </CHANGE> */}
                 <SectionHeading
                   title="In Their Own Words"
                   subtitle={`Unedited voice notes from people who know ${firstName}`}
                 />
 
-                {/* Filter tabs */}
-                <div className="flex justify-center mb-6">
+                <div className="flex justify-center mb-6 opacity-70">
                   <RelationshipFilter
                     selectedCategory={voiceRelationshipFilter}
                     onCategoryChange={setVoiceRelationshipFilter}
                     contributions={voiceContributions}
                   />
                 </div>
+                {/* </CHANGE> */}
 
                 <div className="mt-10 columns-1 md:columns-2 lg:columns-3 [column-gap:2rem]">
                   {filteredVoiceContributions.map((contribution) => {
@@ -598,19 +730,21 @@ export function PremierProfileClient({
             </div>
           </section>
         )}
-
         {/* ============================================ */}
         {/* SECTION 4: PATTERN RECOGNITION */}
         {/* ============================================ */}
         {safeTraits.length > 0 && (
-          <section className="py-[var(--space-section)] px-4">
+          <section ref={patternsRef} className="py-[var(--space-section)] px-4">
+            {" "}
+            {/* Added ref */}
             <div className="max-w-4xl mx-auto">
               <SectionHeading
-                title="Pattern Recognition"
-                subtitle="Not hand-picked — patterns emerge as more people contribute."
+                title={`How it feels to work with ${firstName}`}
+                subtitle="Based on recurring themes across contributions."
               />
+              {/* </CHANGE> */}
 
-              <div className="flex justify-center mt-4 mb-8">
+              <div className="flex justify-center mt-4 mb-8 opacity-70">
                 <Pill variant="direct">
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
@@ -624,6 +758,7 @@ export function PremierProfileClient({
                   {confidenceLevel} confidence
                 </Pill>
               </div>
+              {/* </CHANGE> */}
 
               <CardShell>
                 <div className="grid md:grid-cols-2 gap-8">
@@ -727,12 +862,16 @@ export function PremierProfileClient({
             </div>
           </section>
         )}
-
         {/* ============================================ */}
         {/* SECTION 5: HOW IT FEELS (Direct text submissions only - NO voice) */}
         {/* ============================================ */}
         {writtenContributions.length > 0 && (
-          <section className="py-[var(--space-section)] px-4 bg-white border-t border-[var(--nomee-neutral-border)]">
+          <section
+            ref={howItFeelsRef}
+            className="py-[var(--space-section)] px-4 bg-white border-t border-[var(--nomee-neutral-border)]"
+          >
+            {" "}
+            {/* Added ref */}
             <div className="w-full">
               <div className="mx-auto w-full max-w-6xl px-6">
                 <SectionHeading title="How it feels" subtitle="Day-to-day collaboration style and working patterns" />
@@ -856,12 +995,16 @@ export function PremierProfileClient({
             </div>
           </section>
         )}
-
         {/* ============================================ */}
         {/* SECTION 6: SCREENSHOTS AND HIGHLIGHTS (Imported only) */}
         {/* ============================================ */}
         {importedFeedback.length > 0 && (
-          <section className="py-[var(--space-section)] px-4 bg-white border-t border-[var(--nomee-neutral-border)]">
+          <section
+            ref={screenshotsRef}
+            className="py-[var(--space-section)] px-4 bg-white border-t border-[var(--nomee-neutral-border)]"
+          >
+            {" "}
+            {/* Added ref */}
             <div className="max-w-6xl mx-auto">
               <SectionHeading
                 title="Screenshots and highlights"
@@ -931,7 +1074,6 @@ export function PremierProfileClient({
             </div>
           </section>
         )}
-
         {/* ============================================ */}
         {/* SECTION 7: BUILD YOUR OWN NOMEE CTA (BLACK BG) */}
         {/* ============================================ */}

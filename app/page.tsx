@@ -52,15 +52,6 @@ export default function Home() {
                   One Proof Link that shows how people experience working with you — in their words.
                 </p>
 
-                <p className="text-base text-slate-600 leading-relaxed">
-                  For anyone who works with people — operators, managers, recruiters, contractors, nurses, teachers,
-                  sales, support, creatives.
-                </p>
-
-                <p className="text-sm text-slate-600 font-medium">
-                  Don't lose the praise. Turn it into proof you can share anywhere.
-                </p>
-
                 <div className="flex flex-col sm:flex-row items-start gap-4 pt-4">
                   <Button
                     onClick={() => openModal("deck")}
@@ -79,9 +70,7 @@ export default function Home() {
                   </Link>
                 </div>
 
-                <p className="text-sm text-slate-500">
-                  Creating your Nomee Page is free forever • 3 saved highlights included
-                </p>
+                <p className="text-sm text-slate-500">No credit card required</p>
               </motion.div>
 
               {/* Right: Real Nomee Slice (Desktop) */}
@@ -182,9 +171,6 @@ export default function Home() {
                 <p className="text-sm text-slate-600 leading-relaxed">
                   Your Proof Link shows patterns across all perspectives — ready for any opportunity.
                 </p>
-                <p className="text-sm text-slate-500 leading-relaxed italic">
-                  In plain terms: it shows what it's actually like to work with you — day to day.
-                </p>
               </motion.div>
             </div>
 
@@ -284,8 +270,7 @@ export default function Home() {
                             <span className="text-[10px] text-slate-500">11:23 AM</span>
                           </div>
                           <p className="text-xs leading-relaxed text-slate-700">
-                            Just wrapped the client call — they were so impressed by how you handled their questions and
-                            concerns. That's the kind of thinking we need more of. 💯
+                            Just wrapped the client call — they were so impressed by how you handled their questions and concerns. That's the kind of thinking we need more of. 💯
                           </p>
                         </div>
                       </div>
@@ -355,7 +340,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   </Link>
-                  <p className="text-xs text-slate-500">No credit card required</p>
+                  <p className="text-xs text-slate-500">Have your reputation ready when you need it the most</p>
                 </motion.div>
               </div>
             </div>
@@ -448,7 +433,7 @@ export default function Home() {
             >
               <h2 className="text-2xl md:text-3xl font-semibold text-slate-900">Use your Proof Link anywhere</h2>
               <p className="text-lg text-slate-600 max-w-3xl mx-auto">
-                Share your Proof Link anywhere for free. Add Proof Tiles to your website (copy/paste) with Pro.
+                Share your Proof Link anywhere for free. Embed your Proof Tiles to any website with Pro.
               </p>
 
               <p className="text-sm text-slate-500 max-w-xl mx-auto">
