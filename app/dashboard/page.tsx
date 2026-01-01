@@ -57,7 +57,7 @@ export default async function DashboardPage() {
       <nav className="sticky top-0 z-50 border-b bg-white">
         <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <img src="/images/nomee-20logo-20transparent.png" alt="Nomee" className="h-7 w-auto" />
+            <img src="/images/nomee-20logo-20transparent.png" alt="Nomee" className="h-7.5 w-auto" />
           </Link>
           <div className="flex items-center gap-4">
             {publicUrl && (

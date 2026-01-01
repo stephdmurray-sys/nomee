@@ -17,7 +17,7 @@ export function SiteHeader({ onCreateClick }: SiteHeaderProps) {
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center">
-            <img src="/images/nomee-20logo-20transparent.png" alt="Nomee" className="h-7 w-auto" />
+            <img src="/images/nomee-20logo-20transparent.png" alt="Nomee" className="h-7.5 w-auto" />
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
