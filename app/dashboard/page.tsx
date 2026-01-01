@@ -37,8 +37,8 @@ export default async function DashboardPage() {
 
   const allContributions = contributions || []
   const allImportedFeedback = importedFeedback || []
-  const confirmedContributions = allContributions
-  const pendingContributions: any[] = []
+  const confirmedContributions = allContributions.filter((c) => c.status === "confirmed")
+  const pendingContributions = allContributions.filter((c) => c.status === "pending")
 
   const importedStats = {
     pending: allImportedFeedback.filter((f) => !f.approved_by_owner && f.extraction_status === "completed").length,
@@ -56,8 +56,8 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-neutral-50">
       <nav className="sticky top-0 z-50 border-b bg-white">
         <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold hover:opacity-80 transition-opacity">
-            Nomee
+          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+            <img src="/images/nomee-20logo-20transparent.png" alt="Nomee" className="h-7 w-auto" />
           </Link>
           <div className="flex items-center gap-4">
             {publicUrl && (
