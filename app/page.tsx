@@ -28,9 +28,9 @@ export default function Home() {
       <div className="min-h-screen bg-white">
         <SiteHeader onCreateClick={() => openModal("deck")} />
 
-        <section className="pt-32 pb-24 px-6">
+        <section className="pt-24 md:pt-32 pb-16 md:pb-24 px-6">
           <div className="max-w-7xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-16 items-start">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
               {/* Left: Product-first copy */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -40,19 +40,19 @@ export default function Home() {
               >
                 <p className="text-sm text-slate-600 font-medium">Trusted by the people who decide.</p>
 
-                <h1 className="text-5xl md:text-6xl font-bold text-slate-900 leading-tight tracking-tight">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight tracking-tight">
                   Your reputation already exists.
                 </h1>
 
-                <p className="text-xl md:text-2xl text-slate-700 leading-relaxed">
+                <p className="text-lg md:text-xl lg:text-2xl text-slate-700 leading-relaxed">
                   A living record of how people experience working with you.
                 </p>
 
-                <div className="flex flex-col sm:flex-row items-start gap-4 pt-4">
+                <div className="flex flex-col sm:flex-row items-start gap-4 pt-2 md:pt-4">
                   <Button
                     onClick={() => openModal("deck")}
                     size="lg"
-                    className="bg-slate-900 text-white hover:bg-slate-800 rounded-full px-8 py-6 text-base font-medium shadow-lg hover:shadow-xl transition-all"
+                    className="w-full sm:w-auto bg-slate-900 text-white hover:bg-slate-800 rounded-full px-8 py-6 text-base font-medium shadow-lg hover:shadow-xl transition-all"
                   >
                     Create your Nomee Page
                     <ArrowRight className="w-5 h-5 ml-2" />
@@ -60,7 +60,7 @@ export default function Home() {
 
                   <Link
                     href="/maya-torres"
-                    className="text-slate-600 hover:text-slate-900 font-medium text-base flex items-center gap-2 px-4 py-3"
+                    className="w-full sm:w-auto text-center sm:text-left text-slate-600 hover:text-slate-900 font-medium text-base flex items-center justify-center gap-2 px-4 py-3"
                   >
                     See an example →
                   </Link>
@@ -85,41 +85,38 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="lg:hidden mt-12"
+              className="lg:hidden mt-10"
             >
               <RealNomeeSlice />
             </motion.div>
           </div>
         </section>
 
-        {/* Two ways your Nomee grows - Keep as is */}
-        <section className="relative py-24 px-6 bg-gradient-to-b from-slate-50 to-white overflow-hidden">
-          {/* Subtle background decoration */}
+        <section className="relative py-16 md:py-24 px-6 bg-gradient-to-b from-slate-50 to-white overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.03),transparent_50%)]" />
 
           <div className="relative max-w-7xl mx-auto">
             {/* Section title */}
-            <div className="text-center mb-16">
+            <div className="text-center mb-12 md:mb-16">
               <motion.h3
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="text-4xl md:text-5xl font-semibold text-slate-900 tracking-tight"
+                className="text-3xl md:text-4xl lg:text-5xl font-semibold text-slate-900 tracking-tight"
               >
                 Two ways your Nomee grows
               </motion.h3>
             </div>
 
-            {/* Two-column side-by-side layout */}
-            <div className="grid md:grid-cols-2 gap-8 mb-16 max-w-6xl mx-auto">
-              {/* Left column: Collect new perspectives */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-12 md:mb-16 max-w-6xl mx-auto">
+              {/* Collect new perspectives - shown first on mobile */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm space-y-4 transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1 hover:border-slate-300"
+                className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm space-y-4 transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1 hover:border-slate-300"
               >
-                <h4 className="text-2xl font-semibold text-slate-900">Collect new perspectives</h4>
+                <h4 className="text-xl md:text-2xl font-semibold text-slate-900">Collect new perspectives</h4>
                 <p className="text-base text-slate-700 leading-relaxed">
                   Share your Nomee link.
                   <br />
@@ -130,14 +127,14 @@ export default function Home() {
                 <p className="text-sm text-slate-500 pt-2">Free · Unlimited</p>
               </motion.div>
 
-              {/* Right column: Save existing praise */}
+              {/* Save existing praise */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm space-y-4 transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1 hover:border-slate-300"
+                className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm space-y-4 transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1 hover:border-slate-300"
               >
-                <h4 className="text-2xl font-semibold text-slate-900">Save existing praise</h4>
+                <h4 className="text-xl md:text-2xl font-semibold text-slate-900">Save existing praise</h4>
                 <p className="text-base text-slate-700 leading-relaxed">
                   Upload and store screenshots, emails, Slack messages, texts, or DMs you already have.
                   <br />
@@ -147,22 +144,123 @@ export default function Home() {
               </motion.div>
             </div>
 
-            {/* Bottom line - unified statement */}
+            {/* Bottom line */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="text-center mb-16"
+              className="text-center mb-12 md:mb-16"
             >
-              <p className="text-lg text-slate-700 leading-relaxed max-w-4xl mx-auto">
+              <p className="text-base md:text-lg text-slate-700 leading-relaxed max-w-4xl mx-auto px-4">
                 Don't lose the praise that shows how people experience working with you.
               </p>
             </motion.div>
 
-            {/* Visual demonstration: Three realistic snippets with arrows flowing to CTA */}
             <div className="relative max-w-6xl mx-auto">
-              {/* Three message snippets */}
-              <div className="grid md:grid-cols-3 gap-6 mb-12">
+              {/* Mobile: horizontal scroll container */}
+              <div className="md:hidden overflow-x-auto scrollbar-hide -mx-6 px-6">
+                <div className="flex gap-4 pb-4" style={{ width: "max-content" }}>
+                  {/* iMessage snippet */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.5 }}
+                    className="flex-shrink-0 w-[85vw] max-w-sm"
+                  >
+                    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden h-60 flex flex-col">
+                      <div className="bg-[#f5f5f7] border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-white text-xs font-semibold">
+                          JL
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-slate-900">Jessica Liu</div>
+                          <div className="text-[10px] text-slate-500">iMessage</div>
+                        </div>
+                      </div>
+                      <div className="p-4 space-y-2 flex-1 flex flex-col justify-end">
+                        <div className="bg-blue-500 text-white rounded-2xl rounded-br-sm px-4 py-2 text-sm ml-auto max-w-[85%]">
+                          Thanks again for yesterday!
+                        </div>
+                        <div className="bg-slate-200 text-slate-900 rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm max-w-[85%] leading-snug">
+                          You totally saved us. Your ability to see three steps ahead is exactly what we needed. 🙏
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Email snippet */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.6 }}
+                    className="flex-shrink-0 w-[85vw] max-w-sm"
+                  >
+                    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden h-60 flex flex-col">
+                      <div className="bg-white border-b border-slate-200 px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold mt-0.5">
+                            MK
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-slate-900">Marcus Kim</div>
+                            <div className="text-[10px] text-slate-500 truncate">Re: Q4 Strategy Review</div>
+                          </div>
+                          <div className="text-[10px] text-slate-400">2:14 PM</div>
+                        </div>
+                      </div>
+                      <div className="p-4 flex-1 flex items-center">
+                        <p className="text-xs leading-relaxed text-slate-700">
+                          The way you reframed our approach completely shifted the conversation. I've worked with a lot
+                          of consultants, and your clarity stands out. Let's definitely work together again next
+                          quarter.
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Slack snippet */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.7 }}
+                    className="flex-shrink-0 w-[85vw] max-w-sm"
+                  >
+                    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden h-60 flex flex-col">
+                      <div className="bg-[#4a154b] px-4 py-3 flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className="text-white text-xs font-semibold">#project-team</div>
+                        </div>
+                        <svg className="w-4 h-4 text-white/70" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M6 10.5C6 9.67157 6.67157 9 7.5 9C8.32843 9 9 9.67157 9 10.5C9 11.3284 8.32843 12 7.5 12H6V10.5Z" />
+                          <path d="M6 13.5C6 12.6716 6.67157 12 7.5 12C8.32843 12 9 12.6716 9 13.5V15C9 15.8284 8.32843 16.5 7.5 16.5C6.67157 16.5 6 15.8284 6 15V13.5Z" />
+                          <path d="M10.5 6C9.67157 6 9 6.67157 9 7.5C9 8.32843 9.67157 9 10.5 9H12V7.5C12 6.67157 11.3284 6 10.5 6Z" />
+                          <path d="M13.5 6C12.6716 6 12 6.67157 12 7.5C12 8.32843 12.6716 9 13.5 9H15C15.8284 9 16.5 8.32843 16.5 7.5C16.5 6.67157 15.8284 6 15 6H13.5Z" />
+                        </svg>
+                      </div>
+                      <div className="p-4 flex-1 flex flex-col justify-center">
+                        <div className="flex items-start gap-2 w-full">
+                          <div className="w-6 h-6 rounded bg-teal-500 flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0 mt-0.5">
+                            AS
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline gap-2 mb-1">
+                              <span className="text-xs font-semibold text-slate-900">Aisha Singh</span>
+                              <span className="text-[10px] text-slate-500">11:23 AM</span>
+                            </div>
+                            <p className="text-xs leading-relaxed text-slate-700">
+                              Just wrapped the client call — they were so impressed by how you handled their questions
+                              and concerns. That's the kind of thinking we need more of. 💯
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+
+              {/* Desktop: three columns */}
+              <div className="hidden md:grid md:grid-cols-3 gap-6 mb-12">
                 {/* iMessage snippet */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -310,11 +408,11 @@ export default function Home() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 1, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex flex-col items-center gap-4"
+                  className="flex flex-col items-center gap-3 md:gap-4"
                 >
                   <Link
                     href="/auth/signup"
-                    className="group relative inline-flex items-center justify-center px-10 py-4 bg-slate-900 text-white rounded-full font-medium text-base hover:bg-slate-800 transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105"
+                    className="w-full md:w-auto group relative inline-flex items-center justify-center px-8 md:px-10 py-4 bg-slate-900 text-white rounded-full font-medium text-base hover:bg-slate-800 transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-105"
                   >
                     <span>Start saving your proof</span>
                     <svg
@@ -326,7 +424,9 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   </Link>
-                  <p className="text-xs text-slate-500">Have your reputation ready when you need it the most</p>
+                  <p className="text-xs text-slate-500 text-center px-4">
+                    Have your reputation ready when you need it the most
+                  </p>
                 </motion.div>
               </div>
             </div>
@@ -498,21 +598,20 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Trust/how it works section - Compressed aggressively */}
-        <section className="py-20 px-6 bg-slate-50">
-          <div className="max-w-5xl mx-auto space-y-12">
+        <section className="py-12 md:py-20 px-6 bg-slate-50">
+          <div className="max-w-5xl mx-auto space-y-8 md:space-y-12">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center space-y-6"
+              className="text-center space-y-4 md:space-y-6"
             >
-              <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-slate-900 px-4">
                 Nomee turns moments into patterns you can carry forward.
               </h2>
 
-              <p className="text-lg text-slate-600">This isn't self-promotion. It's reflection.</p>
+              <p className="text-base md:text-lg text-slate-600">This isn't self-promotion. It's reflection.</p>
             </motion.div>
 
             <motion.div
@@ -520,25 +619,25 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="grid md:grid-cols-3 gap-6"
+              className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"
             >
-              <div className="space-y-4 p-6 bg-white rounded-xl border border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-900">One voice per person</h3>
-                <p className="text-slate-600 leading-relaxed">
+              <div className="space-y-3 p-5 md:p-6 bg-white rounded-xl border border-slate-200">
+                <h3 className="text-base md:text-lg font-semibold text-slate-900">One voice per person</h3>
+                <p className="text-sm md:text-base text-slate-600 leading-relaxed">
                   Each person can only contribute once, ensuring authentic and diverse viewpoints.
                 </p>
               </div>
 
-              <div className="space-y-4 p-6 bg-white rounded-xl border border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-900">Identity-backed</h3>
-                <p className="text-slate-600 leading-relaxed">
+              <div className="space-y-3 p-5 md:p-6 bg-white rounded-xl border border-slate-200">
+                <h3 className="text-base md:text-lg font-semibold text-slate-900">Identity-backed</h3>
+                <p className="text-sm md:text-base text-slate-600 leading-relaxed">
                   Contributors provide their full name and company, creating accountability.
                 </p>
               </div>
 
-              <div className="space-y-4 p-6 bg-white rounded-xl border border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-900">You control what's shown</h3>
-                <p className="text-slate-600 leading-relaxed">
+              <div className="space-y-3 p-5 md:p-6 bg-white rounded-xl border border-slate-200">
+                <h3 className="text-base md:text-lg font-semibold text-slate-900">You control what's shown</h3>
+                <p className="text-sm md:text-base text-slate-600 leading-relaxed">
                   Choose which contributions appear without changing what was said.
                 </p>
               </div>
@@ -547,7 +646,7 @@ export default function Home() {
         </section>
 
         {/* Decision-maker section - Keep as is */}
-        <section id="decision-makers" className="py-32 px-6 bg-white">
+        <section id="decision-makers" className="py-16 md:py-32 px-6 bg-white">
           <div className="max-w-7xl mx-auto">
             {/* Header - Generous spacing */}
             <motion.div
@@ -555,10 +654,12 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="text-center space-y-6 mb-20"
+              className="text-center space-y-4 md:space-y-6 mb-12 md:mb-20"
             >
-              <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 tracking-tight">For decision-makers</h2>
-              <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-slate-900 tracking-tight px-4">
+                For decision-makers
+              </h2>
+              <p className="text-lg md:text-xl lg:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed px-4">
                 Review someone's Proof Link — see how they operate in under 60 seconds.
               </p>
             </motion.div>
@@ -569,11 +670,11 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.1 }}
-              className="flex items-center justify-center gap-3 mb-16"
+              className="flex items-center justify-center gap-2 md:gap-3 mb-10 md:mb-16 px-4 overflow-x-auto scrollbar-hide"
             >
               <button
                 onClick={() => setActiveDecisionTab("hiring")}
-                className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                className={`px-5 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                   activeDecisionTab === "hiring"
                     ? "bg-slate-900 text-white shadow-lg"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -583,7 +684,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveDecisionTab("partnerships")}
-                className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                className={`px-5 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                   activeDecisionTab === "partnerships"
                     ? "bg-slate-900 text-white shadow-lg"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -593,7 +694,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveDecisionTab("clients")}
-                className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                className={`px-5 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                   activeDecisionTab === "clients"
                     ? "bg-slate-900 text-white shadow-lg"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -706,7 +807,7 @@ export default function Home() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-center text-slate-500 mt-8 text-sm max-w-2xl mx-auto"
+              className="text-center text-slate-500 mt-8 text-sm max-w-2xl mx-auto px-4"
             >
               {activeDecisionTab === "hiring" && "Skip the guesswork. See collaboration patterns before the interview."}
               {activeDecisionTab === "partnerships" &&
@@ -720,28 +821,30 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-center mt-16 space-y-6"
+              className="text-center mt-12 md:mt-16 space-y-6"
             >
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex flex-col gap-4 px-4">
                 <Link
                   href="/maya-torres"
-                  className="inline-flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-slate-800 transition-all duration-300 shadow-lg hover:shadow-xl"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-xl text-base md:text-lg font-semibold hover:bg-slate-800 transition-all duration-300 shadow-lg hover:shadow-xl"
                 >
                   See an example
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="inline-flex items-center gap-2 border-2 border-slate-300 text-slate-900 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-slate-50 transition-all duration-300"
+                  className="w-full inline-flex items-center justify-center gap-2 border-2 border-slate-300 text-slate-900 px-8 py-4 rounded-xl text-base md:text-lg font-semibold hover:bg-slate-50 transition-all duration-300"
                 >
                   Create your Nomee
                 </Link>
               </div>
 
               {/* Trust line */}
-              <p className="text-sm text-slate-500">Real names. Real relationships. One contribution per person.</p>
+              <p className="text-sm text-slate-500 px-4">
+                Real names. Real relationships. One contribution per person.
+              </p>
 
               {/* Free forever clarification */}
-              <p className="text-sm text-slate-400 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-sm text-slate-400 max-w-2xl mx-auto leading-relaxed px-4">
                 Your Nomee link is free to share — forever. Unlimited people can contribute. You only upgrade to save
                 and showcase highlights.
               </p>
@@ -750,8 +853,8 @@ export default function Home() {
         </section>
 
         {/* Pricing section - Keep as is */}
-        <section id="pricing" className="py-24 px-6 bg-white">
-          <div className="max-w-6xl mx-auto space-y-12">
+        <section id="pricing" className="py-16 md:py-24 px-6 bg-white">
+          <div className="max-w-6xl mx-auto space-y-8 md:space-y-12">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -759,7 +862,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="text-center space-y-4"
             >
-              <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">Pricing</h2>
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-slate-900">Pricing</h2>
             </motion.div>
 
             <motion.div
@@ -767,7 +870,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="grid md:grid-cols-3 gap-8"
+              className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8"
             >
               {/* Free Plan */}
               <div className="border border-slate-200 rounded-xl p-8 bg-white space-y-6 hover:shadow-lg transition-shadow">
@@ -908,24 +1011,23 @@ export default function Home() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-center pt-8"
+              className="text-center pt-6 md:pt-8"
             >
-              <p className="text-sm text-slate-500 max-w-2xl mx-auto">
+              <p className="text-sm text-slate-500 max-w-2xl mx-auto px-4">
                 Contributions are free forever. Subscription keeps uploaded proof stored, organized, and current.
               </p>
             </motion.div>
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="py-32 px-6 bg-slate-900">
-          <div className="max-w-3xl mx-auto text-center space-y-8">
+        <section className="py-20 md:py-32 px-6 bg-slate-900">
+          <div className="max-w-3xl mx-auto text-center space-y-6 md:space-y-8">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-4xl md:text-5xl font-bold text-white"
+              className="text-3xl md:text-4xl lg:text-5xl font-bold text-white px-4"
             >
               Create your Nomee Page once. Let it grow over time.
             </motion.h2>
@@ -935,7 +1037,7 @@ export default function Home() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-xl text-slate-300"
+              className="text-lg md:text-xl text-slate-300 px-4"
             >
               One link. Many perspectives. Patterns emerge.
             </motion.p>
@@ -945,11 +1047,12 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
+              className="px-4"
             >
               <Button
                 onClick={() => openModal("deck")}
                 size="lg"
-                className="bg-white text-slate-900 hover:bg-slate-100 rounded-full px-8 py-6 text-base font-medium shadow-lg hover:shadow-xl transition-all"
+                className="w-full md:w-auto bg-white text-slate-900 hover:bg-slate-100 rounded-full px-8 py-6 text-base font-medium shadow-lg hover:shadow-xl transition-all"
               >
                 Create your Nomee Page
                 <ArrowRight className="w-5 h-5 ml-2" />
