@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import UploadForm from "./upload-form"
+import { DebugPanel } from "./debug-panel"
 
 export default async function ImportedFeedbackUploadPage() {
   const supabase = await createClient()
@@ -65,6 +66,8 @@ export default async function ImportedFeedbackUploadPage() {
           <UploadForm profileId={profile.id} currentCount={uploadCount} limit={uploadLimit} />
         )}
       </div>
+
+      <DebugPanel profileId={profile.id} />
     </div>
   )
 }

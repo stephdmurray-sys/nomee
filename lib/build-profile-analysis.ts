@@ -61,6 +61,7 @@ export async function buildProfileAnalysis(profileId: string): Promise<ProfileAn
     .from("contributions")
     .select("*")
     .eq("owner_id", profileId)
+    .eq("status", "confirmed")
     .order("created_at", { ascending: false })
 
   const { data: importedFeedback } = await supabase
