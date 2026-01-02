@@ -47,14 +47,10 @@ export async function POST(request: NextRequest) {
 
     console.log("[CREATE_RECORD] Validating profile ownership...")
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", profileId)
-      .eq("user_id", user.id)
-      .single()
+    // The profiles.id IS the auth user ID, so we just verify profileId matches user.id
+    const { data: profile } = await supabase.from("profiles").select("id").eq("id", profileId).single()
 
-    if (!profile) {
+    if (!profile || profile.id !== user.id) {
       console.error("[CREATE_RECORD] Profile not found or unauthorized:", { profileId, userId: user.id })
       return NextResponse.json(
         {
