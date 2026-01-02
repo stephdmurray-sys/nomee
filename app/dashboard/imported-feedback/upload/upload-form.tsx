@@ -21,18 +21,18 @@ type UploadFile = {
   status: "pending" | "uploading" | "uploaded" | "processing" | "ready_for_review" | "error_upload"
   error?: string
   id?: string
-  sourceType?: "Email" | "LinkedIn" | "DM" | "Review" | "Other"
+  sourceUiKey?: string // Store unique UI key instead of enum
 }
 
 const SOURCE_OPTIONS = [
-  { label: "Email", value: "Email" as const },
-  { label: "LinkedIn", value: "LinkedIn" as const },
-  { label: "Slack", value: "DM" as const },
-  { label: "Teams", value: "DM" as const },
-  { label: "Text / SMS", value: "DM" as const },
-  { label: "Instagram / Facebook / LinkedIn DM", value: "DM" as const },
-  { label: "Review site (Google / Yelp / etc.)", value: "Review" as const },
-  { label: "Other", value: "Other" as const },
+  { key: "email", label: "Email", backendEnum: "Email" as const },
+  { key: "linkedin", label: "LinkedIn", backendEnum: "LinkedIn" as const },
+  { key: "slack", label: "Slack", backendEnum: "DM" as const },
+  { key: "teams", label: "Microsoft Teams", backendEnum: "DM" as const },
+  { key: "text_sms", label: "Text / SMS", backendEnum: "DM" as const },
+  { key: "social_dm", label: "Social DM (Instagram / Facebook / TikTok)", backendEnum: "DM" as const },
+  { key: "review_site", label: "Review site (Google / Yelp / etc.)", backendEnum: "Review" as const },
+  { key: "other", label: "Other", backendEnum: "Other" as const },
 ] as const
 
 export default function UploadForm({ profileId, currentCount, limit }: UploadFormProps) {
@@ -58,7 +58,7 @@ export default function UploadForm({ profileId, currentCount, limit }: UploadFor
       file,
       preview: URL.createObjectURL(file),
       status: "pending" as const,
-      sourceType: undefined,
+      sourceUiKey: undefined,
     }))
 
     setFiles((prev) => [...prev, ...filesToAdd])
@@ -105,16 +105,20 @@ export default function UploadForm({ profileId, currentCount, limit }: UploadFor
     const fileData = files[index]
     if (!fileData || fileData.status !== "pending") return
 
+    const selectedOption = SOURCE_OPTIONS.find((o) => o.key === fileData.sourceUiKey)
+    const backendEnum = selectedOption?.backendEnum
+
     console.log("[IMPORT_UPLOAD] Starting upload:", {
       index,
-      sourceType: fileData.sourceType,
-      sourceLabel: SOURCE_OPTIONS.find((o) => o.value === fileData.sourceType)?.label,
+      sourceUiKey: fileData.sourceUiKey,
+      sourceLabel: selectedOption?.label,
+      backendEnum,
       fileName: fileData.file.name,
       profileId: profileId,
     })
 
-    if (!fileData.sourceType) {
-      console.log("[IMPORT_UPLOAD] Upload blocked: No source type selected")
+    if (!backendEnum) {
+      console.log("[IMPORT_UPLOAD] Upload blocked: No source selected")
       setFiles((prev) => {
         const updated = [...prev]
         updated[index] = {
@@ -127,22 +131,7 @@ export default function UploadForm({ profileId, currentCount, limit }: UploadFor
       return
     }
 
-    const validBackendEnums = ["Email", "LinkedIn", "DM", "Review", "Other"] as const
-    if (!validBackendEnums.includes(fileData.sourceType as any)) {
-      console.log("[IMPORT_UPLOAD] Upload blocked: Invalid source type:", fileData.sourceType)
-      setFiles((prev) => {
-        const updated = [...prev]
-        updated[index] = {
-          ...updated[index],
-          status: "error_upload",
-          error: "Please choose a valid source.",
-        }
-        return updated
-      })
-      return
-    }
-
-    console.log("[IMPORT_UPLOAD] Source validation passed:", fileData.sourceType)
+    console.log("[IMPORT_UPLOAD] Source validation passed:", backendEnum)
 
     setFiles((prev) => {
       const updated = [...prev]
@@ -176,7 +165,7 @@ export default function UploadForm({ profileId, currentCount, limit }: UploadFor
         imageUrl: url,
         imagePath: path,
         profileId,
-        sourceType: fileData.sourceType, // Enum: Email | LinkedIn | DM | Review | Other
+        sourceType: backendEnum, // Backend enum: Email | LinkedIn | DM | Review | Other
       }
 
       console.log("[IMPORT_UPLOAD] Sending payload to create-record:", payload)
@@ -206,13 +195,13 @@ export default function UploadForm({ profileId, currentCount, limit }: UploadFor
 
         console.error("[IMPORT_UPLOAD] Parsed error data:", errorData)
 
-        let userMessage = "We couldn't save this file yet. Please retry."
+        let userMessage = "We couldn't save this file yet. Please check the source and try again."
 
         if (errorData.code === "INVALID_SOURCE_TYPE") {
           userMessage = "Please choose a valid source."
         } else if (errorData.code === "PROFILE_NOT_FOUND") {
           userMessage = "We couldn't find your profile. Please refresh and try again."
-        } else if (errorData.message) {
+        } else if (errorData.message && typeof errorData.message === "string") {
           userMessage = errorData.message
         }
 
@@ -220,7 +209,7 @@ export default function UploadForm({ profileId, currentCount, limit }: UploadFor
       }
 
       const { id } = await createResponse.json()
-      console.log("[IMPORT_UPLOAD] Record created successfully:", { id, sourceType: fileData.sourceType })
+      console.log("[IMPORT_UPLOAD] Record created successfully:", { id, backendEnum })
 
       setFiles((prev) => {
         const updated = [...prev]
@@ -292,15 +281,17 @@ export default function UploadForm({ profileId, currentCount, limit }: UploadFor
 
   const remainingDisplay = limit === Number.POSITIVE_INFINITY ? "Unlimited" : `${remainingUploads} remaining`
 
-  const updateSourceType = (index: number, sourceType: string) => {
-    console.log("[IMPORT_UPLOAD] Source type selected:", {
+  const updateSourceType = (index: number, sourceUiKey: string) => {
+    const selectedOption = SOURCE_OPTIONS.find((o) => o.key === sourceUiKey)
+    console.log("[IMPORT_UPLOAD] Source selected:", {
       index,
-      sourceType,
-      label: SOURCE_OPTIONS.find((o) => o.value === sourceType)?.label,
+      sourceUiKey,
+      label: selectedOption?.label,
+      backendEnum: selectedOption?.backendEnum,
     })
     setFiles((prev) => {
       const updated = [...prev]
-      updated[index] = { ...updated[index], sourceType: sourceType as any }
+      updated[index] = { ...updated[index], sourceUiKey }
       return updated
     })
   }
@@ -373,27 +364,25 @@ export default function UploadForm({ profileId, currentCount, limit }: UploadFor
                         <label className="text-xs font-medium text-neutral-700 mb-1 block">
                           Source <span className="text-red-500">*</span>
                         </label>
-                        <Select value={fileData.sourceType} onValueChange={(value) => updateSourceType(index, value)}>
-                          <SelectTrigger className={`h-9 text-sm ${!fileData.sourceType ? "border-blue-500" : ""}`}>
-                            <SelectValue placeholder="Choose source..." />
+                        <Select value={fileData.sourceUiKey} onValueChange={(value) => updateSourceType(index, value)}>
+                          <SelectTrigger
+                            className={`h-9 text-sm w-full ${!fileData.sourceUiKey ? "border-blue-500" : ""}`}
+                          >
+                            <SelectValue placeholder="Select source" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="max-h-[300px]">
                             {SOURCE_OPTIONS.map((option) => (
-                              <SelectItem
-                                key={`${option.value}-${option.label}`}
-                                value={option.value}
-                                className="text-sm"
-                              >
+                              <SelectItem key={option.key} value={option.key} className="text-sm">
                                 {option.label}
-                                {option.value === "Other" && (
+                                {option.key === "other" && (
                                   <span className="text-neutral-500 text-xs ml-1">(only if none fit)</span>
                                 )}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-neutral-500 mt-1">
-                          Choose the closest match. Slack/Teams/Text all count as Direct Messages.
+                        <p className="text-xs text-neutral-500 mt-1.5">
+                          We group chats (Slack/Teams/SMS/Social DMs) as Direct Messages.
                         </p>
                       </div>
                     )}
@@ -472,7 +461,7 @@ export default function UploadForm({ profileId, currentCount, limit }: UploadFor
           <div className="flex gap-4">
             <Button
               onClick={handleUpload}
-              disabled={isProcessing || allProcessed || files.some((f) => f.status === "pending" && !f.sourceType)}
+              disabled={isProcessing || allProcessed || files.some((f) => f.status === "pending" && !f.sourceUiKey)}
               className="flex-1"
             >
               {isProcessing ? (
