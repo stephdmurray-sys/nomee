@@ -71,6 +71,43 @@ export default function ReviewList({ initialPending, initialApproved }: ReviewLi
   }
 
   const handleApprove = async (feedbackId: string) => {
+    const feedback = pending.find((f) => f.id === feedbackId)
+    const nameToCheck = editingId === feedbackId ? editForm.giverName : feedback?.giver_name
+    const companyToCheck = editingId === feedbackId ? editForm.giverCompany : feedback?.giver_company
+    const roleToCheck = editingId === feedbackId ? editForm.giverRole : feedback?.giver_role
+
+    if (!nameToCheck || nameToCheck === "Review needed" || nameToCheck === "Unknown" || nameToCheck.trim() === "") {
+      toast({
+        variant: "destructive",
+        title: "Missing required information",
+        description: "Please provide the name of the person who gave this feedback before approving.",
+      })
+      return
+    }
+
+    if (
+      !companyToCheck ||
+      companyToCheck === "Not specified" ||
+      companyToCheck === "Needs input" ||
+      companyToCheck.trim() === ""
+    ) {
+      toast({
+        variant: "destructive",
+        title: "Missing required information",
+        description: "Please provide the company or relationship context before approving.",
+      })
+      return
+    }
+
+    if (!roleToCheck || roleToCheck === "Not specified" || roleToCheck === "Needs input" || roleToCheck.trim() === "") {
+      toast({
+        variant: "destructive",
+        title: "Missing required information",
+        description: "Please provide the role or relationship type before approving.",
+      })
+      return
+    }
+
     setProcessingId(feedbackId)
     try {
       const response = await fetch("/api/imported-feedback/approve", {
@@ -426,8 +463,20 @@ export default function ReviewList({ initialPending, initialApproved }: ReviewLi
                               <Button variant="outline" size="sm" onClick={() => handleEdit(feedback.id)}>
                                 Edit Details
                               </Button>
-                              <Button size="sm" onClick={() => handleApprove(feedback.id)}>
-                                <Check className="mr-2 h-4 w-4" />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(feedback.id)}
+                                disabled={isProcessing}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" onClick={() => handleApprove(feedback.id)} disabled={isProcessing}>
+                                {isProcessing ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Check className="mr-2 h-4 w-4" />
+                                )}
                                 Approve & Publish
                               </Button>
                             </div>
@@ -450,39 +499,57 @@ export default function ReviewList({ initialPending, initialApproved }: ReviewLi
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <Label htmlFor="giverName" className="mb-1 block text-sm font-medium">
-                                  Giver Name
+                                  Giver Name <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                   id="giverName"
                                   value={editForm.giverName}
                                   onChange={(e) => setEditForm({ ...editForm, giverName: e.target.value })}
                                   className={`text-sm ${!editForm.giverName || editForm.giverName === "Review needed" || editForm.giverName === "Unknown" ? "border-amber-400 bg-amber-50" : ""}`}
-                                  placeholder="Enter name"
+                                  placeholder="Enter name (required)"
+                                  required
                                 />
+                                {(!editForm.giverName ||
+                                  editForm.giverName === "Review needed" ||
+                                  editForm.giverName === "Unknown") && (
+                                  <p className="mt-1 text-xs text-amber-600">This field is required before approval</p>
+                                )}
                               </div>
                               <div>
                                 <Label htmlFor="giverCompany" className="mb-1 block text-sm font-medium">
-                                  Company
+                                  Company <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                   id="giverCompany"
                                   value={editForm.giverCompany}
                                   onChange={(e) => setEditForm({ ...editForm, giverCompany: e.target.value })}
-                                  className={`text-sm ${!editForm.giverCompany ? "border-amber-400 bg-amber-50" : ""}`}
-                                  placeholder="Enter company"
+                                  className={`text-sm ${!editForm.giverCompany || editForm.giverCompany === "Not specified" || editForm.giverCompany === "Needs input" ? "border-amber-400 bg-amber-50" : ""}`}
+                                  placeholder="Enter company or relationship (required)"
+                                  required
                                 />
+                                {(!editForm.giverCompany ||
+                                  editForm.giverCompany === "Not specified" ||
+                                  editForm.giverCompany === "Needs input") && (
+                                  <p className="mt-1 text-xs text-amber-600">This field is required before approval</p>
+                                )}
                               </div>
                               <div>
                                 <Label htmlFor="giverRole" className="mb-1 block text-sm font-medium">
-                                  Role
+                                  Role <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                   id="giverRole"
                                   value={editForm.giverRole}
                                   onChange={(e) => setEditForm({ ...editForm, giverRole: e.target.value })}
-                                  className={`text-sm ${!editForm.giverRole ? "border-amber-400 bg-amber-50" : ""}`}
-                                  placeholder="Enter role"
+                                  className={`text-sm ${!editForm.giverRole || editForm.giverRole === "Not specified" || editForm.giverRole === "Needs input" ? "border-amber-400 bg-amber-50" : ""}`}
+                                  placeholder="Enter role or relationship type (required)"
+                                  required
                                 />
+                                {(!editForm.giverRole ||
+                                  editForm.giverRole === "Not specified" ||
+                                  editForm.giverRole === "Needs input") && (
+                                  <p className="mt-1 text-xs text-amber-600">This field is required before approval</p>
+                                )}
                               </div>
                               <div>
                                 <Label htmlFor="sourceType" className="mb-1 block text-sm font-medium">

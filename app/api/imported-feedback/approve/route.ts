@@ -49,6 +49,38 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Approve: Ownership verified, updating feedback")
 
+    const giverName = updates?.giverName
+    if (!giverName || giverName === "Review needed" || giverName === "Unknown" || giverName.trim() === "") {
+      console.error("[v0] Approve: Missing giver_name")
+      return NextResponse.json(
+        { error: "Giver name is required. Please provide the name of the person who gave this feedback." },
+        { status: 400 },
+      )
+    }
+
+    const giverCompany = updates?.giverCompany
+    if (
+      !giverCompany ||
+      giverCompany === "Not specified" ||
+      giverCompany === "Needs input" ||
+      giverCompany.trim() === ""
+    ) {
+      console.error("[v0] Approve: Missing giver_company")
+      return NextResponse.json(
+        { error: "Company or relationship context is required. Please provide this information before approving." },
+        { status: 400 },
+      )
+    }
+
+    const giverRole = updates?.giverRole
+    if (!giverRole || giverRole === "Not specified" || giverRole === "Needs input" || giverRole.trim() === "") {
+      console.error("[v0] Approve: Missing giver_role")
+      return NextResponse.json(
+        { error: "Role or relationship type is required. Please provide this information before approving." },
+        { status: 400 },
+      )
+    }
+
     // Update and approve
     const updateData: any = {
       approved_by_owner: true,
