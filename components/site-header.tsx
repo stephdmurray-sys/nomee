@@ -24,6 +24,9 @@ export function SiteHeader({ onCreateClick }: SiteHeaderProps) {
             <Link href="/what-is-nomee" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
               What is Nomee
             </Link>
+            <Link href="/why-nomee" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
+              Why Nomee
+            </Link>
             <a href="#decision-makers" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
               For Decision-Makers
             </a>
@@ -82,6 +85,13 @@ export function SiteHeader({ onCreateClick }: SiteHeaderProps) {
               onClick={() => setMobileMenuOpen(false)}
             >
               What is Nomee
+            </Link>
+            <Link
+              href="/why-nomee"
+              className="text-base text-slate-600 hover:text-slate-900 transition-colors py-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Why Nomee
             </Link>
             <a
               href="#decision-makers"
