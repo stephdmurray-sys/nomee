@@ -45,14 +45,14 @@ export function SiteHeader({ onCreateClick }: SiteHeaderProps) {
                   onClick={onCreateClick}
                   className="bg-slate-900 hover:bg-slate-800 text-white rounded-full px-5 h-9 text-sm font-medium transition-all"
                 >
-                  Start uploading today
+                  Start Your Nomee
                 </Button>
               ) : (
                 <Button
                   asChild
                   className="bg-slate-900 hover:bg-slate-800 text-white rounded-full px-5 h-9 text-sm font-medium transition-all"
                 >
-                  <Link href="/auth/signup">Start uploading today</Link>
+                  <Link href="/auth/signup">Start Your Nomee</Link>
                 </Button>
               )}
             </div>
@@ -122,7 +122,7 @@ export function SiteHeader({ onCreateClick }: SiteHeaderProps) {
                 }}
                 className="bg-slate-900 hover:bg-slate-800 text-white rounded-full h-11 text-base font-medium transition-all"
               >
-                Start uploading today
+                Start Your Nomee
               </Button>
             ) : (
               <Button
@@ -130,7 +130,7 @@ export function SiteHeader({ onCreateClick }: SiteHeaderProps) {
                 className="bg-slate-900 hover:bg-slate-800 text-white rounded-full h-11 text-base font-medium transition-all"
               >
                 <Link href="/auth/signup" onClick={() => setMobileMenuOpen(false)}>
-                  Start uploading today
+                  Start Your Nomee
                 </Link>
               </Button>
             )}
