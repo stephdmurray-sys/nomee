@@ -45,7 +45,7 @@ export default function Home() {
                 </h1>
 
                 <p className="text-lg md:text-xl lg:text-2xl text-slate-700 leading-relaxed">
-                  A living record of how people experience working with you.
+                  Nomee is a living record of how people experience working with you.
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-start gap-4 pt-2 md:pt-4">
