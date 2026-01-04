@@ -50,7 +50,7 @@ export default function WhyNomeePage() {
             <div className="bg-white rounded-xl p-6 border border-slate-200/60 hover:border-slate-300 hover:shadow-sm transition-all min-w-[280px] snap-center">
               <UserCheck className="w-7 h-7 text-slate-800 mb-3" strokeWidth={1.5} />
               <h3 className="text-base font-medium text-slate-900 mb-1.5">Contractors & Consultants</h3>
-              <p className="text-sm text-slate-600">Praise → leverage</p>
+              <p className="text-sm text-slate-600">Turn feedback into credibility</p>
             </div>
 
             <div className="bg-white rounded-xl p-6 border border-slate-200/60 hover:border-slate-300 hover:shadow-sm transition-all min-w-[280px] snap-center">
@@ -89,7 +89,7 @@ export default function WhyNomeePage() {
             <div className="bg-white rounded-xl p-8 border border-slate-200/60 hover:border-slate-300 hover:shadow-sm transition-all">
               <UserCheck className="w-8 h-8 text-slate-800 mb-4" strokeWidth={1.5} />
               <h3 className="text-lg font-medium text-slate-900 mb-2">Contractors & Consultants</h3>
-              <p className="text-sm text-slate-600">Praise → leverage</p>
+              <p className="text-sm text-slate-600">Turn feedback into credibility</p>
             </div>
 
             <div className="bg-white rounded-xl p-8 border border-slate-200/60 hover:border-slate-300 hover:shadow-sm transition-all">

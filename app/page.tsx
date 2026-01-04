@@ -466,13 +466,13 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="text-center space-y-6"
             >
-              <h2 className="text-2xl md:text-3xl font-semibold text-slate-900">Use your Proof Link anywhere</h2>
+              <h2 className="text-2xl md:text-3xl font-semibold text-slate-900">Use your Nomee page anywhere</h2>
               <p className="text-lg text-slate-600 max-w-3xl mx-auto">
-                Share your Proof Link anywhere for free. Embed your Proof Tiles to any website with Pro.
+                Share your Nomee page anywhere for free. Embed feedback tiles to any website with Pro.
               </p>
 
               <p className="text-sm text-slate-500 max-w-xl mx-auto">
-                Add your proof tiles to any website, your portfolio, media kit, brand kit, Linktree -- it will auto
+                Add your feedback tiles to any website, your portfolio, media kit, brand kit, Linktree -- it will auto
                 update as new ones come in.
               </p>
 
@@ -763,7 +763,7 @@ export default function Home() {
 
                 {/* Top Signals - Large and prominent */}
                 <div className="space-y-5">
-                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Top Signals</p>
+                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Common themes</p>
                   <div className="flex flex-wrap gap-3">
                     <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
                       Strategic
@@ -817,7 +817,7 @@ export default function Home() {
                 {/* Patterns - Subtle footer */}
                 <div className="pt-6 border-t border-slate-200">
                   <p className="text-sm text-slate-500">
-                    Patterns forming:{" "}
+                    Common themes:{" "}
                     <span className="font-semibold text-slate-700">Strategic ×5, Clear communicator ×4</span>
                   </p>
                 </div>
@@ -963,11 +963,11 @@ export default function Home() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Monthly insights digest</span>
+                    <span>Monthly summary of what people say</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">✓</span>
-                    <span>Advanced AI patterns</span>
+                    <span>See common themes over time</span>
                   </li>
                 </ul>
 
@@ -1054,7 +1054,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg md:text-xl text-slate-300 px-4"
             >
-              One link. Many perspectives. Patterns emerge.
+              One link. Many perspectives. Common themes emerge.
             </motion.p>
 
             <motion.div
@@ -1069,7 +1069,7 @@ export default function Home() {
                 size="lg"
                 className="w-full md:w-auto bg-white text-slate-900 hover:bg-slate-100 rounded-full px-8 py-6 text-base font-medium shadow-lg hover:shadow-xl transition-all"
               >
-                Create your Nomee Page
+                Start saving feedback
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </motion.div>

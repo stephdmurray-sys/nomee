@@ -337,7 +337,7 @@ export function PremierSignalBar({
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-neutral-700">
               <TrendingUp className="w-4 h-4" />
-              <h3 className="font-semibold text-sm">Top Signals</h3>
+              <h3 className="font-semibold text-sm">Common themes</h3>
             </div>
             <div className="space-y-2">
               {topSignals.length > 0 ? (

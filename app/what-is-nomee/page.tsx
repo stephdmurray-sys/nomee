@@ -189,7 +189,7 @@ export default function WhatIsNomeePage() {
               <p>Praise is easy to give, hard to keep</p>
               <p>Recognition disappears when roles or companies change</p>
               <p>Annual reviews rely on memory, not evidence</p>
-              <p>Hiring decisions lack real signal about working style</p>
+              <p>Hiring decisions lack real evidence about working style</p>
             </motion.div>
           </div>
         </section>
@@ -240,7 +240,7 @@ export default function WhatIsNomeePage() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="text-center text-lg text-slate-600"
             >
-              Nomee turns moments into signal.
+              Nomee turns moments into patterns.
             </motion.p>
           </div>
         </section>
@@ -273,7 +273,7 @@ export default function WhatIsNomeePage() {
                 <div className="space-y-4 text-base text-slate-700 leading-relaxed">
                   <p>Company-owned recognition tools</p>
                   <p>Performance reviews</p>
-                  <p>Testimonials</p>
+                  <p>Formal recommendations</p>
                   <p>References</p>
                 </div>
               </div>
@@ -316,7 +316,7 @@ export default function WhatIsNomeePage() {
                 "Preparing for an annual review",
                 "Supporting a promotion conversation",
                 "Reflecting during burnout or transition",
-                "Giving hiring managers real signal",
+                "Giving hiring managers real examples",
                 "Differentiating as a contractor or independent contributor",
               ].map((moment, idx) => (
                 <motion.div
@@ -354,7 +354,7 @@ export default function WhatIsNomeePage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="space-y-4 text-lg text-slate-700 leading-relaxed"
             >
-              <p>Adds signal beyond resumes and interviews</p>
+              <p>Adds evidence beyond resumes and interviews</p>
               <p>Shows patterns across multiple collaborators</p>
               <p>Surfaces working style, communication, and impact</p>
               <p>Reduces reliance on single-manager perspectives</p>
@@ -367,7 +367,7 @@ export default function WhatIsNomeePage() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="text-center text-lg text-slate-900 font-medium pt-8"
             >
-              Nomee doesn't replace interviews. It adds signal where interviews fall short.
+              Nomee doesn't replace interviews. It adds context where interviews fall short.
             </motion.p>
           </div>
         </section>
@@ -422,7 +422,7 @@ export default function WhatIsNomeePage() {
             >
               <p>Not a peer recognition platform</p>
               <p>Not a performance review tool</p>
-              <p>Not testimonials</p>
+              <p>Not formal recommendations</p>
               <p>Not self-promotion</p>
             </motion.div>
           </div>

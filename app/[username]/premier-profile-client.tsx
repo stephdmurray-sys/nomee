@@ -552,7 +552,7 @@ export function PremierProfileClient({
 
             {/* Framing sentence - completes identity block */}
             <p className="text-[var(--text-body)] text-neutral-700 font-medium mb-12 tracking-tighter leading-relaxed">
-              This is a Proof Link — showing what it's actually like to work with {firstName}, based on real
+              This is a Nomee page — showing what it's actually like to work with {firstName}, based on real
               experiences.
             </p>
 
@@ -774,7 +774,7 @@ export function PremierProfileClient({
                 <div className="grid md:grid-cols-2 gap-8">
                   <div>
                     <h3 className="text-[var(--text-micro)] font-semibold text-neutral-500 uppercase tracking-wider mb-4 opacity-75">
-                      TOP SIGNALS
+                      COMMON THEMES
                     </h3>
                     <div className="flex flex-wrap gap-3">
                       {topTraits.map((trait) => {

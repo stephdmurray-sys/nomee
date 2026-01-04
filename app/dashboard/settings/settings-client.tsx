@@ -128,7 +128,7 @@ export default function SettingsClient({ profile, userEmail }: { profile: Profil
         <div className="mb-12">
           <h1 className="mb-3 text-4xl font-bold text-neutral-900">Settings</h1>
           <p className="text-lg text-neutral-600 leading-relaxed">
-            Manage how your Nomee appears, how people contribute, and how your Proof Link is shared.
+            Manage how your Nomee appears, how people contribute, and how your Nomee page is shared.
           </p>
         </div>
 
@@ -237,7 +237,7 @@ export default function SettingsClient({ profile, userEmail }: { profile: Profil
           {/* SECTION 2: Nomee Visibility */}
           <Card className="p-8 rounded-2xl border border-neutral-200 shadow-sm">
             <h2 className="mb-6 text-2xl font-semibold text-neutral-900">Nomee Visibility</h2>
-            <p className="text-sm text-neutral-600 mb-4">This controls who can view your Proof Link.</p>
+            <p className="text-sm text-neutral-600 mb-4">This controls who can view your Nomee page.</p>
             <RadioGroup value={visibility} onValueChange={setVisibility} className="space-y-4">
               <div className="flex items-start space-x-3 p-4 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors">
                 <RadioGroupItem value="public" id="public" className="mt-1" />
@@ -307,7 +307,7 @@ export default function SettingsClient({ profile, userEmail }: { profile: Profil
             ) : (
               <>
                 <p className="text-base text-neutral-700 leading-relaxed mb-6">
-                  Choose which perspectives appear first on your public Proof Link.
+                  Choose which perspectives appear first on your public Nomee page.
                 </p>
                 <Button variant="outline" asChild>
                   <Link href="/dashboard">Manage featured perspectives</Link>
@@ -363,9 +363,11 @@ export default function SettingsClient({ profile, userEmail }: { profile: Profil
             {(profile.plan === "Pro" || profile.plan === "Premier") && (
               <>
                 <p className="mb-2 text-base text-neutral-700">
-                  Your Proof Link updates as new perspectives are added.
+                  Your Nomee page updates as new perspectives are added.
                 </p>
-                <p className="mb-4 text-sm text-neutral-600">Canceling pauses updates — your proof remains visible.</p>
+                <p className="mb-4 text-sm text-neutral-600">
+                  Canceling pauses updates — your saved feedback remains visible.
+                </p>
                 <Button variant="outline" asChild>
                   <Link href="/pricing">Manage billing</Link>
                 </Button>

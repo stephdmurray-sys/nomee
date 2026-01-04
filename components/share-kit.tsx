@@ -38,9 +38,7 @@ export function ShareKit({ publicUrl, plan }: ShareKitProps) {
       <div className="mb-4">
         <h3 className="text-xl font-semibold text-slate-900">Share Kit</h3>
         <p className="text-sm text-slate-600 mt-1">Use your Nomee anywhere to show what it's like to work with you</p>
-        <p className="text-xs text-slate-500 mt-2">
-          Sharing your Nomee link is free. Embeds + extra proof tools are Pro.
-        </p>
+        <p className="text-xs text-slate-500 mt-2">Sharing your Nomee link is free. Embeds + extra features are Pro.</p>
       </div>
 
       {/* Tabs */}
@@ -62,7 +60,7 @@ export function ShareKit({ publicUrl, plan }: ShareKitProps) {
       <div className="space-y-4">
         {activeTab === "resume" && (
           <div className="space-y-3">
-            <p className="text-sm text-slate-600">Add your Nomee as a clean proof link on your resume.</p>
+            <p className="text-sm text-slate-600">Add your Nomee as a clean link on your resume.</p>
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
               <p className="text-sm font-mono text-slate-700">What it's like to work with me: {publicUrl}</p>
             </div>
@@ -149,7 +147,7 @@ export function ShareKit({ publicUrl, plan }: ShareKitProps) {
 
             {websiteMode === "link" ? (
               <div className="space-y-3">
-                <p className="text-sm text-slate-600">Add as a clean proof link on your site.</p>
+                <p className="text-sm text-slate-600">Add as a clean link on your site.</p>
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                   <p className="text-sm font-mono text-slate-700">What it's like to work with me: {publicUrl}</p>
                 </div>

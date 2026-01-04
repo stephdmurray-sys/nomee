@@ -128,7 +128,7 @@ export function PremierTraitBar({
       <div className="text-center space-y-1">
         <div className="flex items-center justify-center gap-2 text-blue-600">
           <Sparkles className="w-4 h-4" />
-          <h3 className="text-sm font-semibold">Top signals people repeat</h3>
+          <h3 className="text-sm font-semibold">Common themes people repeat</h3>
         </div>
         <p className="text-xs text-neutral-500">Ranked by how consistently they appear across perspectives</p>
         <p className="text-xs text-neutral-400">

@@ -116,7 +116,7 @@ export function DashboardClient({
         toast({
           title: newFeaturedState ? "Added to Featured" : "Removed from Featured",
           description: newFeaturedState
-            ? "This perspective now appears first on your Proof Link."
+            ? "This perspective now appears first on your Nomee page."
             : "This perspective has been unfeatured.",
         })
         window.location.reload()
