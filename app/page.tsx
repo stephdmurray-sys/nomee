@@ -148,6 +148,28 @@ export default function Home() {
               </motion.div>
             </div>
 
+            {/* Your personal Nomee page section after "Two ways to save feedback" */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-16 md:mb-20 max-w-2xl mx-auto text-center px-4"
+            >
+              <h3 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-4">Your personal Nomee page</h3>
+              <p className="text-base md:text-lg text-slate-700 leading-relaxed mb-3">
+                A private link that keeps all your saved feedback in one place — ready to share when it matters.
+              </p>
+              <p className="text-base text-slate-600 leading-relaxed mb-6">
+                You decide when to share it — for a review, a role, a client, or an unexpected opportunity.
+              </p>
+              <Link
+                href="/auth/signup"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors duration-200"
+              >
+                Create my Nomee link
+              </Link>
+            </motion.div>
+
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
