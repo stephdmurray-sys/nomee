@@ -36,16 +36,18 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="space-y-4"
             >
-              <p className="text-xs md:text-sm text-slate-500 font-normal">
-                Most people forget the best feedback they receive — until they need it.
-              </p>
+              
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight tracking-tight">
-                You receive valuable feedback. Nomee keeps it.
+                Nomee is a living record of how people experience working with you.
               </h1>
 
               <p className="text-lg md:text-xl lg:text-2xl text-slate-700 leading-relaxed">
-                Save what people say about your work in one place — so it's ready when it matters.
+                Built from real feedback shared over time — automatically organized into patterns decision-makers trust.
+              </p>
+
+              <p className="text-sm md:text-base text-slate-500 font-normal pt-1">
+                Not accomplishments. Not self-descriptions. Real experience.
               </p>
 
               <div className="flex flex-col sm:flex-row items-start gap-4 pt-1">
@@ -54,7 +56,7 @@ export default function Home() {
                   size="lg"
                   className="w-full sm:w-auto bg-slate-900 text-white hover:bg-slate-800 rounded-full px-8 py-6 text-base font-medium shadow-lg hover:shadow-xl transition-all"
                 >
-                  Save my feedback
+                  Create your Nomee
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
 
