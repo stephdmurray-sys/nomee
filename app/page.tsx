@@ -531,16 +531,16 @@ export default function Home() {
               </span>
               .
             </h2>
-            {/* UPDATED CODE END */}
-            <p className="text-lg text-slate-600 max-w-3xl mx-auto">
-              Share your Nomee link anywhere you need credibility.
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Everything you've saved is already there — in one place.
             </p>
 
-            <div className="flex flex-wrap justify-center gap-8 pt-4">
-              <div className="text-base text-slate-700">Reviews</div>
-              <div className="text-base text-slate-700">Interviews</div>
-              <div className="text-base text-slate-700">Clients</div>
+            <div className="pt-4">
+              <Button size="lg" asChild>
+                <Link href="/auth/signup">Create my Nomee link</Link>
+              </Button>
             </div>
+            {/* UPDATED CODE END */}
           </motion.div>
         </div>
       </section>
