@@ -2,10 +2,10 @@
 
 import { motion } from "framer-motion"
 import { SiteHeader } from "@/components/site-header"
-import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import { useState } from "react"
 import { ModalSignup } from "@/components/modal-signup"
+import Link from "next/link"
 
 export default function WhatIsNomeePage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -15,168 +15,353 @@ export default function WhatIsNomeePage() {
       <div className="min-h-screen bg-white">
         <SiteHeader onCreateClick={() => setIsModalOpen(true)} />
 
-        {/* 1. Opening Definition */}
-        <section className="pt-32 pb-20 px-6">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
+        {/* SECTION 1 — HERO (VERY CLEAN) */}
+        <section className="pt-32 pb-24 px-6">
+          <div className="max-w-4xl mx-auto text-center space-y-6">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               className="text-5xl md:text-7xl font-bold text-slate-900 leading-tight tracking-tight"
             >
-              What is Nomee?
+              Nomee keeps the feedback you receive — so it's ready when it matters.
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-2xl md:text-3xl text-slate-900 leading-relaxed max-w-3xl mx-auto font-medium"
+              className="text-xl md:text-2xl text-slate-600 leading-relaxed"
             >
-              Nomee is a personal record of how people experience working with you.
-            </motion.p>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-lg text-slate-600 max-w-2xl mx-auto"
-            >
-              Built from real workplace praise and feedback, captured over time.
+              Feedback is often shared casually, then forgotten. Nomee keeps it in one place.
             </motion.p>
           </div>
         </section>
 
-        {/* 2. Visual First: Where Praise Lives Today */}
-        <section className="py-20 px-6 bg-slate-50">
-          <div className="max-w-6xl mx-auto space-y-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Email snippet */}
+        {/* SECTION 2 — "FEEDBACK IS EASY TO LOSE" (IMAGE-LED) */}
+        <section className="py-20 px-6 bg-gradient-to-b from-slate-50 to-white">
+          <div className="max-w-6xl mx-auto space-y-16">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* iMessage feedback */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
-                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"
+                className="space-y-4"
               >
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm">
-                      JK
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm">
+                        JL
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-slate-900">Jessica Liu</p>
+                        <p className="text-xs text-slate-500">iMessage</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-900">Jordan K.</p>
-                      <p className="text-xs text-slate-500">Re: Project Update</p>
+                    <div className="bg-blue-500 text-white p-3 rounded-2xl rounded-tl-sm max-w-[85%]">
+                      <p className="text-sm leading-relaxed">
+                        Thanks again for yesterday! The way you explained it made everything click.
+                      </p>
                     </div>
                   </div>
-                  <p className="text-sm text-slate-700 leading-relaxed">
-                    Your ability to see three steps ahead is exactly what we needed on this.
-                  </p>
                 </div>
+                <p className="text-center text-sm text-slate-500">Said once.</p>
               </motion.div>
 
-              {/* Slack message */}
+              {/* Email feedback */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"
+                className="space-y-4"
               >
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                    <div className="w-6 h-6 rounded bg-purple-600" />
-                    <span className="text-sm font-medium text-slate-900">#team-wins</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded bg-teal-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                      AS
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                      <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold text-sm">
+                        MK
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-slate-900">Marcus Kim</p>
+                        <p className="text-xs text-slate-500">Re: Q4 Strategy Review</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-slate-500 mb-1">Alex S. 2:14 PM</p>
-                      <p className="text-sm text-slate-700 leading-relaxed">
-                        How you handled their questions was the kind of thinking we need more of.
-                      </p>
-                    </div>
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      The way you reframed our approach completely shifted how the team sees this launch.
+                    </p>
                   </div>
                 </div>
+                <p className="text-center text-sm text-slate-500">Never saved.</p>
               </motion.div>
 
-              {/* LinkedIn message */}
+              {/* Slack feedback */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"
+                className="space-y-4"
               >
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
-                      in
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                      <div className="w-6 h-6 rounded bg-purple-600" />
+                      <span className="text-sm font-medium text-slate-900">#project-team</span>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-900">Sam Chen</p>
-                      <p className="text-xs text-slate-500">Product Lead at TechCo</p>
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded bg-teal-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                        AS
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-slate-500 mb-1">Aisha Singh 11:23 AM</p>
+                        <p className="text-sm text-slate-700 leading-relaxed">
+                          Just wrapped the client call — they were so impressed by how you handled their questions.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-sm text-slate-700 leading-relaxed">
-                    Working with you changed how I think about collaboration.
-                  </p>
                 </div>
+                <p className="text-center text-sm text-slate-500">Easily forgotten.</p>
               </motion.div>
+            </div>
+          </div>
+        </section>
 
-              {/* Peer recognition */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Recognition</span>
-                    <div className="w-6 h-6 rounded bg-amber-400 flex items-center justify-center text-xs">⭐</div>
+        {/* SECTION 3 — TRANSFORMATION (THE HEART OF THE PAGE) */}
+        <section className="py-20 px-6 bg-white">
+          <div className="max-w-6xl mx-auto space-y-16">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-4xl md:text-5xl font-bold text-slate-900 text-center leading-tight"
+            >
+              Nomee turns moments into something you can use.
+            </motion.h2>
+
+            {/* Visual transformation with arrows */}
+            <div className="relative">
+              {/* Desktop: horizontal layout with arrows */}
+              <div className="hidden md:grid md:grid-cols-[1fr,auto,1fr] gap-8 items-center">
+                {/* Left: Three feedback artifacts stacked */}
+                <div className="space-y-4">
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-sm text-slate-700">
+                      "Thanks again for yesterday! The way you explained it made everything click."
+                    </p>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                      MR
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-slate-500 mb-1">Morgan R.</p>
-                      <p className="text-sm text-slate-700 leading-relaxed">
-                        You stayed calm when everything felt like it was falling apart.
-                      </p>
-                    </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-sm text-slate-700">
+                      "The way you reframed our approach completely shifted how the team sees this launch."
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-sm text-slate-700">
+                      "They were so impressed by how you handled their questions."
+                    </p>
                   </div>
                 </div>
-              </motion.div>
+
+                {/* Middle: Dotted arrows */}
+                <div className="flex flex-col items-center gap-2">
+                  <svg
+                    width="60"
+                    height="40"
+                    viewBox="0 0 60 40"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="text-slate-300"
+                  >
+                    <path
+                      d="M2 20 L50 20"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeDasharray="4 4"
+                      markerEnd="url(#arrowhead)"
+                    />
+                    <defs>
+                      <marker
+                        id="arrowhead"
+                        markerWidth="10"
+                        markerHeight="10"
+                        refX="8"
+                        refY="3"
+                        orient="auto"
+                        markerUnits="strokeWidth"
+                      >
+                        <path d="M0,0 L0,6 L9,3 z" fill="currentColor" />
+                      </marker>
+                    </defs>
+                  </svg>
+                </div>
+
+                {/* Right: Maya page preview (cropped) */}
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-6 space-y-6">
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-slate-900">Maya Torres</h3>
+                    <p className="text-sm text-slate-600">Product Lead</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-slate-700">What consistently shows up</p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                        Strategic
+                      </span>
+                      <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">
+                        Clear communicator
+                      </span>
+                      <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm font-medium">
+                        Calm under pressure
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      "Maya has this gift for{" "}
+                      <span className="bg-yellow-200/40 px-1 rounded">seeing both the forest and the trees</span>. She
+                      caught details that would have derailed our launch while never losing sight of the bigger{" "}
+                      <span className="bg-yellow-200/40 px-1 rounded">strategic picture</span>."
+                    </p>
+                    <p className="text-xs text-slate-500 mt-2">— Taylor Kim, Colleague</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile: vertical layout */}
+              <div className="md:hidden space-y-8">
+                <div className="space-y-4">
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-sm text-slate-700">
+                      "Thanks again for yesterday! The way you explained it made everything click."
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-sm text-slate-700">
+                      "The way you reframed our approach completely shifted how the team sees this launch."
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-sm text-slate-700">
+                      "They were so impressed by how you handled their questions."
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  <svg width="24" height="60" viewBox="0 0 24 60" fill="none" className="text-slate-300">
+                    <path
+                      d="M12 2 L12 50"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeDasharray="4 4"
+                      markerEnd="url(#arrowhead-down)"
+                    />
+                    <defs>
+                      <marker
+                        id="arrowhead-down"
+                        markerWidth="10"
+                        markerHeight="10"
+                        refX="3"
+                        refY="8"
+                        orient="auto"
+                        markerUnits="strokeWidth"
+                      >
+                        <path d="M0,0 L6,0 L3,9 z" fill="currentColor" />
+                      </marker>
+                    </defs>
+                  </svg>
+                </div>
+
+                <p className="text-center text-base text-slate-600 font-medium">All of it becomes one Nomee page</p>
+
+                <div className="flex justify-center">
+                  <svg width="24" height="40" viewBox="0 0 24 40" fill="none" className="text-slate-300">
+                    <path
+                      d="M12 2 L12 32"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeDasharray="4 4"
+                      markerEnd="url(#arrowhead-down2)"
+                    />
+                    <defs>
+                      <marker
+                        id="arrowhead-down2"
+                        markerWidth="10"
+                        markerHeight="10"
+                        refX="3"
+                        refY="8"
+                        orient="auto"
+                        markerUnits="strokeWidth"
+                      >
+                        <path d="M0,0 L6,0 L3,9 z" fill="currentColor" />
+                      </marker>
+                    </defs>
+                  </svg>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-6 space-y-6">
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-slate-900">Maya Torres</h3>
+                    <p className="text-sm text-slate-600">Product Lead</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-slate-700">What consistently shows up</p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                        Strategic
+                      </span>
+                      <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">
+                        Clear communicator
+                      </span>
+                      <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm font-medium">
+                        Calm under pressure
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      "Maya has this gift for{" "}
+                      <span className="bg-yellow-200/40 px-1 rounded">seeing both the forest and the trees</span>. She
+                      caught details that would have derailed our launch."
+                    </p>
+                    <p className="text-xs text-slate-500 mt-2">— Taylor Kim, Colleague</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.5 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
               className="text-center text-lg text-slate-600 pt-4"
             >
-              Most meaningful praise lives scattered across tools you don't own.
+              One private page that holds everything.
             </motion.p>
           </div>
         </section>
 
-        {/* 3. The Problem Nomee Solves */}
-        <section className="py-20 px-6 bg-white">
+        {/* SECTION 4 — WHAT NOMEE IS (ULTRA-MINIMAL) */}
+        <section className="py-20 px-6 bg-slate-50">
           <div className="max-w-3xl mx-auto space-y-12">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-3xl md:text-4xl font-semibold text-slate-900 text-center"
+              className="text-4xl md:text-5xl font-bold text-slate-900 text-center"
             >
-              The problem
+              So, what is Nomee?
             </motion.h2>
 
             <motion.div
@@ -184,180 +369,17 @@ export default function WhatIsNomeePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="space-y-4 text-lg text-slate-700 leading-relaxed"
+              className="space-y-8"
             >
-              <p>Praise is easy to give, hard to keep</p>
-              <p>Recognition disappears when roles or companies change</p>
-              <p>Annual reviews rely on memory, not evidence</p>
-              <p>Hiring decisions lack real evidence about working style</p>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* 4. Visual: From Moments to Signal */}
-        <section className="py-20 px-6 bg-slate-50">
-          <div className="max-w-6xl mx-auto space-y-12">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              {/* Left: Raw praise */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm"
-              >
-                <p className="text-base text-slate-700 leading-relaxed">
-                  You have been so great to work with! Thanks for being amazing and so creative with the work you've
-                  done. Your organizational skills and gift for seeing the big picture while managing details made this
-                  project actually enjoyable. You helped me think more clearly about what we were trying to accomplish.
-                </p>
-              </motion.div>
-
-              {/* Right: Highlighted version */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm"
-              >
-                <p className="text-base text-slate-700 leading-relaxed">
-                  You have been so <span className="nomee-highlight-marker">great to work with</span>! Thanks for being
-                  amazing and so creative with the work you've done. Your{" "}
-                  <span className="nomee-highlight-marker">organizational skills</span> and{" "}
-                  <span className="nomee-highlight-marker">gift for seeing the big picture</span> while managing details
-                  made this project actually enjoyable. You{" "}
-                  <span className="nomee-highlight-marker">helped me think more clearly</span> about what we were trying
-                  to accomplish.
-                </p>
-              </motion.div>
-            </div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-center text-lg text-slate-600"
-            >
-              Nomee turns moments into patterns.
-            </motion.p>
-          </div>
-        </section>
-
-        {/* 5. How Nomee Is Different */}
-        <section className="py-20 px-6 bg-white">
-          <div className="max-w-5xl mx-auto space-y-12">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-3xl md:text-4xl font-semibold text-slate-900 text-center"
-            >
-              How Nomee is different
-            </motion.h2>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="grid md:grid-cols-2 gap-12"
-            >
-              {/* Left column */}
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-slate-900 pb-4 border-b border-slate-200">
-                  What exists today
-                </h3>
-                <div className="space-y-4 text-base text-slate-700 leading-relaxed">
-                  <p>Company-owned recognition tools</p>
-                  <p>Performance reviews</p>
-                  <p>Formal recommendations</p>
-                  <p>References</p>
-                </div>
-              </div>
-
-              {/* Right column */}
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-slate-900 pb-4 border-b border-slate-200">Nomee</h3>
-                <div className="space-y-4 text-base text-slate-700 leading-relaxed">
-                  <p>Personal ownership</p>
-                  <p>Spans roles and time</p>
-                  <p>Focuses on how it feels to work with someone</p>
-                  <p>Surfaces patterns, not ratings</p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* 6. When People Use Nomee */}
-        <section className="py-20 px-6 bg-slate-50">
-          <div className="max-w-4xl mx-auto space-y-12">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-3xl md:text-4xl font-semibold text-slate-900 text-center"
-            >
-              When people use Nomee
-            </motion.h2>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="grid md:grid-cols-2 gap-6"
-            >
-              {[
-                "Preparing for an annual review",
-                "Supporting a promotion conversation",
-                "Reflecting during burnout or transition",
-                "Giving hiring managers real examples",
-                "Differentiating as a contractor or independent contributor",
-              ].map((moment, idx) => (
-                <motion.div
-                  key={moment}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: 0.3 + idx * 0.1 }}
-                  className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"
-                >
-                  <p className="text-base text-slate-700">{moment}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* 7. For Hiring Professionals */}
-        <section className="py-20 px-6 bg-white">
-          <div className="max-w-3xl mx-auto space-y-12">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-3xl md:text-4xl font-semibold text-slate-900 text-center"
-            >
-              For hiring professionals
-            </motion.h2>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="space-y-4 text-lg text-slate-700 leading-relaxed"
-            >
-              <p>Adds evidence beyond resumes and interviews</p>
-              <p>Shows patterns across multiple collaborators</p>
-              <p>Surfaces working style, communication, and impact</p>
-              <p>Reduces reliance on single-manager perspectives</p>
+              <p className="text-xl md:text-2xl text-slate-700 leading-relaxed">
+                Nomee is a place to save feedback as you receive it.
+              </p>
+              <p className="text-xl md:text-2xl text-slate-700 leading-relaxed">
+                It helps you notice patterns over time.
+              </p>
+              <p className="text-xl md:text-2xl text-slate-700 leading-relaxed">
+                It gives you one link when you need to show your work.
+              </p>
             </motion.div>
 
             <motion.p
@@ -365,42 +387,14 @@ export default function WhatIsNomeePage() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-center text-lg text-slate-900 font-medium pt-8"
+              className="text-center text-base text-slate-600 pt-4"
             >
-              Nomee doesn't replace interviews. It adds context where interviews fall short.
+              That's it.
             </motion.p>
           </div>
         </section>
 
-        {/* 8. How Nomee Uses AI */}
-        <section className="py-20 px-6 bg-slate-50">
-          <div className="max-w-3xl mx-auto space-y-12">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-3xl md:text-4xl font-semibold text-slate-900 text-center"
-            >
-              How Nomee uses AI
-            </motion.h2>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="space-y-4 text-lg text-slate-700 leading-relaxed"
-            >
-              <p>Highlights traits and patterns</p>
-              <p>Preserves original wording</p>
-              <p>Synthesizes over time</p>
-              <p>Never generates praise</p>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* 9. What Nomee Is Not */}
+        {/* SECTION 5 — WHAT NOMEE IS NOT (VERY IMPORTANT) */}
         <section className="py-20 px-6 bg-white">
           <div className="max-w-3xl mx-auto space-y-12">
             <motion.h2
@@ -408,9 +402,9 @@ export default function WhatIsNomeePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-3xl md:text-4xl font-semibold text-slate-900 text-center"
+              className="text-4xl md:text-5xl font-bold text-slate-900 text-center"
             >
-              What Nomee is not
+              Nomee is not:
             </motion.h2>
 
             <motion.div
@@ -418,28 +412,39 @@ export default function WhatIsNomeePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="space-y-4 text-lg text-slate-700 leading-relaxed"
+              className="space-y-6 text-lg text-slate-500"
             >
-              <p>Not a peer recognition platform</p>
-              <p>Not a performance review tool</p>
-              <p>Not formal recommendations</p>
-              <p>Not self-promotion</p>
+              <p>Not a performance review</p>
+              <p>Not a testimonial page</p>
+              <p>Not written after the fact</p>
             </motion.div>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-2xl md:text-3xl text-slate-900 font-semibold text-center pt-8"
+            >
+              It's what people actually say — saved as it happens.
+            </motion.p>
           </div>
         </section>
 
-        {/* 10. Closing Thought + CTA */}
-        <section className="py-24 px-6 bg-slate-900">
+        {/* SECTION 6 — CLOSE (CALM, CONFIDENT) */}
+        <section className="py-24 px-6 bg-slate-50">
           <div className="max-w-3xl mx-auto text-center space-y-10">
-            <motion.p
+            <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-2xl md:text-3xl text-white leading-relaxed font-medium"
+              className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight"
             >
-              Your work speaks through other people. Nomee makes sure you don't lose that record.
-            </motion.p>
+              You don't need more feedback.
+              <br />
+              You need to stop losing it.
+            </motion.h2>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -447,20 +452,19 @@ export default function WhatIsNomeePage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <Button
-                onClick={() => setIsModalOpen(true)}
-                size="lg"
-                className="bg-white text-slate-900 hover:bg-slate-100 rounded-full px-8 py-6 text-base font-medium shadow-lg hover:shadow-xl transition-all"
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors text-lg"
               >
-                Start your Nomee
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
+                See how it works
+                <ArrowRight className="w-5 h-5" />
+              </Link>
             </motion.div>
           </div>
         </section>
       </div>
 
-      <ModalSignup isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialType="deck" />
+      <ModalSignup isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </>
   )
 }
