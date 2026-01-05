@@ -513,7 +513,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-gradient-to-b from-white to-slate-50">
+      <section className="py-12 md:py-20 px-6 bg-gradient-to-b from-white to-slate-50">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -522,7 +522,16 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center space-y-6"
           >
-            <h2 className="text-2xl md:text-3xl font-semibold text-slate-900">Use your Nomee page anywhere</h2>
+            {/* UPDATED CODE START */}
+            <h2 className="text-2xl md:text-3xl font-semibold text-slate-900">
+              When it matters,{" "}
+              <span className="relative inline-block">
+                <span className="relative z-10">you'll be ready</span>
+                <span className="absolute inset-0 bg-yellow-200/20 rounded-full -mx-2 -my-1" aria-hidden="true" />
+              </span>
+              .
+            </h2>
+            {/* UPDATED CODE END */}
             <p className="text-lg text-slate-600 max-w-3xl mx-auto">
               Share your Nomee link anywhere you need credibility.
             </p>
@@ -1053,17 +1062,20 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Final CTA */}
       <section className="py-20 md:py-32 px-6 bg-slate-900">
         <div className="max-w-3xl mx-auto text-center space-y-6 md:space-y-8">
-          <motion.h2
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-white px-4"
+            className="text-center space-y-6"
           >
-            Ready when it matters — not lost in messages.
-          </motion.h2>
+            <h2 className="text-3xl md:text-4xl font-semibold text-white">
+              Ready when it matters — not lost in messages.
+            </h2>
+          </motion.div>
 
           <motion.p
             initial={{ opacity: 0 }}
