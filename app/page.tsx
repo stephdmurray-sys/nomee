@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ModalSignup } from "@/components/modal-signup"
+import { SiteHeader } from "@/components/site-header"
 import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
@@ -14,7 +15,7 @@ export default function Home() {
   const [expandedFramework, setExpandedFramework] = useState<string | null>(null)
   const [heroTab, setHeroTab] = useState<"professional" | "decision-maker">("professional")
   const [showAllTraits, setShowAllTraits] = useState(false)
-  const [activeDecisionTab, setActiveDecisionTab] = useState<"hiring" | "partnerships" | "clients">("hiring") // Added state for decision tab
+  const [activeDecisionTab, setActiveDecisionTab] = useState<"hiring" | "partnerships" | "clients">("hiring")
 
   const openModal = (type: "deck" | "recognition") => {
     setModalType(type)
@@ -23,7 +24,10 @@ export default function Home() {
 
   return (
     <>
-      <section className="pt-12 md:pt-16 pb-6 md:pb-8 px-6">
+      <SiteHeader onCreateClick={() => openModal("deck")} />
+
+      {/* Hero Section */}
+      <section className="relative pt-28 md:pt-32 pb-16 md:pb-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-3xl mx-auto">
             <motion.div
@@ -66,9 +70,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Two ways to save feedback */}
       <section className="relative py-12 md:py-16 px-6 bg-gradient-to-b from-slate-50 to-white overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.03),transparent_50%)]" />
-
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(148,163,184,0.05),transparent_50%)]" />
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center mb-10 md:mb-12">
             <motion.h3
@@ -86,7 +90,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm space-y-4 transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1 hover:border-slate-300"
+              className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1 hover:border-slate-300"
             >
               <h4 className="text-xl md:text-2xl font-semibold text-slate-900">Collect feedback</h4>
               <p className="text-base text-slate-700 leading-relaxed">Invite people to share feedback as it happens.</p>
@@ -96,7 +100,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm space-y-4 transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1 hover:border-slate-300"
+              className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1 hover:border-slate-300"
             >
               <h4 className="text-xl md:text-2xl font-semibold text-slate-900">Save existing feedback</h4>
               <p className="text-base text-slate-700 leading-relaxed">
@@ -223,7 +227,7 @@ export default function Home() {
                           </div>
                           <p className="text-xs leading-relaxed text-slate-700">
                             Just wrapped the client call — they were so impressed by how you handled your questions and
-                            concerns. That's the kind of thinking we need more of. 💯
+                            concerns. That's the kind of thinking we need. 💯
                           </p>
                         </div>
                       </div>
@@ -487,7 +491,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 1.0 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12"
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-16"
             >
               <Link
                 href="/auth/signup"
@@ -669,64 +673,184 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Top Signals - Large and prominent */}
               <div className="space-y-5">
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Common themes</p>
                 <div className="flex flex-wrap gap-3">
-                  <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
-                    Strategic
-                  </span>
-                  <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
-                    Clear communicator
-                  </span>
-                  <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
-                    Reliable
-                  </span>
+                  {activeDecisionTab === "hiring" && (
+                    <>
+                      <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
+                        Calm under pressure
+                      </span>
+                      <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
+                        Strategic thinker
+                      </span>
+                      <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
+                        Clear communicator
+                      </span>
+                    </>
+                  )}
+                  {activeDecisionTab === "partnerships" && (
+                    <>
+                      <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
+                        Reliable
+                      </span>
+                      <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
+                        Trustworthy
+                      </span>
+                      <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
+                        Proactive
+                      </span>
+                    </>
+                  )}
+                  {activeDecisionTab === "clients" && (
+                    <>
+                      <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
+                        Delivers results
+                      </span>
+                      <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
+                        Clear timelines
+                      </span>
+                      <span className="px-5 py-3 bg-blue-100 text-blue-900 text-base font-semibold rounded-xl border-2 border-blue-200">
+                        Great to work with
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Quick Scan - Larger, cleaner quotes */}
               <div className="space-y-5">
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">What people say</p>
 
-                {/* Quote 1 */}
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                  <p className="text-lg text-slate-800 leading-relaxed font-medium">
-                    "Brings clarity to complex projects. Always two steps ahead."
-                  </p>
-                </div>
+                {activeDecisionTab === "hiring" && (
+                  <>
+                    {/* Quote 1 - Hiring: confidence under pressure */}
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                      <p className="text-lg text-slate-800 leading-relaxed">
+                        "When the project shifted mid-sprint, she{" "}
+                        <span className="bg-yellow-200 px-1 rounded">stayed calm</span> and{" "}
+                        <span className="bg-yellow-200 px-1 rounded">mapped a new approach</span> in minutes."
+                      </p>
+                    </div>
 
-                {/* Quote 2 */}
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                  <p className="text-lg text-slate-800 leading-relaxed font-medium">
-                    "The kind of collaborator who makes everyone better."
-                  </p>
-                </div>
+                    {/* Quote 2 */}
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                      <p className="text-lg text-slate-800 leading-relaxed">
+                        "<span className="bg-yellow-200 px-1 rounded">Thinks three steps ahead.</span> Her planning
+                        saved us from major blockers."
+                      </p>
+                    </div>
 
-                {/* Uploaded proof */}
-                <div className="bg-white rounded-xl p-6 border-2 border-slate-300 shadow-sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">From email</span>
-                  </div>
-                  <p className="text-lg text-slate-800 leading-relaxed font-medium">
-                    "This exceeded our expectations. Thank you."
-                  </p>
-                </div>
+                    {/* Quote 3 - From email */}
+                    <div className="bg-white rounded-xl p-6 border-2 border-slate-300 shadow-sm">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          From email
+                        </span>
+                      </div>
+                      <p className="text-lg text-slate-800 leading-relaxed">
+                        "Her updates were <span className="bg-yellow-200 px-1 rounded">always clear</span> — no
+                        surprises, no confusion."
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {activeDecisionTab === "partnerships" && (
+                  <>
+                    {/* Quote 1 - Partnerships: trust and reliability */}
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                      <p className="text-lg text-slate-800 leading-relaxed">
+                        "Every commitment was met. <span className="bg-yellow-200 px-1 rounded">Zero surprises</span>,
+                        just <span className="bg-yellow-200 px-1 rounded">consistent delivery.</span>"
+                      </p>
+                    </div>
+
+                    {/* Quote 2 */}
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                      <p className="text-lg text-slate-800 leading-relaxed">
+                        "<span className="bg-yellow-200 px-1 rounded">Flagged issues before they became problems.</span>{" "}
+                        That's the kind of partner you want."
+                      </p>
+                    </div>
+
+                    {/* Quote 3 - From Slack */}
+                    <div className="bg-white rounded-xl p-6 border-2 border-slate-300 shadow-sm">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                          />
+                        </svg>
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          From Slack
+                        </span>
+                      </div>
+                      <p className="text-lg text-slate-800 leading-relaxed">
+                        "I'd <span className="bg-yellow-200 px-1 rounded">work with them again</span> without
+                        hesitation."
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {activeDecisionTab === "clients" && (
+                  <>
+                    {/* Quote 1 - Clients: clarity and delivery */}
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                      <p className="text-lg text-slate-800 leading-relaxed">
+                        "<span className="bg-yellow-200 px-1 rounded">Delivered exactly what we needed</span> — on time,
+                        no back-and-forth."
+                      </p>
+                    </div>
+
+                    {/* Quote 2 */}
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                      <p className="text-lg text-slate-800 leading-relaxed">
+                        "Timelines were <span className="bg-yellow-200 px-1 rounded">clear from day one.</span> No
+                        guessing, no delays."
+                      </p>
+                    </div>
+
+                    {/* Quote 3 - From email */}
+                    <div className="bg-white rounded-xl p-6 border-2 border-slate-300 shadow-sm">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          From email
+                        </span>
+                      </div>
+                      <p className="text-lg text-slate-800 leading-relaxed">
+                        "A pleasure to work with.{" "}
+                        <span className="bg-yellow-200 px-1 rounded">Made the whole process easy.</span>"
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
 
-              {/* Patterns - Subtle footer */}
               <div className="pt-6 border-t border-slate-200">
                 <p className="text-sm text-slate-500">
-                  Common themes:{" "}
-                  <span className="font-semibold text-slate-700">Strategic ×5, Clear communicator ×4</span>
+                  {activeDecisionTab === "hiring" && "Common themes across team feedback."}
+                  {activeDecisionTab === "partnerships" && "Common themes across partner feedback."}
+                  {activeDecisionTab === "clients" && "Common themes across client feedback."}
                 </p>
               </div>
             </div>
