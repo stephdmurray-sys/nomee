@@ -15,7 +15,6 @@ export default function WhatIsNomeePage() {
       <div className="min-h-screen bg-white">
         <SiteHeader onCreateClick={() => setIsModalOpen(true)} />
 
-        {/* SECTION 1 — HERO (VERY CLEAN) */}
         <section className="pt-32 pb-24 px-6">
           <div className="max-w-4xl mx-auto text-center space-y-6">
             <motion.h1
@@ -33,14 +32,13 @@ export default function WhatIsNomeePage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-xl md:text-2xl text-slate-600 leading-relaxed"
             >
-              Feedback is often shared casually, then forgotten. Nomee keeps it in one place.
+              Feedback is often shared casually, then forgotten. Nomee saves it in one place.
             </motion.p>
           </div>
         </section>
 
-        {/* SECTION 2 — "FEEDBACK IS EASY TO LOSE" (IMAGE-LED) */}
         <section className="py-20 px-6 bg-gradient-to-b from-slate-50 to-white">
-          <div className="max-w-6xl mx-auto space-y-16">
+          <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* iMessage feedback */}
               <motion.div
@@ -131,7 +129,6 @@ export default function WhatIsNomeePage() {
           </div>
         </section>
 
-        {/* SECTION 3 — TRANSFORMATION (THE HEART OF THE PAGE) */}
         <section className="py-20 px-6 bg-white">
           <div className="max-w-6xl mx-auto space-y-16">
             <motion.h2
@@ -200,7 +197,7 @@ export default function WhatIsNomeePage() {
                   </svg>
                 </div>
 
-                {/* Right: Maya page preview (cropped) */}
+                {/* Right: Maya page preview */}
                 <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-6 space-y-6">
                   <div className="space-y-2">
                     <h3 className="text-2xl font-bold text-slate-900">Maya Torres</h3>
@@ -279,33 +276,6 @@ export default function WhatIsNomeePage() {
                   </svg>
                 </div>
 
-                <p className="text-center text-base text-slate-600 font-medium">All of it becomes one Nomee page</p>
-
-                <div className="flex justify-center">
-                  <svg width="24" height="40" viewBox="0 0 24 40" fill="none" className="text-slate-300">
-                    <path
-                      d="M12 2 L12 32"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeDasharray="4 4"
-                      markerEnd="url(#arrowhead-down2)"
-                    />
-                    <defs>
-                      <marker
-                        id="arrowhead-down2"
-                        markerWidth="10"
-                        markerHeight="10"
-                        refX="3"
-                        refY="8"
-                        orient="auto"
-                        markerUnits="strokeWidth"
-                      >
-                        <path d="M0,0 L6,0 L3,9 z" fill="currentColor" />
-                      </marker>
-                    </defs>
-                  </svg>
-                </div>
-
                 <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-6 space-y-6">
                   <div className="space-y-2">
                     <h3 className="text-2xl font-bold text-slate-900">Maya Torres</h3>
@@ -318,10 +288,10 @@ export default function WhatIsNomeePage() {
                       <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
                         Strategic
                       </span>
-                      <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">
+                      <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
                         Clear communicator
                       </span>
-                      <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm font-medium">
+                      <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
                         Calm under pressure
                       </span>
                     </div>
@@ -338,22 +308,67 @@ export default function WhatIsNomeePage() {
                 </div>
               </div>
             </div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-center text-lg text-slate-600 pt-4"
-            >
-              One private page that holds everything.
-            </motion.p>
           </div>
         </section>
 
-        {/* SECTION 4 — WHAT NOMEE IS (ULTRA-MINIMAL) */}
         <section className="py-20 px-6 bg-slate-50">
-          <div className="max-w-3xl mx-auto space-y-12">
+          <div className="max-w-4xl mx-auto space-y-12">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl md:text-4xl font-semibold text-slate-900 text-center"
+            >
+              What a Nomee page looks like
+            </motion.h2>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="bg-white border border-slate-200 rounded-2xl shadow-lg p-8 space-y-6"
+            >
+              {/* Name */}
+              <div>
+                <h3 className="text-3xl font-bold text-slate-900">Maya Torres</h3>
+                <p className="text-base text-slate-500 mt-1">Product Manager</p>
+              </div>
+
+              {/* Traits section */}
+              <div>
+                <p className="text-sm font-medium text-slate-500 mb-3">What consistently shows up</p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1.5 bg-blue-50 text-blue-700 text-sm rounded-full">Strategic</span>
+                  <span className="px-3 py-1.5 bg-blue-50 text-blue-700 text-sm rounded-full">Calm under pressure</span>
+                  <span className="px-3 py-1.5 bg-blue-50 text-blue-700 text-sm rounded-full">Clear communicator</span>
+                </div>
+              </div>
+
+              {/* Sample quotes */}
+              <div className="space-y-4">
+                <div className="border-l-2 border-slate-200 pl-4">
+                  <p className="text-slate-700 text-base leading-relaxed">
+                    "Maya brings incredible <mark className="bg-yellow-200/40 px-0.5">strategic clarity</mark> to
+                    complex projects."
+                  </p>
+                  <p className="text-sm text-slate-500 mt-2">— Alex Rivera, Colleague</p>
+                </div>
+
+                <div className="border-l-2 border-slate-200 pl-4">
+                  <p className="text-slate-700 text-base leading-relaxed">
+                    "She <mark className="bg-yellow-200/40 px-0.5">stays calm</mark> in high-pressure situations."
+                  </p>
+                  <p className="text-sm text-slate-500 mt-2">— Jordan Chen, Manager</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        <section className="py-20 px-6 bg-white">
+          <div className="max-w-3xl mx-auto space-y-8">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -369,17 +384,11 @@ export default function WhatIsNomeePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="space-y-8"
+              className="space-y-4 text-xl text-slate-700 text-center"
             >
-              <p className="text-xl md:text-2xl text-slate-700 leading-relaxed">
-                Nomee is a place to save feedback as you receive it.
-              </p>
-              <p className="text-xl md:text-2xl text-slate-700 leading-relaxed">
-                It helps you notice patterns over time.
-              </p>
-              <p className="text-xl md:text-2xl text-slate-700 leading-relaxed">
-                It gives you one link when you need to show your work.
-              </p>
+              <p>Nomee saves feedback as you receive it.</p>
+              <p>It helps you see patterns over time.</p>
+              <p>It gives you one link when you need to show your work.</p>
             </motion.div>
 
             <motion.p
@@ -387,22 +396,21 @@ export default function WhatIsNomeePage() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-center text-base text-slate-600 pt-4"
+              className="text-lg text-slate-600 text-center pt-4"
             >
               That's it.
             </motion.p>
           </div>
         </section>
 
-        {/* SECTION 5 — WHAT NOMEE IS NOT (VERY IMPORTANT) */}
-        <section className="py-20 px-6 bg-white">
-          <div className="max-w-3xl mx-auto space-y-12">
+        <section className="py-16 px-6 bg-slate-50">
+          <div className="max-w-2xl mx-auto space-y-8">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-4xl md:text-5xl font-bold text-slate-900 text-center"
+              className="text-3xl md:text-4xl font-bold text-slate-900 text-center"
             >
               Nomee is not:
             </motion.h2>
@@ -412,7 +420,7 @@ export default function WhatIsNomeePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="space-y-6 text-lg text-slate-500"
+              className="space-y-3 text-base text-slate-500 text-center"
             >
               <p>Not a performance review</p>
               <p>Not a testimonial page</p>
@@ -424,15 +432,14 @@ export default function WhatIsNomeePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-2xl md:text-3xl text-slate-900 font-semibold text-center pt-8"
+              className="text-xl text-slate-900 font-medium text-center pt-6"
             >
               It's what people actually say — saved as it happens.
             </motion.p>
           </div>
         </section>
 
-        {/* SECTION 6 — CLOSE (CALM, CONFIDENT) */}
-        <section className="py-24 px-6 bg-slate-50">
+        <section className="py-24 px-6 bg-gradient-to-b from-white to-slate-50">
           <div className="max-w-3xl mx-auto text-center space-y-10">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
@@ -451,13 +458,22 @@ export default function WhatIsNomeePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors text-lg"
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="px-8 py-4 bg-slate-900 text-white rounded-full font-medium hover:bg-slate-800 transition-colors text-lg shadow-lg hover:shadow-xl"
               >
-                See how it works
-                <ArrowRight className="w-5 h-5" />
+                Start saving feedback
+              </button>
+
+              <Link
+                href="/how-it-works"
+                className="group relative inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-full font-medium text-slate-700 hover:border-slate-300 transition-all overflow-hidden"
+              >
+                <span className="relative z-10 transition-transform group-hover:-translate-x-1">See how it works</span>
+                <ArrowRight className="w-4 h-4 relative z-10 transition-transform group-hover:translate-x-1" />
+                <span className="absolute inset-0 bg-slate-50 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
               </Link>
             </motion.div>
           </div>
