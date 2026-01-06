@@ -46,14 +46,12 @@ export default function Home() {
             </h1>
 
             <p className="text-2xl text-gray-600 mb-4 font-light leading-relaxed">
-              Every professional says "trust me." You need to{" "}
-              <span className="font-semibold text-gray-900">show them.</span>
+              Nomee turns <strong className="font-semibold text-gray-900">scattered feedback</strong> from clients,
+              colleagues, and collaborators into verified social proof that wins deals, builds trust, and follows you{" "}
+              <strong className="font-semibold text-gray-900">throughout your career</strong>.
             </p>
 
-            <p className="text-lg text-gray-500 mb-10 max-w-3xl mx-auto">
-              Nomee turns scattered feedback from clients, colleagues, and collaborators into verified social proof that
-              wins deals, builds trust, and follows you throughout your career.
-            </p>
+            
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button
