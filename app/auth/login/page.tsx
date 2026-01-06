@@ -40,7 +40,6 @@ export default function LoginPage() {
         throw new Error(errorMessage)
       }
 
-      // Redirect to dashboard on success
       window.location.href = "/dashboard"
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
@@ -51,18 +50,22 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader onCreateClick={() => {}} />
-      <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center p-6 md:p-10">
+      <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center p-4 sm:p-6 md:p-10">
         <div className="w-full max-w-sm">
           <Card className="border-neutral-200">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-              <CardDescription className="text-neutral-600">Sign in to your Nomee account</CardDescription>
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="text-xl sm:text-2xl font-bold">Welcome back</CardTitle>
+              <CardDescription className="text-sm sm:text-base text-neutral-600">
+                Sign in to your Nomee account
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 sm:px-6">
               <form onSubmit={handleLogin}>
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-5 sm:gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="text-sm sm:text-base">
+                      Email
+                    </Label>
                     <Input
                       id="email"
                       type="email"
@@ -71,11 +74,13 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={isLoading}
-                      className="border-neutral-300"
+                      className="border-neutral-300 min-h-[44px] text-base"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="text-sm sm:text-base">
+                      Password
+                    </Label>
                     <Input
                       id="password"
                       type="password"
@@ -83,7 +88,7 @@ export default function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isLoading}
-                      className="border-neutral-300"
+                      className="border-neutral-300 min-h-[44px] text-base"
                     />
                   </div>
                   {error && (
@@ -92,20 +97,30 @@ export default function LoginPage() {
                       {error.includes("Invalid email or password") && (
                         <p className="text-sm text-red-600 mt-2">
                           New to Nomee?{" "}
-                          <Link href="/auth/signup" className="font-medium underline underline-offset-4">
+                          <Link
+                            href="/auth/signup"
+                            className="font-medium underline underline-offset-4 min-h-[44px] inline-flex items-center"
+                          >
                             Create an account
                           </Link>
                         </p>
                       )}
                     </div>
                   )}
-                  <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-700 min-h-[48px] text-base"
+                    disabled={isLoading}
+                  >
                     {isLoading ? "Signing in..." : "Sign in"}
                   </Button>
                 </div>
                 <div className="mt-4 text-center text-sm text-neutral-600">
                   Don&apos;t have an account?{" "}
-                  <Link href="/auth/signup" className="text-blue-600 hover:underline underline-offset-4">
+                  <Link
+                    href="/auth/signup"
+                    className="text-blue-600 hover:underline underline-offset-4 font-medium min-h-[44px] inline-flex items-center"
+                  >
                     Sign up
                   </Link>
                 </div>

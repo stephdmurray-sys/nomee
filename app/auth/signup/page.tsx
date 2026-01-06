@@ -52,18 +52,22 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader onCreateClick={() => {}} />
-      <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center p-6 md:p-10">
+      <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center p-4 sm:p-6 md:p-10">
         <div className="w-full max-w-sm">
           <Card className="border-neutral-200">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-              <CardDescription className="text-neutral-600">Start collecting feedback today</CardDescription>
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="text-xl sm:text-2xl font-bold">Create an account</CardTitle>
+              <CardDescription className="text-sm sm:text-base text-neutral-600">
+                Start collecting feedback today
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 sm:px-6">
               <form onSubmit={handleSignup}>
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-5 sm:gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="fullName">Full Name</Label>
+                    <Label htmlFor="fullName" className="text-sm sm:text-base">
+                      Full Name
+                    </Label>
                     <Input
                       id="fullName"
                       type="text"
@@ -72,11 +76,13 @@ export default function SignUpPage() {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       disabled={isLoading}
-                      className="border-neutral-300"
+                      className="border-neutral-300 min-h-[44px] text-base"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="text-sm sm:text-base">
+                      Email
+                    </Label>
                     <Input
                       id="email"
                       type="email"
@@ -85,11 +91,13 @@ export default function SignUpPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={isLoading}
-                      className="border-neutral-300"
+                      className="border-neutral-300 min-h-[44px] text-base"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="text-sm sm:text-base">
+                      Password
+                    </Label>
                     <Input
                       id="password"
                       type="password"
@@ -98,26 +106,36 @@ export default function SignUpPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isLoading}
-                      className="border-neutral-300"
+                      className="border-neutral-300 min-h-[44px] text-base"
                     />
                   </div>
                   {error && (
                     <div className="rounded-md bg-red-50 p-3 border border-red-200">
                       <p className="text-sm text-red-600">{error}</p>
                       {error.toLowerCase().includes("already registered") && (
-                        <Link href="/auth/login" className="text-sm text-blue-600 hover:underline mt-2 inline-block">
+                        <Link
+                          href="/auth/login"
+                          className="text-sm text-blue-600 hover:underline mt-2 inline-block font-medium min-h-[44px] flex items-center"
+                        >
                           Go to sign in →
                         </Link>
                       )}
                     </div>
                   )}
-                  <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-700 min-h-[48px] text-base"
+                    disabled={isLoading}
+                  >
                     {isLoading ? "Creating account..." : "Create account"}
                   </Button>
                 </div>
                 <div className="mt-4 text-center text-sm text-neutral-600">
                   Already have an account?{" "}
-                  <Link href="/auth/login" className="text-blue-600 hover:underline underline-offset-4">
+                  <Link
+                    href="/auth/login"
+                    className="text-blue-600 hover:underline underline-offset-4 font-medium min-h-[44px] inline-flex items-center"
+                  >
                     Sign in
                   </Link>
                 </div>
