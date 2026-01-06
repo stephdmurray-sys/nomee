@@ -37,16 +37,14 @@ export default function Home() {
       <SiteHeader />
 
       {/* Hero Section */}
-      <section className="pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+      <section className="pt-14 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center max-w-5xl mx-auto mb-12 sm:mb-16 space-y-6">
-            {/* Trust signal */}
-            <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm border border-indigo-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg text-xs sm:text-sm font-semibold text-indigo-900">
-              <Shield className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span>The first personal reputation marketing platform</span>
+            <div className="inline-flex items-center bg-white/80 backdrop-blur-sm border border-indigo-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg text-xs sm:text-sm font-semibold text-indigo-900">
+              <span>First personal reputation platform</span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-bold text-slate-900 leading-[1.15] sm:leading-[1.1] tracking-tight">
+            <h1 className="text-[34px] sm:text-6xl md:text-8xl font-bold text-slate-900 leading-[1.15] sm:leading-[1.1] tracking-tight">
               Your best feedback is
               <br />
               <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -56,14 +54,13 @@ export default function Home() {
 
             <div className="space-y-4">
               <p className="text-lg sm:text-2xl md:text-3xl text-slate-600 font-light leading-relaxed max-w-[34ch] mx-auto px-4">
-                Nomee captures real feedback and turns it into proof.
+                Nomee collects real feedback and turns it into proof.
               </p>
-              <p className="text-sm sm:text-base text-slate-500 font-light max-w-[34ch] mx-auto px-4">
+              <p className="hidden sm:block text-sm sm:text-base text-slate-500 font-light max-w-[34ch] mx-auto px-4">
                 So your best work doesn't disappear when it matters most.
               </p>
             </div>
 
-            {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-none mx-auto px-4">
               <Button
                 variant="default"
@@ -71,12 +68,12 @@ export default function Home() {
               >
                 Build My Reputation Profile
               </Button>
-              <Link href="/what-is-nomee" className="w-full sm:w-auto">
+              <Link href="/example" className="w-full sm:w-auto">
                 <Button
                   variant="outline"
                   className="w-full px-8 sm:px-10 min-h-[48px] sm:h-auto sm:py-5 rounded-xl text-base sm:text-lg font-semibold border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all bg-white"
                 >
-                  See How It Works
+                  See Live Example
                 </Button>
               </Link>
             </div>
@@ -101,60 +98,48 @@ export default function Home() {
       </section>
 
       {/* Visual Flow Section */}
-      <section className="py-12 sm:py-16 lg:py-24 bg-gradient-to-b from-white to-gray-50 px-4 sm:px-6 lg:px-8">
+      <section className="py-8 sm:py-16 lg:py-24 bg-gradient-to-b from-white to-gray-50 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="space-y-8 text-center mb-16">
+          <div className="space-y-6 sm:space-y-8 text-center mb-12 sm:mb-16">
             <div>
-              <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
-                Your proof already exists. It's just spread out.
+              <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-6">
+                Your proof already exists.
               </h2>
-              <div className="max-w-3xl mx-auto space-y-4">
+              <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">It's just not in one place yet.</p>
+
+              {/* Pill-style labels */}
+              <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
                 {/* Row 1 */}
                 <div className="flex flex-wrap justify-center gap-2">
                   <span className="inline-flex items-center px-4 py-2 rounded-full bg-slate-100 text-slate-700 text-sm font-medium">
-                    Quick messages
+                    Slack messages
                   </span>
                   <span className="inline-flex items-center px-4 py-2 rounded-full bg-slate-50 text-slate-600 text-sm font-medium">
-                    Side comments
-                  </span>
-                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-stone-50 text-stone-600 text-sm font-medium">
-                    Nice work moments
+                    Emails
                   </span>
                 </div>
 
                 {/* Row 2 */}
                 <div className="flex flex-wrap justify-center gap-2">
                   <span className="inline-flex items-center px-4 py-2 rounded-full bg-neutral-100 text-neutral-700 text-sm font-medium">
-                    Old threads
+                    Texts
                   </span>
                   <span className="inline-flex items-center px-4 py-2 rounded-full bg-gray-50 text-gray-600 text-sm font-medium">
-                    After-the-fact notes
-                  </span>
-                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-zinc-50 text-zinc-600 text-sm font-medium">
-                    Follow-up DMs
+                    After-project notes
                   </span>
                 </div>
 
                 {/* Row 3 */}
                 <div className="flex flex-wrap justify-center gap-2">
                   <span className="inline-flex items-center px-4 py-2 rounded-full bg-slate-50 text-slate-600 text-sm font-medium">
-                    Calls that ended
-                  </span>
-                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-neutral-50 text-neutral-600 text-sm font-medium">
-                    Meetings with no record
-                  </span>
-                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-stone-100 text-stone-700 text-sm font-medium">
-                    Praise you didn't save
+                    Conversations
                   </span>
                 </div>
-
-                {/* Closing line */}
-                <p className="text-gray-600 text-base sm:text-lg pt-2">Real feedback. No single place it lives.</p>
               </div>
             </div>
           </div>
 
-          <div className="space-y-12 lg:space-y-0 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-12 lg:items-center">
+          <div className="space-y-8 sm:space-y-12 lg:space-y-0 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-12 lg:items-center">
             {/* Left Side - Scattered Feedback */}
             <div>
               <div className="text-center mb-4 lg:mb-8">
@@ -163,10 +148,10 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Mobile: Horizontal scroll carousel | Desktop: stacked */}
-              <div className="overflow-x-auto snap-x snap-mandatory lg:overflow-visible flex lg:block gap-4 lg:space-y-6 lg:gap-0 pb-4 lg:pb-0 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide">
+              {/* Mobile: Stack max 3 cards | Desktop: all cards stacked */}
+              <div className="space-y-4 sm:space-y-6">
                 {/* iMessage */}
-                <div className="min-w-[280px] sm:min-w-[300px] lg:min-w-0 snap-center lg:snap-none flex-shrink-0 lg:flex-shrink bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 lg:p-6 lg:max-w-sm lg:ml-auto transform hover:scale-105 transition-transform duration-200">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 lg:p-6 lg:max-w-sm lg:ml-auto transform hover:scale-105 transition-transform duration-200">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                       <span className="text-xs sm:text-sm font-semibold text-blue-600">JL</span>
@@ -187,7 +172,7 @@ export default function Home() {
                 </div>
 
                 {/* Email */}
-                <div className="min-w-[280px] sm:min-w-[300px] lg:min-w-0 snap-center lg:snap-none flex-shrink-0 lg:flex-shrink bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 lg:p-6 lg:max-w-sm transform hover:scale-105 transition-transform duration-200">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 lg:p-6 lg:max-w-sm transform hover:scale-105 transition-transform duration-200">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
                       <span className="text-xs sm:text-sm font-semibold text-white">MK</span>
@@ -205,7 +190,7 @@ export default function Home() {
                 </div>
 
                 {/* Slack */}
-                <div className="min-w-[280px] sm:min-w-[300px] lg:min-w-0 snap-center lg:snap-none flex-shrink-0 lg:flex-shrink bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden lg:max-w-sm lg:ml-auto transform hover:scale-105 transition-transform duration-200">
+                <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden lg:max-w-sm lg:ml-auto transform hover:scale-105 transition-transform duration-200">
                   <div className="bg-purple-900 text-white px-4 py-2 flex items-center space-x-2">
                     <span className="text-sm font-semibold">#project-team</span>
                     <span className="text-sm">📌</span>
@@ -229,8 +214,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Fourth Card - LinkedIn Message (for balance) */}
-                <div className="min-w-[280px] sm:min-w-[300px] lg:min-w-0 snap-center lg:snap-none flex-shrink-0 lg:flex-shrink bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 lg:p-6 lg:max-w-sm transform hover:scale-105 transition-transform duration-200">
+                {/* Fourth Card - LinkedIn (hidden on mobile for brevity) */}
+                <div className="hidden lg:block bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-5 lg:p-6 lg:max-w-sm transform hover:scale-105 transition-transform duration-200">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0">
                       <span className="text-xs sm:text-sm font-semibold text-white">PP</span>
@@ -272,7 +257,7 @@ export default function Home() {
           </div>
 
           {/* Bottom Summary */}
-          <div className="text-center mt-12 sm:mt-16 lg:mt-20">
+          <div className="text-center mt-8 sm:mt-12 lg:mt-20">
             <p className="text-lg sm:text-xl lg:text-2xl text-gray-600 font-light">It all becomes one Nomee page.</p>
           </div>
         </div>

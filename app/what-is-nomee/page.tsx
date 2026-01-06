@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform } from "framer-motion"
 import { SiteHeader } from "@/components/site-header"
-import { ArrowRight, Mail, MessageSquare, Send, Check, Sparkles } from "lucide-react"
+import { ArrowRight, AlertCircle, Layers, Zap, Check, Send, MessageSquare, Mail } from "lucide-react"
 import { useState, useRef } from "react"
 import { ModalSignup } from "@/components/modal-signup"
 import Link from "next/link"
@@ -28,26 +28,16 @@ export default function WhatIsNomeePage() {
         <SiteHeader onCreateClick={() => setIsModalOpen(true)} />
 
         {/* Hero Section with Animated Typography */}
-        <section className="pt-32 pb-24 px-6 relative overflow-hidden">
+        <section className="pt-20 md:pt-32 pb-16 md:pb-24 px-5 md:px-6 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 opacity-50" />
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
 
-          <div className="max-w-5xl mx-auto text-center space-y-8 relative z-10">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm border border-indigo-200 px-4 py-2 rounded-full shadow-lg"
-            >
-              <Sparkles className="w-4 h-4 text-indigo-600" />
-              <span className="text-sm font-semibold text-indigo-900">The professional reputation platform</span>
-            </motion.div>
-
+          <div className="max-w-5xl mx-auto text-center space-y-6 md:space-y-8 relative z-10">
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-6xl md:text-8xl font-bold text-slate-900 leading-[1.1] tracking-tight"
+              className="text-5xl md:text-6xl lg:text-8xl font-bold text-slate-900 leading-[1.1] tracking-tight"
             >
               What is Nomee?
             </motion.h1>
@@ -56,10 +46,9 @@ export default function WhatIsNomeePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-2xl md:text-3xl text-slate-600 leading-relaxed max-w-4xl mx-auto font-light"
+              className="text-xl md:text-2xl lg:text-3xl text-slate-600 leading-relaxed max-w-4xl mx-auto"
             >
-              Nomee helps you save and organize real feedback from the people you work with—so you're not relying on
-              memory, screenshots, or outdated recommendations.
+              A single place to save real feedback about how you work.
             </motion.p>
 
             <motion.div
@@ -70,7 +59,7 @@ export default function WhatIsNomeePage() {
             >
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="group px-10 py-5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl text-lg font-semibold hover:shadow-2xl hover:shadow-indigo-300 transition-all transform hover:scale-105"
+                className="group px-8 md:px-10 py-4 md:py-5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl text-base md:text-lg font-semibold hover:shadow-2xl hover:shadow-indigo-300 transition-all transform hover:scale-105"
               >
                 <span className="flex items-center justify-center gap-2">
                   Start Your Nomee
@@ -79,11 +68,171 @@ export default function WhatIsNomeePage() {
               </button>
               <Link
                 href="/example"
-                className="px-10 py-5 bg-white text-slate-900 border-2 border-slate-200 rounded-2xl text-lg font-semibold hover:border-slate-300 hover:shadow-xl transition-all"
+                onClick={scrollToTop}
+                className="px-8 md:px-10 py-4 md:py-5 bg-white text-slate-900 border-2 border-slate-200 rounded-2xl text-base md:text-lg font-semibold hover:border-slate-300 hover:shadow-xl transition-all"
               >
                 View Live Example
               </Link>
             </motion.div>
+          </div>
+        </section>
+
+        <section className="py-16 md:py-24 px-5 md:px-6 bg-gradient-to-b from-white via-slate-50 to-white">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="text-center mb-12 md:mb-16"
+            >
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
+                The problem isn't feedback. It's losing it.
+              </h2>
+            </motion.div>
+
+            <div className="space-y-4 md:space-y-6">
+              {/* Card 1 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="bg-white rounded-2xl p-6 md:p-8 shadow-lg border-2 border-slate-100"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-2">Great feedback happens</h3>
+                    <p className="text-base md:text-lg text-slate-600">
+                      A client says you nailed it. A colleague calls out your thinking. Real praise shows up after real
+                      work.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Card 2 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="bg-white rounded-2xl p-6 md:p-8 shadow-lg border-2 border-slate-100"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Layers className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-2">It shows up everywhere</h3>
+                    <p className="text-base md:text-lg text-slate-600">
+                      Slack messages. Email chains. Texts after a project. Quick notes that never get saved.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Card 3 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="bg-white rounded-2xl p-6 md:p-8 shadow-lg border-2 border-red-100 bg-red-50"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-2">Then it disappears</h3>
+                    <p className="text-base md:text-lg text-slate-600">
+                      When you need proof of your work, it's buried in old threads or gone completely.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-16 md:py-24 px-5 md:px-6 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+              {/* Before Nomee */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="bg-slate-50 rounded-3xl p-8 md:p-10 border-2 border-slate-200"
+              >
+                <div className="mb-6">
+                  <p className="text-sm uppercase tracking-widest text-slate-400 font-bold mb-2">Before Nomee</p>
+                  <h3 className="text-2xl md:text-3xl font-bold text-slate-900">Feedback is scattered</h3>
+                </div>
+                <ul className="space-y-4 text-base md:text-lg text-slate-700">
+                  <li className="flex items-start gap-3">
+                    <span className="text-slate-400 mt-1">•</span>
+                    <span>Lost in old Slack threads</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-slate-400 mt-1">•</span>
+                    <span>Buried in email inboxes</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-slate-400 mt-1">•</span>
+                    <span>Never written down at all</span>
+                  </li>
+                </ul>
+              </motion.div>
+
+              {/* With Nomee */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl p-8 md:p-10 border-2 border-indigo-200"
+              >
+                <div className="mb-6">
+                  <p className="text-sm uppercase tracking-widest text-indigo-600 font-bold mb-2">With Nomee</p>
+                  <h3 className="text-2xl md:text-3xl font-bold text-slate-900">Feedback is organized</h3>
+                </div>
+                <ul className="space-y-4 text-base md:text-lg text-slate-700">
+                  <li className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-indigo-600 mt-1 flex-shrink-0" />
+                    <span>All in one place</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-indigo-600 mt-1 flex-shrink-0" />
+                    <span>Verified and timestamped</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-indigo-600 mt-1 flex-shrink-0" />
+                    <span>Ready when you need it</span>
+                  </li>
+                </ul>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-16 md:py-24 px-5 md:px-6 bg-gradient-to-b from-white via-slate-50 to-white">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Here's how it looks</h2>
+            </motion.div>
+            <DynamicMiniExample />
           </div>
         </section>
 
@@ -518,7 +667,7 @@ export default function WhatIsNomeePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="group px-10 py-5 bg-white text-indigo-600 rounded-2xl text-xl font-bold hover:shadow-2xl transition-all transform hover:scale-105"
+                className="group px-10 py-5 bg-white text-indigo-600 rounded-2xl text-lg font-semibold hover:shadow-2xl transition-all transform hover:scale-105"
               >
                 <span className="flex items-center justify-center gap-2">
                   Create Your Nomee — Free
@@ -528,7 +677,7 @@ export default function WhatIsNomeePage() {
               <Link
                 href="/example"
                 onClick={scrollToTop}
-                className="px-10 py-5 bg-transparent border-2 border-white text-white rounded-2xl text-xl font-bold hover:bg-white/10 transition-all"
+                className="px-10 py-5 bg-transparent border-2 border-white text-white rounded-2xl text-lg font-bold hover:bg-white/10 transition-all"
               >
                 See a Live Example
               </Link>
